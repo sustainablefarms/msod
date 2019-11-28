@@ -1,0 +1,21 @@
+Type: Package
+Package: sustfarmld
+Title: Linking Data Project R Package
+Version: 0.0-1
+Date: 2019-11-28
+Author: ???
+Maintainer: Kassel Liam Hingee <kassel.hingee@anu.edu.au>
+Description: Code developed by Martin Westgate and Kassel Liam Hingee for accessing and evaluating data relevant to the linking data project.
+License: GPL (>= 2)
+Imports:
+    maptools,
+    raster,
+    lubridate,
+    readxl,
+    testthat,
+    ncdf4
+Suggests:
+    ggplot2,
+    corrplot
+ByteCompile: true
+
