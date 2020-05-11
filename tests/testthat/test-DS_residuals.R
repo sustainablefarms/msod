@@ -30,6 +30,12 @@ test_that("PDF and CDF computations are correct"){
   expect_equal(hetcdf(length(pDetected), pDetected),  1)
   expect_equal(hetcdf(2.1, pDetected),  hetcdf(2, pDetected))
   expect_gt(hetcdf(3, pDetected), hetcdf(2, pDetected))
+  
+  # compare to simulations
+  s <- summary(as.factor(simDetectedDistr(500000, pDetected)))/500000
+  p <- vapply(0:length(pDetected), hetpdf, pDetected = pDetected, FUN.VALUE = 3)
+  names(p) <- 0:length(pDetected)
+  expect_equal(s, p, tolerance = 1E-3)
 }
 
 test_that("Detection residuals sensible for simulated data", {
