@@ -75,6 +75,7 @@ test_that("Occupancy residuals sensible for simulated data", {
   sites <- c(1:10)
   occupancy <- expand.grid(Species = species, ModelSite = sites)
   occupancy$pOccupancy <- runif(nrow(occupancy))
+  occupancy$Occupied <- mapply(rbinom, prob = occupancy$pOccupancy, MoreArgs = list(n = 1, size = 1))
   
   visits <- rbind(occupancy, occupancy, occupancy[1:(2 * length(species)), ],
                   occupancy, occupancy, occupancy)
@@ -82,11 +83,13 @@ test_that("Occupancy residuals sensible for simulated data", {
   names(specdet_base) <- species
   visitdetprob_offset <- runif(nrow(visits), -0.1, 0.1)
   preds <- visits %>%
-    dplyr::mutate(pDetected = pOccupancy * (specdet_base[Species] + visitdetprob_offset))
+    dplyr::mutate(pDetected_cond = specdet_base[Species] + visitdetprob_offset)
   
   # simulate observations from the given predicted values (purely for testing)
   obs <- preds %>% dplyr::select(Species, ModelSite)
-  obs$Detected <- mapply(rbinom, prob = preds$pDetected, MoreArgs = list(n = 1, size = 1))
+  obs$Detected <- mapply(rbinom, prob = preds$Occupied * preds$pDetected_cond, MoreArgs = list(n = 1, size = 1))
+
+  preds <- preds %>% dplyr::select(Species, ModelSite, pOccupancy, pDetected_cond)
   
   # test residuals response to seed
   expect_equal(ds_occupancy_residuals(preds, obs, seed = 1234),
