@@ -2,6 +2,8 @@ library(testthat);
 
 context("Tests of Dunn-Smyth Residuals")
 
+
+
 test_that("Seed argument works for setting final residual computation", {
   a <- cdfvals_2_dsres_discrete(rep(0.5, 6), rep(0.6, 6), seed = 5346)
   b <- cdfvals_2_dsres_discrete(rep(0.5, 6), rep(0.6, 6), seed = 5346)
@@ -105,41 +107,8 @@ test_that("Occupancy residuals sensible for simulated data", {
 
 test_that("DS Residuals are Gaussian for Simulated Fitted Object", {
   # simulate a fitted object
-  species <- c("A", "B", "C", "D")
-  nsites <- 1000
-  sites <- c(1:nsites)
-  XoccIn <- data.frame(ModelSite = sites, UpSite = sites, Sine1 = sin(2 * pi * sites / nsites), Sine2 = sin(4 * pi * sites / nsites))
-  XobsIn <- data.frame(ModelSite = c(sites, sites), UpVisit = 1:(2*nsites), Step = c(rep(1, nsites), rep(2, nsites)))
-  LV <- scale(cbind(sites %% 2, ((sites %/% 5) * 5 == sites ) | (sites %/% 3) * 3 == sites ))
-  OccFmla <- "~ UpSite + Sine1 + Sine2"
-  ObsFmla <- "~ UpVisit + Step"
-  XoccProcess <- prep.designmatprocess(XoccIn, OccFmla)
-  XobsProcess <- prep.designmatprocess(XobsIn, ObsFmla)
+  fit <- artificial_runjags(nspecies = 5, nsites = 1000, nvisitspersite = 2, nlv = 2)
   
-  data.list <- prep.data(XoccIn, yXobs = XobsIn, ModelSite = "ModelSite", species = NULL, nlv = 2, XoccProcess = XoccProcess, XobsProcess = XobsProcess)
-  fit <- list()
-  fit$data <- data.list
-  fit$data$n <- length(species)
-  
-  # set parameters
-  u.b <- matrix(runif( fit$data$n * fit$data$Vocc, min = -1, max = 1), nrow = fit$data$n, ncol = fit$data$Vocc)
-  v.b <- matrix(runif(  fit$data$n * fit$data$Vobs, min = -1, max = 1), nrow = fit$data$n, ncol = fit$data$Vobs)
-  set.seed(324)
-  lv.coef <- matrix(runif(  fit$data$n * fit$data$nlv, min = -0.5, max = 0.5), nrow = fit$data$n, ncol = fit$data$nlv) #0.5 constraint makes sure rowSum(lv.coef^2) < 1
-  theta <- c(matrix2bugsvar(u.b, name = "u.b"),
-             matrix2bugsvar(v.b, name = "v.b"),
-             matrix2bugsvar(lv.coef, name = "lv.coef"),
-             matrix2bugsvar(LV, name = "LV")
-             )
-  fit$mcmc <- list()
-  fit$mcmc[[1]] <- t(as.matrix(theta))
-  fit$summary.available <- TRUE
-  fit$species <- species
-  
-  # simulate data
-  fit$data$y <- simulate.fit(fit, esttype = 1, conditionalLV = TRUE)
-  colnames(fit$data$y) <- species
- 
   # compute residuals 
   resid_det <- ds_detection_residuals.fit(fit, type = 1)
   shapiro_det_residual <- resid_det %>% dplyr::select(-ModelSite) %>%  as.matrix() %>%  as.vector() %>%
