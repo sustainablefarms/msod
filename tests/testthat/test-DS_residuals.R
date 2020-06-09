@@ -177,7 +177,7 @@ test_that("Occupancy and Detection Residuals match fresh conversion from fit to 
   expect_gt(shapiroresults$p.value, 0.05) #if things are good this test will fail 1/20 times
 })
 
-test_that("Detection residuals sensible and gaussian for simulated data", {
+test_that("Detection residuals sensible and gaussian for very raw simulated data", {
   # simulate a data set
   species <- c("A", "B", "C", "D")
   sites <- c(1:1000)
@@ -243,9 +243,9 @@ test_that("Occupancy residuals sensible for simulated data", {
 })
 
 
-test_that("DS Residuals are Gaussian for Artificial Fitted Object", {
+test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object", {
   # simulate a fitted object
-  fit <- artificial_runjags(nspecies = 5, nsites = 1000, nvisitspersite = 2, nlv = 0)
+  fit <- artificial_runjags(nspecies = 5, nsites = 500, nvisitspersite = 5, nlv = 2)
   
   # compute residuals 
   resid_det <- ds_detection_residuals.fit(fit, type = 1)
@@ -253,13 +253,19 @@ test_that("DS Residuals are Gaussian for Artificial Fitted Object", {
     shapiro.test()
   expect_gt(shapiro_det_residual$p.value, 0.05)
   
+  # resid_det %>% dplyr::select(-ModelSite) %>% as.matrix() %>% as.vector() %>% qqnorm()
+  # abline(a = 0, b = 1)
+})
+
+test_that("DS Occupancy Residuals are Gaussian for Artificial Fitted Object", {
+  # simulate a fitted object
+  fit <- artificial_runjags(nspecies = 5, nsites = 500, nvisitspersite = 5, nlv = 2)
+  
+  # compute residuals 
   resid_occ <- ds_occupancy_residuals.fit(fit, type = 1)
   shapiro_occ_residual <- resid_occ %>% dplyr::select(-ModelSite) %>%  as.matrix() %>%  as.vector() %>%
     shapiro.test()
   expect_gt(shapiro_occ_residual$p.value, 0.05)
-  
-  # resid_det %>% dplyr::select(-ModelSite) %>% as.matrix() %>% as.vector() %>% qqnorm()
-  # abline(a = 0, b = 1)
   # resid_occ %>% dplyr::select(-ModelSite) %>% as.matrix() %>% as.vector() %>% qqnorm()
   # abline(a = 0, b = 1)
 })
