@@ -103,10 +103,10 @@ test_that("Occupancy residuals sensible for simulated data", {
   expect_gt(shapiroresults$p.value, 0.05) #if things are good this test will fail 1/20 times
 })
 
-test_that("DS Residuals are Gaussian for Simulated Fitted Object"){
+test_that("DS Residuals are Gaussian for Simulated Fitted Object", {
   # simulate a fitted object
   species <- c("A", "B", "C", "D")
-  nsites <- 100
+  nsites <- 1000
   sites <- c(1:nsites)
   XoccIn <- data.frame(ModelSite = sites, UpSite = sites, Sine1 = sin(2 * pi * sites / nsites), Sine2 = sin(4 * pi * sites / nsites))
   XobsIn <- data.frame(ModelSite = c(sites, sites), UpVisit = 1:(2*nsites), Step = c(rep(1, nsites), rep(2, nsites)))
@@ -126,10 +126,10 @@ test_that("DS Residuals are Gaussian for Simulated Fitted Object"){
   v.b <- matrix(runif(  fit$data$n * fit$data$Vobs, min = -1, max = 1), nrow = fit$data$n, ncol = fit$data$Vobs)
   set.seed(324)
   lv.coef <- matrix(runif(  fit$data$n * fit$data$nlv, min = -0.5, max = 0.5), nrow = fit$data$n, ncol = fit$data$nlv) #0.5 constraint makes sure rowSum(lv.coef^2) < 1
-  theta <- c(array2bugsvar(u.b, name = "u.b"),
-             array2bugsvar(v.b, name = "v.b"),
-             array2bugsvar(lv.coef, name = "lv.coef"),
-             array2bugsvar(LV, name = "LV")
+  theta <- c(matrix2bugsvar(u.b, name = "u.b"),
+             matrix2bugsvar(v.b, name = "v.b"),
+             matrix2bugsvar(lv.coef, name = "lv.coef"),
+             matrix2bugsvar(LV, name = "LV")
              )
   fit$mcmc <- list()
   fit$mcmc[[1]] <- t(as.matrix(theta))
@@ -142,20 +142,20 @@ test_that("DS Residuals are Gaussian for Simulated Fitted Object"){
  
   # compute residuals 
   resid_det <- ds_detection_residuals.fit(fit, type = 1)
-  shapirodet <- resid_det %>% dplyr::select(-ModelSite) %>%  as.matrix() %>%  as.vector() %>%
+  shapiro_det_residual <- resid_det %>% dplyr::select(-ModelSite) %>%  as.matrix() %>%  as.vector() %>%
     shapiro.test()
-  expect_gt(shapirodet$p.value, 0.05)
+  expect_gt(shapiro_det_residual$p.value, 0.05)
   
   resid_occ <- ds_occupancy_residuals.fit(fit, type = 1)
-  shapiroocc <- resid_occ %>% dplyr::select(-ModelSite) %>%  as.matrix() %>%  as.vector() %>%
+  shapiro_occ_residual <- resid_occ %>% dplyr::select(-ModelSite) %>%  as.matrix() %>%  as.vector() %>%
     shapiro.test()
-  expect_gt(shapiroocc$p.value, 0.05)
+  expect_gt(shapiro_occ_residual$p.value, 0.05)
   
   # resid_det %>% dplyr::select(-ModelSite) %>% as.matrix() %>% as.vector() %>% qqnorm()
   # abline(a = 0, b = 1)
   # resid_occ %>% dplyr::select(-ModelSite) %>% as.matrix() %>% as.vector() %>% qqnorm()
   # abline(a = 0, b = 1)
-}
+})
 
 test_that("Number of detection residuals computed for a highly common species at a single ModelSite", {
   species <- c("A")#, "B", "C", "D")
