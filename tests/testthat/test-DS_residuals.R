@@ -243,7 +243,37 @@ test_that("Occupancy residuals sensible for simulated data", {
 })
 
 
-test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object", {
+test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made of Common Species", {
+  # simulate a fitted object
+  fit <- artificial_runjags(nspecies = 5, nsites = 500, nvisitspersite = 5, nlv = 2,
+                            u.b.min = 0.95)
+  
+  # compute residuals 
+  resid_det <- ds_detection_residuals.fit(fit, type = 1)
+  shapiro_det_residual <- resid_det %>% dplyr::select(-ModelSite) %>%  as.matrix() %>%  as.vector() %>%
+    shapiro.test()
+  expect_gt(shapiro_det_residual$p.value, 0.05)
+  
+  # resid_det %>% dplyr::select(-ModelSite) %>% as.matrix() %>% as.vector() %>% qqnorm()
+  # abline(a = 0, b = 1)
+})
+
+test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made of Rare Species", {
+  # simulate a fitted object
+  fit <- artificial_runjags(nspecies = 5, nsites = 500, nvisitspersite = 5, nlv = 2,
+                            u.b.max = -0.9)
+  
+  # compute residuals 
+  resid_det <- ds_detection_residuals.fit(fit, type = 1)
+  shapiro_det_residual <- resid_det %>% dplyr::select(-ModelSite) %>%  as.matrix() %>%  as.vector() %>%
+    shapiro.test()
+  expect_gt(shapiro_det_residual$p.value, 0.05)
+  
+  # resid_det %>% dplyr::select(-ModelSite) %>% as.matrix() %>% as.vector() %>% qqnorm()
+  # abline(a = 0, b = 1)
+})
+
+test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made of Variety of Species", {
   # simulate a fitted object
   fit <- artificial_runjags(nspecies = 5, nsites = 500, nvisitspersite = 5, nlv = 2)
   
