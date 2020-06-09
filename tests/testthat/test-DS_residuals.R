@@ -1,9 +1,9 @@
 library(testthat);
+out <- lapply(paste0("./functions/", list.files("./functions/")), source)
 
 context("Tests of Dunn-Smyth Residuals")
 
-
-test_that("Seed argument works for setting final residual computation", {
+test_that("Seed argument works for setting cumulative distribution computations", {
   a <- cdfvals_2_dsres_discrete(rep(0.5, 6), rep(0.6, 6), seed = 5346)
   b <- cdfvals_2_dsres_discrete(rep(0.5, 6), rep(0.6, 6), seed = 5346)
   c <- cdfvals_2_dsres_discrete(rep(0.5, 6), rep(0.6, 6), seed = NULL)
@@ -37,6 +37,19 @@ test_that("PDF and CDF computations are correct", {
   p <- vapply(0:length(pDetected), numdet_pdf, pDetected = pDetected, FUN.VALUE = 3)
   names(p) <- 0:length(pDetected)
   expect_equal(s, p, tolerance = 1E-3)
+})
+
+test_that("Conditioning on Greater Than Zero Correct", {
+  pDetected <- runif(3)  #detections at each visit
+  pdf <- vapply(0:length(pDetected), function(x) numdet_pdf(x, pDetected), FUN.VALUE = 0.0)
+  cdf <- vapply(0:length(pDetected), function(x) numdet_cdf(x, pDetected), FUN.VALUE = 0.0)
+  expect_equivalent(cdf, cumsum(pdf))
+  
+  expect_equal(condition_nonzero.cdf(cdf[[1]], cdf[[2]]), pdf[[2]] / (1 - pdf[[1]]))
+  expect_equal(condition_nonzero.cdf(cdf[[1]], cdf[[2]]), condition_nonzero.pdf(cdf[[1]], pdf[[2]]))
+  expect_equal(condition_nonzero.cdf(cdf[[1]], cdf[[1 + length(pDetected)]]), 1)
+  expect_equal(condition_nonzero.cdf(cdf[[1]], cdf[[1]]), 0)
+  expect_equal(condition_nonzero.pdf(cdf[[length(pDetected)]], pdf[[1 + length(pDetected)]]), 1)
 })
 
 test_that("Occupancy and Detection Residuals match fresh conversion from fit to raw, with LV", {
@@ -75,8 +88,7 @@ test_that("Occupancy and Detection Residuals match fresh conversion from fit to 
     arrange(VisitId, Species, ModelSite)
   
   ds_residuals <- ds_occupancy_residuals.raw(preds, obs)
-  shapiroresults <- shapiro.test(ds_residuals$OccupancyResidual)
-  expect_gt(shapiroresults$p.value, 0.05) #if things are good this test will fail 1/20 times
+  expect_gt(shapiro.test(ds_residuals$OccupancyResidual)$p.value, 0.05) #if things are good this test will fail 1/20 times
   
   #' @param preds is a dataframe with columns Species, ModelSite, and pDetected
   #' @param obs is a dataframe with columns Species, ModelSite, and Detected
@@ -90,14 +102,13 @@ test_that("Occupancy and Detection Residuals match fresh conversion from fit to 
     arrange(VisitId, Species, ModelSite)
   
   ds_residuals <- ds_detection_residuals.raw(preds, obs)
-  shapiroresults <- shapiro.test(ds_residuals$DetectionResidual)
-  expect_gt(shapiroresults$p.value, 0.05) #if things are good this test will fail 1/20 times
+  expect_gt(shapiro.test(ds_residuals$DetectionResidual)$p.value, 0.05) #if things are good this test will fail 1/20 times
 })
 
 test_that("Detection residuals sensible and gaussian for very raw simulated data", {
   # simulate a data set
-  species <- c("A", "B", "C", "D")
-  sites <- c(1:1000)
+  species <- LETTERS
+  sites <- c(1:100)
   occupancy <- expand.grid(Species = species, ModelSite = sites)
   occupancy$pOccupancy <- runif(nrow(occupancy))
   
@@ -125,9 +136,9 @@ test_that("Detection residuals sensible and gaussian for very raw simulated data
   expect_gt(shapiroresults$p.value, 0.05) #if things are good this test will fail 1/20 times
 })
 
-test_that("Occupancy residuals sensible for simulated data", {
+test_that("Detection residuals sensible and gaussian for very raw simulated data", {
   # simulate a data set
-  species <- c("A", "B", "C", "D")
+  species <- LETTERS
   sites <- c(1:100)
   occupancy <- expand.grid(Species = species, ModelSite = sites)
   occupancy$pOccupancy <- runif(nrow(occupancy))
@@ -173,6 +184,7 @@ test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made
   # resid_det %>% dplyr::select(-ModelSite) %>% as.matrix() %>% as.vector() %>% qqnorm()
   # abline(a = 0, b = 1)
 })
+# 1 out of 20 fails :))
 
 test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made of Rare Species", {
   # simulate a fitted object
@@ -188,6 +200,45 @@ test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made
   # resid_det %>% dplyr::select(-ModelSite) %>% as.matrix() %>% as.vector() %>% qqnorm()
   # abline(a = 0, b = 1)
 })
+# 1 out of 20 fails :)
+
+test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made of Hard to Detect Species", {
+  # simulate a fitted object
+  fit <- artificial_runjags(nspecies = 5, nsites = 500, nvisitspersite = 5, nlv = 2,
+                            v.b.max = -1)
+  
+  # crnings(ompute residuals 
+  resid_det <- ds_detection_residuals.fit(fit, type = 1)
+  shapiro_det_residual <- resid_det %>% dplyr::select(-ModelSite) %>%  as.matrix() %>%  as.vector() %>%
+    shapiro.test()
+  expect_gt(shapiro_det_residual$p.value, 0.05)
+  
+  # resid_det %>% dplyr::select(-ModelSite) %>% as.matrix() %>% as.vector() %>% qqnorm()
+  # abline(a = 0, b = 1)
+})
+# failed about 8 out of 20 times. Could it be something related to situations when only one detection for a modelsite?
+
+test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made of Variety of Species, no LV", {
+  # simulate a fitted object
+  fit <- artificial_runjags(nspecies = 5, nsites = 500, nvisitspersite = 5, nlv = 0,
+                            OccFmla = "~ 1",
+                            ObsFmla = "~ 1")
+  
+  # compute residuals 
+  resid_det <- ds_detection_residuals.fit(fit, type = 1, conditionalLV = FALSE)
+  shapiro_det_residual <- resid_det %>% dplyr::select(-ModelSite) %>%  as.matrix() %>%  as.vector() %>%
+    shapiro.test()
+  expect_gt(shapiro_det_residual$p.value, 0.05)
+  
+  # resid_det %>% dplyr::select(-ModelSite) %>% as.matrix() %>% as.vector() %>% qqnorm()
+  # abline(a = 0, b = 1)
+  poccupy_species(fit, type = 1, conditionalLV = FALSE)[1, ]
+  pdetect_condoccupied(fit, type = 1)[1, ]
+  bugsvar2matrix(fit$mcmc[[1]][1,  ], "u.b", 1:fit$data$n, 1:fit$data$Vocc)
+  # v.b <- bugsvar2matrix(fit$mcmc[[1]][1,  ], "v.b", 1:fit$data$n, 1:fit$data$Vobs)
+  # lv.coef <- bugsvar2matrix(fit$mcmc[[1]][1,  ], "lv.coef", 1:fit$data$n, 1:fit$data$nlv)
+})
+# this failed 8 out of 20 times
 
 test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made of Variety of Species", {
   # simulate a fitted object
@@ -199,9 +250,13 @@ test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made
     shapiro.test()
   expect_gt(shapiro_det_residual$p.value, 0.05)
   
-  # resid_det %>% dplyr::select(-ModelSite) %>% as.matrix() %>% as.vector() %>% qqnorm()
-  # abline(a = 0, b = 1)
+  resid_det %>% dplyr::select(-ModelSite) %>% as.matrix() %>% as.vector() %>% qqnorm()
+  abline(a = 0, b = 1)
+  u.b <- bugsvar2matrix(fit$mcmc[[1]][1,  ], "u.b", 1:fit$data$n, 1:fit$data$Vocc)
+  v.b <- bugsvar2matrix(fit$mcmc[[1]][1,  ], "v.b", 1:fit$data$n, 1:fit$data$Vobs)
+  lv.coef <- bugsvar2matrix(fit$mcmc[[1]][1,  ], "lv.coef", 1:fit$data$n, 1:fit$data$nlv)
 })
+# above sits at about 14 fails out of 20!
 
 test_that("DS Occupancy Residuals are Gaussian for Artificial Fitted Object", {
   # simulate a fitted object

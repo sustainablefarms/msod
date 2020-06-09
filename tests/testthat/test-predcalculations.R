@@ -1,5 +1,7 @@
 library(testthat);
 
+out <- lapply(paste0("./functions/", list.files("./functions/")), source)
+
 context("Calculations of Predicted Probabilities")
 
 test_that("poccupy_species is correct without LV", {
@@ -48,7 +50,7 @@ test_that("pdetect_condoccupied is correct", {
                             ObsFmla = ObsFmla)
   pDetCondOcc<- pdetect_condoccupied(fit, type = 1)
   diff <- Rfast::eachrow(pDetCondOcc, pDetCondOccFresh, oper = "-")
-  expect_true(max(abs(diffOdd)) < 1E-3)
+  expect_true(max(abs(diff)) < 1E-3)
 })
 
 test_that("pdetect_indvisit is correct with LV", {
