@@ -147,15 +147,15 @@ prep_data_by_modelsite <- function(Xocc, Xobs, y, ModelSite, outformat = "list")
   Xocc <- Xocc %>%
     as_tibble(.name_repair = "minimal") %>%
     rowid_to_column(var = "ModelSite") %>%
-    nest(Xocc = -ModelSite)
+    tidyr::nest(Xocc = -ModelSite)
   Xobs <- Xobs %>%
     as_tibble(.name_repair = "minimal") %>%
     mutate(ModelSite = ModelSite) %>%
-    nest(Xobs = -ModelSite)
+    tidyr::nest(Xobs = -ModelSite)
   y <- y %>%
     as_tibble(.name_repair = "minimal") %>%
     mutate(ModelSite = ModelSite) %>%
-    nest(y = -ModelSite)
+    tidyr::nest(y = -ModelSite)
   data <- inner_join(Xocc, Xobs, by = "ModelSite", suffix = c("occ", "obs")) %>%
     inner_join(y, by = "ModelSite", suffix = c("X", "y"))
   if (outformat == "list") {data <- lapply(1:nrow(data), function(i) data[i,, drop = FALSE])}
