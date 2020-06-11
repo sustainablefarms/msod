@@ -46,7 +46,7 @@ simulate.fit <- function(fit, esttype = "median", conditionalLV = TRUE){
 }
 
 ## function for creating a fully artificial fitted object
-#' @value A list that has enough similarities to runjags objects that residual calculations are possible.
+#' @return A list that has enough similarities to runjags objects that residual calculations are possible.
 #' The true parameter set is the first (and only row) of the first MCMC chain.
 #' It can be accessed using get_theta(fit, type = 1)
 #' @param nspecies Number of species
@@ -118,7 +118,7 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2, 
 #' @describeIn artificial_runjags Simulates covariate dataframes for occupancy and detection.
 #' Occupancy covariate names are UpSite, Sine1 and Sine2.
 #' Detection dovariate names are UpVisit and Step.
-#' @value A list with elements Xocc, and Xobs for the occupancy and detection covariates respectively
+#' @return A list with elements Xocc, and Xobs for the occupancy and detection covariates respectively
 simulate_covar_data <- function(nsites, nvisitspersite){
   sites <- c(1:nsites)
   XoccIn <- data.frame(ModelSite = sites,
@@ -136,7 +136,7 @@ simulate_covar_data <- function(nsites, nvisitspersite){
 #' @param nspecies is the number of species to simulate. Species are named A, B, C... (max of 26 allowed)
 #' @param nvisits Number of visits in total to simulate
 #' @param p The probability of detection, constant for all species and visits.
-#' @value A simulated dataframe of detections. Column names are the species names, each row is a visit.
+#' @return A simulated dataframe of detections. Column names are the species names, each row is a visit.
 #' Elements of the data frame are either 1 (detected) or 0 (not detected).
 simulate_iid_detections <- function(nspecies, nvisits, p = 0.5){
   stopifnot(nspecies <= 26)

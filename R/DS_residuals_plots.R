@@ -59,7 +59,7 @@ library(ggplot2); library(dplyr);
 #' Rows with duplicated ModelSite values are averaged, which is in keeping with Warton et al for detection residuals.
 #' @param plotfunction A plotting method to use. Default is \code{facet_species_covariate}.
 #' @param ... Extra arguments to pass to plot function.
-#' @value A ggplot object. Data is in the \code{data} slot.
+#' @return A ggplot object. Data is in the \code{data} slot.
 plot_residuals.residual <- function(residuals, covar, plotfunction = facet_species_covariate,
                                     aggregatefcn = mean, ...){
   # Average covariates to ModelSite level. This is what Warton, Mackenzie et al do. In future it could be possible to present residuals per visit
@@ -99,7 +99,7 @@ plot_residuals.residual <- function(residuals, covar, plotfunction = facet_speci
 #' @describeIn plot_residuals A function that prepares plot of residuals, one facet for each species and covariate
 #' @param data Input tibble. Columns of Species, Residual, Covariate and CovariateValue
 #' @param ... Extra arguments to pass. Currently ignored.
-#' @value A ggplot object.
+#' @return A ggplot object.
 facet_species_covariate <- function(data, ...){
   pltobj <- data %>% 
     ggplot() +
@@ -114,7 +114,7 @@ facet_species_covariate <- function(data, ...){
 #' @describeIn plot_residuals A function that prepares plot of residuals, one facet for each covariate. Species ignored.
 #' @param data Input tibble. Columns of Species, Residual, Covariate and CovariateValue
 #' @param ... Extra arguments to pass. Currently ignored (no extra arguments accepted).
-#' @value A ggplot object.
+#' @return A ggplot object.
 facet_covariate <- function(data, ...){
   data %>% 
     ggplot() +
@@ -134,7 +134,7 @@ facet_covariate <- function(data, ...){
 #' @param esttype The point estimate extracted from fit.
 #'  Passed to \code{ds_detection_residuals.fit} as argument \code{type}.
 #'  See get_theta() for available options.
-#' @value A ggplot object. Data is saved in the \code{data} slot.
+#' @return A ggplot object. Data is saved in the \code{data} slot.
 plot_residuals_detection.fit <- function(fit, detectionresiduals = NULL, varidx = NULL, esttype = NULL, 
                                          conditionalLV = TRUE, aggregatefcn = mean, ...){
   stopifnot(is.null(detectionresiduals) | is.null(esttype))  #error if est type is supplied when detection residuals is also supplied
@@ -172,7 +172,7 @@ plot_residuals_detection.fit <- function(fit, detectionresiduals = NULL, varidx 
 #' Must have column names identical to output of \code{ds_detection_residuals.fit}.
 #' If not supplied then detection residuals are computed from \code{fit} using \code{ds_detection_residuals.fit}.
 #' @param esttype The point estimate extracted from fit. Passed to \code{ds_detection_residuals.fit} as argument \code{type}.
-#' @value A ggplot object. Data is saved in the \code{data} slot.
+#' @return A ggplot object. Data is saved in the \code{data} slot.
 plot_residuals_occupancy.fit <- function(fit, occupancyresidual = NULL, varidx = NULL,
                                          esttype = NULL, conditionalLV = TRUE, aggregatefcn = mean, ...){
   stopifnot(is.null(occupancyresidual) | is.null(esttype))  #error if est type is supplied when detection residuals is also supplied

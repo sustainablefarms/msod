@@ -22,7 +22,7 @@ library(runjags); library(dplyr); library(tidyr); library(tibble);
 #' @param ModelSite A list mapping each row in \code{Xobs} to the row in \code{Xocc} that represents the ModelSite visited.
 #' @param conditionalLV If TRUE returned probabilities are conditioned on estimated latent variable values (and species are independent due to model structure)
 #' If FALSE returned probabilities assume no knowledge of the latent variable values and that species are independent.
-#' @value A matrix of detection probabilities. Each row is a visit, corresponding to the rows in Xobs. Each column is a species.
+#' @return A matrix of detection probabilities. Each row is a visit, corresponding to the rows in Xobs. Each column is a species.
 pdetect_indvisit <- function(fit, type = "median", Xocc = NULL, Xobs = NULL, ModelSite = NULL, conditionalLV = TRUE){
   if (!fit$summary.available){ fit <- add.summary(fit)}
   
@@ -53,7 +53,7 @@ pdetect_indvisit <- function(fit, type = "median", Xocc = NULL, Xobs = NULL, Mod
 #' @param type is the type of point estimate to use. See get_theta() for available options.
 #' @param Xobs A matrix of observation (detection) coefficients. Default is the observation coefficients saved in \code{fit}
 #' @param ModelSite A list mapping each row in \code{Xobs} to the row in \code{Xocc} that represents the ModelSite visited.
-#' @value A matrix of detection probabilities. Each row is a visit, corresponding to the rows in Xobs. Each column is a species.
+#' @return A matrix of detection probabilities. Each row is a visit, corresponding to the rows in Xobs. Each column is a species.
 pdetect_condoccupied <- function(fit, type = "median", Xobs = NULL){
   if (!fit$summary.available){ fit <- add.summary(fit)}
   fitdata <- as.list.format(fit$data)
@@ -88,7 +88,7 @@ pdetect_condoccupied <- function(fit, type = "median", Xobs = NULL){
 #' @param type is the type of point estimate to use. See get_theta().
 #' @param Xocc A matrix of occupancy coefficient, with each row corresponding to a ModelSite (i.e. a spatial location and year).
 #'  If \code{NULL} the Xocc data saved in \code{fit} will be used.
-#' @value A matrix of occupany probabilities. Each row is a ModelSite, corresponding to the rows in Xocc. Each column is a species.
+#' @return A matrix of occupany probabilities. Each row is a ModelSite, corresponding to the rows in Xocc. Each column is a species.
 poccupy_species <- function(fit, type = "median", Xocc = NULL, conditionalLV = TRUE){
   if (!fit$summary.available){ fit <- add.summary(fit)}
   fitdata <- as.list.format(fit$data)

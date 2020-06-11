@@ -65,7 +65,7 @@ numdet_cdf <- function(x, pDetected){
 #' @param fit A fitted occupancy-detection model.
 #' @param seed A seed to fix randomness of Dunn-Smyth residual jitter.
 #' @param type The type of point estimate to use for parameter estimates. See \code{\link{get_theta}}
-#' @value A matrix, each row is a ModelSite and each column is a species.
+#' @return A matrix, each row is a ModelSite and each column is a species.
 #' Detection residuals are only computed for species and sites that have at least one detection. Other values are NA.
 ds_detection_residuals.fit <- function(fit, type = "median", seed = NULL){
   pDetection <- pdetect_condoccupied(fit, type = type)  #the detection probabilities, assuming occupied
@@ -102,7 +102,7 @@ ds_detection_residuals.fit <- function(fit, type = "median", seed = NULL){
 #'  and corresponding and detection observations, compute Dunn-Smyth residuals for detection
 #' @param preds is a dataframe with columns Species, ModelSite, and pDetected
 #' @param obs is a dataframe with columns Species, ModelSite, and Detected
-#' @value A dataframe with a columns for Species, ModelSite, and detection residual. 
+#' @return A dataframe with a columns for Species, ModelSite, and detection residual. 
 #' The residual is only computed for species detected at least once at a site.
 ds_detection_residuals.raw <- function(preds, obs, seed = NULL){
   stopifnot(all(c("Species", "ModelSite", "pDetected") %in% names(preds)))
@@ -145,7 +145,7 @@ condition_nonzero.pdf <- function(cdf0, pdfval){
 #' @param fit A fitted occupancy-detection model.
 #' @param seed A seed to fix randomness of Dunn-Smyth residual jitter.
 #' @param type The type of point estimate to use for parameter estimates. See \code{\link{get_theta}}
-#' @value A matrix, each row is a ModelSite and each column is a species.
+#' @return A matrix, each row is a ModelSite and each column is a species.
 ds_occupancy_residuals.fit <- function(fit, type = "median", seed = NULL, conditionalLV = TRUE){
   pOccupancy <- poccupy_species(fit, type = type, conditionalLV = conditionalLV) #occupany probabilities
   if (is.null(colnames(pOccupancy))){colnames(pOccupancy) <- paste0("S", 1:ncol(pOccupancy))} #name the species S1....Sn
