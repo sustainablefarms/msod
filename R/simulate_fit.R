@@ -1,5 +1,5 @@
 # Simulate observations from parameters
-source("./R/calcpredictions.R")
+# source("./R/calcpredictions.R")
 
 #' @examples 
 #' fit <- readRDS("./tmpdata/deto_wind.rds")
