@@ -1,4 +1,5 @@
-## Computing Likelihood (which allows computing WAIC (and possibly PSIS-LOO) with the help of the LOO package by Vehtari and Gelman)
+#' @title Computing Likelihoods for Occupancy Detection Models
+
 
 #' @details Any predictinve accuracy measure requires a choice of 
 #' (1) the part of the model that is considered the 'likelihood' and 
@@ -11,6 +12,8 @@
 #'          (c) is conditional on the latent variable value for (each) new ModelSite being drawn from a standard Gaussian distribution.
 #' On (2): Factoring the likelihood using the inbuilt independence properties corresponds to a 'point' being all the data for all visits of a single ModelSite.
 #'         The likelihood could also be partitioned by each visit, but then data points are dependent (they have the same occupancy value).
+#'         
+#' The output of [likelihoods.fit] and [lppd.newdata] can be easily passed to [loo::waic()] and [loo::loo()].
 
 # For WAIC:
 ## function(data_i = data[i, , drop = FALSE], draws = draws)  --> returns a vector, each entry given by draw in draws.
@@ -164,7 +167,7 @@ prep_data_by_modelsite <- function(Xocc, Xobs, y, ModelSite, outformat = "list")
   return(data)
 }
 
-#' @description Compute the joint-species LV-marginal likelihood for a ModelSite
+#' @describeIn likelihoods.fit Compute the joint-species LV-marginal likelihood for a ModelSite
 #' @param draws A large matrix. Each column is a model parameter, with array elements named according to the BUGS naming convention.
 #' Each row of \code{draws} is a simulation from the posterior.
 #' @param data_i A row of a data frame created by \code{prep_data_by_modelsite}. Each row contains data for a single ModelSite. 
@@ -187,6 +190,7 @@ likelihood_joint_marginal.ModelSiteDataRow <- function(data_i, draws, lvsim, cl 
   return(Likl_margLV)
 }
 
+#' @describeIn likelihoods.fit Compute the joint-species LV-marginal likelihood for a ModelSite
 #' @param Xocc A matrix of occupancy covariates. Must have a single row. Columns correspond to covariates.
 #' @param Xobs A matrix of detection covariates, each row is a visit.
 #' @param y A matrix of detection data for a given model site. 1 corresponds to detected. Each row is visit, each column is a species.
