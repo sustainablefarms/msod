@@ -1,0 +1,50 @@
+model{
+
+  # community priors for occupancy covariates
+  for(m in 1:Vocc) {
+    mu.u.b[m] ~ dnorm(0, 0.01)T(-10,10)
+    tau.u.b[m] <- pow(sigma.u.b[m], -2)
+    sigma.u.b[m] ~ dunif(0, 10)
+  }
+
+  # community priors for detection covariates
+  for(m in 1:Vobs) {
+    mu.v.b[m] ~ dnorm(0, 0.01)T(-10,10)
+    tau.v.b[m] <- pow(sigma.v.b[m], -2)
+    sigma.v.b[m] ~ dunif(0, 10)
+  }
+
+  # loop over all species
+  for (i in 1:(n)) {
+
+
+    # random effects for occupancy
+    for(m in 1:Vocc) {
+      u.b[i, m] ~ dnorm(mu.u.b[m], tau.u.b[m])T(-10,10)
+    }
+
+    # random effects for detection
+    for(m in 1:Vobs) {
+      v.b[i, m] ~ dnorm(mu.v.b[m], tau.v.b[m])T(-10,10)
+    }
+    
+    # loop over all sites to give occupancy
+    for (j in 1:J) {
+
+      # probit model for occupancy
+      eta[j,i] <-  inprod(u.b[i, ], Xocc[j, ])
+      u[j,i] ~ dnorm(eta[j,i],1) 
+      z[j,i] <- step(u[j,i])
+   }
+   
+   # apply occupancy probabilities to detection
+   for (l in 1:Vvisits) {
+      # logistic model for detection
+      logit(p[l,i]) <-   inprod(v.b[i, ], Xobs[l, ])
+      mu.p[l,i] <- p[l,i]*z[ModelSite[l],i]
+      y[l,i] ~ dbern(mu.p[l,i])
+   }
+  }
+
+}
+
