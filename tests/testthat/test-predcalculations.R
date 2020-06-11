@@ -1,6 +1,6 @@
 library(testthat);
 
-out <- lapply(paste0("./functions/", list.files("./functions/")), source)
+out <- lapply(paste0("./R/", list.files("./R/")), source)
 
 context("Calculations of Predicted Probabilities")
 
