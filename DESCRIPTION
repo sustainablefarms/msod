@@ -15,6 +15,7 @@ Imports:
     testthat,
     ncdf4
 Suggests:
+    arrangements,
     ggplot2,
     corrplot
 ByteCompile: true
