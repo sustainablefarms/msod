@@ -144,10 +144,10 @@ facet_covariate <- function(data, ...){
 #' @return A ggplot object. Data is saved in the \code{data} slot.
 #' @export
 plot_residuals_detection.fit <- function(fit, detectionresiduals = NULL, varidx = NULL, esttype = NULL, 
-                                         conditionalLV = TRUE, aggregatefcn = mean, ...){
+                                         aggregatefcn = mean, ...){
   stopifnot(is.null(detectionresiduals) | is.null(esttype))  #error if est type is supplied when detection residuals is also supplied
   fitdata <- as.list.format(fit$data)
-  if (is.null(detectionresiduals)) {detectionresiduals <- ds_detection_residuals.fit(fit, type = esttype, conditionalLV = conditionalLV)}
+  if (is.null(detectionresiduals)) {detectionresiduals <- ds_detection_residuals.fit(fit, type = esttype)}
   
   # get detection covariates
   detectioncovars <- fitdata$Xobs
