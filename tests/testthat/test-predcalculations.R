@@ -1,7 +1,5 @@
 library(testthat);
 
-out <- lapply(paste0("./R/", list.files("./R/")), source)
-
 context("Calculations of Predicted Probabilities")
 
 test_that("poccupy_species is correct without LV", {

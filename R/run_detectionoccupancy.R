@@ -42,11 +42,15 @@ run.detectionoccupany <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~ 
             XobsProcess = XobsProcess)
   if (nlv > 0){
     ### Latent variable multi-species co-occurence model
-    modelFile='./scripts/7_2_1_model_description.txt'
+    modelFile=system.file("modeldescriptions",
+                          "7_2_1_model_description.txt",
+                          package = "sustfarmld")
     #Specify the parameters to be monitored
     monitor.params = c('u.b','v.b','mu.u.b','tau.u.b','mu.v.b','tau.v.b','lv.coef', "LV")
   } else {
-    modelFile='./scripts/7_2_3_model_description_nolv.txt'
+    modelFile=system.file("modeldescriptions",
+                          "7_2_3_model_description_nolv.txt",
+                          package = "sustfarmld")
     #Specify the parameters to be monitored
     monitor.params = c('u.b','v.b','mu.u.b','tau.u.b','mu.v.b','tau.v.b')
   }

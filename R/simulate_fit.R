@@ -77,6 +77,7 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2, 
   species <- LETTERS[1:nspecies]
   covardfs <- simulate_covar_data(nsites, nvisitspersite)
 
+  sites <- 1:nrow(covardfs$Xocc)
   LV <- scale(cbind(sites %% 2,
               sites < (nsites / 2), 
               sites > (nsites / 5),
