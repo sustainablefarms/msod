@@ -1,11 +1,14 @@
-## DS_residual_plotting
-source("./R/DS_residuals.R")
+#' @title Plotting of Dunn-Smyth Residuals
+#' @details The inclusion of a smoothed fit for easier interpretability follows suggestions by Warton et al (2017)
+#' @references D. I. Warton, J. Stoklosa, G. Guillera-Arroita, D. I. MacKenzie, and A. H. Welsh, 
+#' "Graphical diagnostics for occupancy models with imperfect detection," Methods in Ecology and Evolution, vol. 8, no. 4, pp. 408-419, 2017, doi: 10.1111/2041-210X.12761.
+
+# source("./R/DS_residuals.R")
 
 # two situations:
 # 1) ploting residuals against a covariate already fitted  in the model
 # 2) plotting residauls against a covariate that is not yet included in the model
 
-library(ggplot2); library(dplyr);
 #' @param fit Is a runjags object created by fitting using package runjags.
 #' @examples 
 #' fit <- readRDS("./tmpdata/7_1_mcmcchain_20200424.rds")
@@ -60,6 +63,8 @@ library(ggplot2); library(dplyr);
 #' @param plotfunction A plotting method to use. Default is \code{facet_species_covariate}.
 #' @param ... Extra arguments to pass to plot function.
 #' @return A ggplot object. Data is in the \code{data} slot.
+#' @import dplyr
+#' @export
 plot_residuals.residual <- function(residuals, covar, plotfunction = facet_species_covariate,
                                     aggregatefcn = mean, ...){
   # Average covariates to ModelSite level. This is what Warton, Mackenzie et al do. In future it could be possible to present residuals per visit
@@ -100,14 +105,15 @@ plot_residuals.residual <- function(residuals, covar, plotfunction = facet_speci
 #' @param data Input tibble. Columns of Species, Residual, Covariate and CovariateValue
 #' @param ... Extra arguments to pass. Currently ignored.
 #' @return A ggplot object.
+#' @export
 facet_species_covariate <- function(data, ...){
   pltobj <- data %>% 
-    ggplot() +
-    facet_wrap(~ Covariate + Species, as.table = TRUE, scale = "free_x") +
-    geom_point(aes(x = CovariateValue, y = Residual)) +
-    geom_hline(yintercept = 0, col = "blue", lty = "dashed") +
-    geom_smooth(aes(x = CovariateValue, y = Residual), method = "gam", level = 0.95, formula = y ~ s(x, bs = "cs")) +
-    scale_x_continuous(name = "Covariate Value")
+    ggplot2::ggplot() +
+    ggplot2::facet_wrap(~ Covariate + Species, as.table = TRUE, scale = "free_x") +
+    ggplot2::geom_point(aes(x = CovariateValue, y = Residual)) +
+    ggplot2::geom_hline(yintercept = 0, col = "blue", lty = "dashed") +
+    ggplot2::geom_smooth(aes(x = CovariateValue, y = Residual), method = "gam", level = 0.95, formula = y ~ s(x, bs = "cs")) +
+    ggplot2::scale_x_continuous(name = "Covariate Value")
   return(pltobj)
 }
 
@@ -115,14 +121,15 @@ facet_species_covariate <- function(data, ...){
 #' @param data Input tibble. Columns of Species, Residual, Covariate and CovariateValue
 #' @param ... Extra arguments to pass. Currently ignored (no extra arguments accepted).
 #' @return A ggplot object.
+#' @export
 facet_covariate <- function(data, ...){
   data %>% 
-    ggplot() +
-    facet_wrap(~ Covariate, as.table = TRUE, scales = "free_x") +
-    geom_point(aes(x = CovariateValue, y = Residual)) +
-    geom_hline(yintercept = 0, col = "blue", lty = "dashed") +
-    geom_smooth(aes(x = CovariateValue, y = Residual), method = "gam", level = 0.95, formula = y ~ s(x, bs = "cs")) +
-    scale_x_continuous(name = "Covariate Value")
+    ggplot2::ggplot() +
+    ggplot2::facet_wrap(~ Covariate, as.table = TRUE, scales = "free_x") +
+    ggplot2::geom_point(aes(x = CovariateValue, y = Residual)) +
+    ggplot2::geom_hline(yintercept = 0, col = "blue", lty = "dashed") +
+    ggplot2::geom_smooth(aes(x = CovariateValue, y = Residual), method = "gam", level = 0.95, formula = y ~ s(x, bs = "cs")) +
+    ggplot2::scale_x_continuous(name = "Covariate Value")
 }
 
 #' @describeIn plot_residuals Prepares tibbles and plots of residuals for covariates that are part of a fitted object
@@ -135,6 +142,7 @@ facet_covariate <- function(data, ...){
 #'  Passed to \code{ds_detection_residuals.fit} as argument \code{type}.
 #'  See get_theta() for available options.
 #' @return A ggplot object. Data is saved in the \code{data} slot.
+#' @export
 plot_residuals_detection.fit <- function(fit, detectionresiduals = NULL, varidx = NULL, esttype = NULL, 
                                          conditionalLV = TRUE, aggregatefcn = mean, ...){
   stopifnot(is.null(detectionresiduals) | is.null(esttype))  #error if est type is supplied when detection residuals is also supplied
@@ -173,6 +181,7 @@ plot_residuals_detection.fit <- function(fit, detectionresiduals = NULL, varidx 
 #' If not supplied then detection residuals are computed from \code{fit} using \code{ds_detection_residuals.fit}.
 #' @param esttype The point estimate extracted from fit. Passed to \code{ds_detection_residuals.fit} as argument \code{type}.
 #' @return A ggplot object. Data is saved in the \code{data} slot.
+#' @export
 plot_residuals_occupancy.fit <- function(fit, occupancyresidual = NULL, varidx = NULL,
                                          esttype = NULL, conditionalLV = TRUE, aggregatefcn = mean, ...){
   stopifnot(is.null(occupancyresidual) | is.null(esttype))  #error if est type is supplied when detection residuals is also supplied
@@ -202,62 +211,3 @@ plot_residuals_occupancy.fit <- function(fit, occupancyresidual = NULL, varidx =
   return(pltobject)
 }
 
-
-#' @describeIn ?? Plot estimated latent variable values against covariate values for occupancy
-#' @param theta a vector of model parameters with BUGS names
-#' @param fit A fitted runjags object.
-#' @param esttype When fit is non-NULL, then esttype is used to extract parameter values
-#' @param covar a dataframe of covariate values. It must have a column labelled 'ModelSite' that gives the ModelSite of covariate value.
-#' @param aggregatefcn Rows in covar with duplicate ModelSite values are aggregrated using this function
-plot_LVvscovar.fit <- function(fit, esttype = "median", theta = NULL, covar, facetvars = NULL, cuts = 3, aggregatefcn = mean){
-  df <- plotdf_LVvscovar.fit(fit, esttype = esttype, theta = theta, covar = covar, aggregatefcn = aggregatefcn)
- 
-  if (!is.null(facetvars)){
-    df <- df %>%
-      mutate_at(facetvars, ~cut(., cuts))
-  } 
-  dflong <- df %>%
-    pivot_longer(starts_with("LV"), names_to = "LV Name", values_to = "LV Value") %>%
-    pivot_longer(setdiff(names(covar), c("ModelSite", facetvars)), names_to = "Covariate Name", values_to = "Covariate Value")
-  if (is.null(facetvars)){
-    plt <- dflong %>%
-      ggplot() +
-      geom_point(aes_(y = ~`LV Value`, x = ~`Covariate Value`)) +
-      facet_wrap(vars(`LV Name`, `Covariate Name`), scales = "free") +
-      geom_hline(yintercept = 0, col = "blue", lty = "dashed") +
-      geom_smooth(aes_(y = ~`LV Value`, x = ~`Covariate Value`), method = "gam", level = 0.95, formula = y ~ s(x, bs = "cs")) 
-  } else {
-    plt <- dflong %>%
-      ggplot() +
-      geom_point(aes_(y = ~`LV Value`, x = ~`Covariate Value`, col = as.name(facetvars))) +
-      facet_wrap(vars(`LV Name`, `Covariate Name`), scales = "free") +
-      geom_hline(yintercept = 0, col = "blue", lty = "dashed") +
-      geom_smooth(aes_(y = ~`LV Value`, x = ~`Covariate Value`, col = as.name(facetvars)), method = "gam", level = 0.95, formula = y ~ s(x, bs = "cs")) 
-  }
-  return(plt)
-}
-
-#' @describeIn ?? Prepare plotting data frames for latent variable values against covariate values for occupancy
-#' @param theta a vector of model parameters with BUGS names
-#' @param fit A fitted runjags object.
-#' @param esttype When fit is non-NULL, then esttype is used to extract parameter values
-#' @param covar a dataframe of covariate values. It must have a column labelled 'ModelSite' that gives the ModelSite of covariate value.
-#' @param aggregatefcn Rows in covar with duplicate ModelSite values are aggregrated using this function
-plotdf_LVvscovar.fit <- function(fit, esttype = "median", theta = NULL, covar, aggregatefcn = mean){
-  if (is.null(theta)){theta <- get_theta(fit, type = esttype)}
-  if (anyDuplicated(covar[, "ModelSite"]) > 0){
-    warning("Multiple rows in 'covar' have the same ModelSite. These rows will be aggregated using aggregatefcn")
-    covar <- covar %>%
-      as_tibble() %>%
-      group_by(ModelSite) %>%
-      summarise_all(aggregatefcn)
-  }
-  
-  fitdata <- as.list.format(fit$data)
-  ## LV values
-  LV <- bugsvar2matrix(theta, "LV", 1:fitdata$J, 1:fitdata$nlv) # rows are model sites, columns are latent variables
-  colnames(LV) <- paste0("LV", 1:ncol(LV))
-  LV <- cbind(ModelSite = 1:nrow(LV), LV) %>% as_tibble() 
-  df <- dplyr::left_join(LV, covar, by = "ModelSite", suffix = c(".LV", ".X"))
-  return(df)
-}
