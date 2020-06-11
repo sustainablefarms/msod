@@ -18,4 +18,5 @@ Suggests:
     ggplot2,
     corrplot
 ByteCompile: true
-
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.0
