@@ -16,6 +16,10 @@ Imports:
     ncdf4
 Suggests:
     arrangements,
+    Rfast,
+    sf,
+    parallel,
+    runjags,
     ggplot2,
     corrplot
 ByteCompile: true
