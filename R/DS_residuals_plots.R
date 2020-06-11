@@ -173,7 +173,7 @@ plot_residuals_detection.fit <- function(fit, detectionresiduals = NULL, varidx 
   return(pltobject)
 }
 
-#' @describeIn ?? Prepares tibbles and plots of occupancy residuals for covariates that are part of a fitted object
+#' @describeIn plot_residuals Prepares tibbles and plots of occupancy residuals for covariates that are part of a fitted object
 #' @param fit The fitted runjags object.
 #' @param varidx The index of the covariate to plot. If NULL, then all occupancy covariates will be plotted
 #' @param occupancyresiduals Optional. A tibble of already calculated occupancy residuals.

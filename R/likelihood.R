@@ -89,7 +89,7 @@ lppd.newdata <- function(fit, Xocc, yXobs, ModelSite, chains = 1, numlvsims = 10
   )
 }
 
-#' @describeIn ?? Compute the likelihood of observations at each ModelSites. At data in the fitted model, or on new data supplied.
+#' @describeIn likelihoods.fit Compute the likelihood of observations at each ModelSites. At data in the fitted model, or on new data supplied.
 #' @param chains is a vector indicator which mcmc chains to extract draws from
 #' @param numlvsims the number of simulated latent variable values to use for computing likelihoods
 #' @param cl a cluster created by parallel::makeCluster()
