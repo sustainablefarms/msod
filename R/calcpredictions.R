@@ -123,6 +123,7 @@ poccupy_species <- function(fit, type = "median", Xocc = NULL, conditionalLV = T
   return(ModelSite.Occ.Pred.CondLV)
 }
 
+#' @title Converting BUGS Variable Names
 #' @describeIn bugsvar2array For converting values for array-valued parameters from the bugs variable format to an array
 #' @param values is a list of values named according to the bugs variables names
 #' @param varname is the desired variable name (e.g. 'u.b')

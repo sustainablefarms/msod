@@ -27,7 +27,11 @@
 #' coord_cartesian(ylim = c(-1, 1))
 
 
-
+#' @title Simulate observations from parameters of a fitted object.
+#' @param fit A runjags fitted object created by [run.detectionoccupancy()]
+#' @param esttype Specifies parameter set to extract from fit, see [get_theta()]
+#' @param conditionalLV Logical. If TRUE, the simulation uses fitted LV values.
+#' @export
 simulate.fit <- function(fit, esttype = "median", conditionalLV = TRUE){
   poccupy <- poccupy_species(fit, type = esttype, conditionalLV = conditionalLV)
   pdetectcond <- pdetect_condoccupied(fit, type = esttype)
@@ -45,7 +49,7 @@ simulate.fit <- function(fit, esttype = "median", conditionalLV = TRUE){
   return(detected)
 }
 
-## function for creating a fully artificial fitted object
+#' @title Create a fully artificial fitted object
 #' @return A list that has enough similarities to runjags objects that residual calculations are possible.
 #' The true parameter set is the first (and only row) of the first MCMC chain.
 #' It can be accessed using get_theta(fit, type = 1)
@@ -59,6 +63,7 @@ simulate.fit <- function(fit, esttype = "median", conditionalLV = TRUE){
 #'  May be a single number or an array with rows corresponding to species and columns to covariates.
 #'  @examples 
 #'  artfit <- artificial_runjags(nspecies = 2, nsites = 10, nvisitspersite = 4, nlv = 2)
+#' @export
 artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2, nlv = 2,
                                OccFmla = "~ UpSite + Sine1 + Sine2",
                                ObsFmla = "~ UpVisit + Step",
@@ -113,12 +118,14 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2, 
   return(fit)
 }
 
+#' @describeIn artificial_runjags Generate fake covariate data.
 #' @param nsites Number of ModelSites to simulate
 #' @param nvisitspersite Number of visits per site (the same number for each site)
-#' @describeIn artificial_runjags Simulates covariate dataframes for occupancy and detection.
+#' @details 
 #' Occupancy covariate names are UpSite, Sine1 and Sine2.
 #' Detection dovariate names are UpVisit and Step.
 #' @return A list with elements Xocc, and Xobs for the occupancy and detection covariates respectively
+#' @export
 simulate_covar_data <- function(nsites, nvisitspersite){
   sites <- c(1:nsites)
   XoccIn <- data.frame(ModelSite = sites,
@@ -133,11 +140,14 @@ simulate_covar_data <- function(nsites, nvisitspersite){
   return(list(Xocc = XoccIn, Xobs = XobsIn))
 }
 
+#' @describeIn artificial_runjags Generate fake observation data.
+#' @details Every species is equally likely to be detected at every visit.
 #' @param nspecies is the number of species to simulate. Species are named A, B, C... (max of 26 allowed)
 #' @param nvisits Number of visits in total to simulate
 #' @param p The probability of detection, constant for all species and visits.
 #' @return A simulated dataframe of detections. Column names are the species names, each row is a visit.
 #' Elements of the data frame are either 1 (detected) or 0 (not detected).
+#' @export
 simulate_iid_detections <- function(nspecies, nvisits, p = 0.5){
   stopifnot(nspecies <= 26)
   species <- LETTERS[1:nspecies]

@@ -1,5 +1,5 @@
-
-library(dplyr)
+#' @title Fit detection occupancy models using runjags.
+#' @import dplyr
 
 #' 
 #' @param Xocc A dataframe of covariates related to occupancy. One row per ModelSite.
@@ -104,8 +104,8 @@ run.detectionoccupany <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~ 
   invisible(fit.runjags)
 }
 
-
-#' @describeIn apply.designmatprocess Used to create instructions for processing data.
+#' @title Preprocessing Input Data
+#' @describeIn apply.designmatprocess Calculates the parameters required to build a centred and scaled design matrix from input data.
 #' @param indata Input dataframe to be processed.
 #' @param fmla A model formula (predictor side only).
 #' @return A special list containing parameters for applying a preprocessing step to data.
@@ -121,6 +121,7 @@ prep.designmatprocess <- function(indata, fmla){
   preprocessobj <- list(fmla = fmla, center = center, scale = scale)
   return(preprocessobj)
 }
+#' @describeIn apply.designmatprocess Builds a centred and scaled design matrix from input data.
 #' @param designmatprocess Are instructions for preprocessing input data, created by [prep.designmatprocess()] 
 #' @param indata Input dataframe to be processed.
 #' @details The input data is turned into a design matrix using [stats::model.matrix()].
@@ -134,7 +135,7 @@ apply.designmatprocess <- function(designmatprocess, indata){
 }
 
 
-#' Given the input data parameters of run.detectionoccupancy prepare the data list for JAGS
+#' @describeIn run.detectionoccupany Given the input data parameters of run.detectionoccupancy prepare the data list for JAGS
 #' @param XoccProcess An object create by prep.designmatprocess for the occupancy covariates
 #' @param XobsProcess An object create by prep.designmatprocess for the observation covariates
 prep.data <- function(Xocc, yXobs, ModelSite, species, nlv, XoccProcess, XobsProcess){
@@ -167,7 +168,7 @@ prep.data <- function(Xocc, yXobs, ModelSite, species, nlv, XoccProcess, XobsPro
   return(data.list)
 }
 
-#' A short function that applies the prep.data function to new data, given an object created by run.detectionoccupancy
+#' @describeIn run.detectionoccupany A short function that applies the prep.data function to new data, given an object created by run.detectionoccupancy
 #' Xocc, yXobs, ModelSite must follow some rules as for run.detectionoccupancy
 prep_new_data <- function(fit, Xocc, yXobs, ModelSite){
   data.list <- prep.data(Xocc, yXobs, ModelSite, fit$species, fit$nlv, fit$XoccProcess, fit$XobsProcess)
@@ -176,6 +177,10 @@ prep_new_data <- function(fit, Xocc, yXobs, ModelSite){
 
 ### Initial conditions function
 #Specify the initial values using a function
+#' @describeIn run.detectionoccupany Specifies the initial conditions for the MCMC chains.
+#'  This functions is called by [run.detectionoccupancy()]
+#' @param chain Integer. Index of the chain.
+#' @param indata A list of data that is typically passed to [runjags::run.jags()]
 defaultinitsfunction <- function(chain, indata, ...) {
   if (!is.null(indata$nlv) && (indata$nlv > 0)){
     lv.coef<-matrix(1, indata$n, indata$nlv)
