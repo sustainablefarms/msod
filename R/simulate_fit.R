@@ -4,7 +4,7 @@
 #' @examples 
 #' fit <- readRDS("./tmpdata/deto_wind.rds")
 #' fit$data <- as.list.format(fit$data)
-#' detected <- simulate.fit(fit, esttype = "median")
+#' detected <- simulate_fit(fit, esttype = "median")
 #' 
 #' ## Use to check residuals
 #' fit_sim <- fit
@@ -32,7 +32,7 @@
 #' @param esttype Specifies parameter set to extract from fit, see [get_theta()]
 #' @param conditionalLV Logical. If TRUE, the simulation uses fitted LV values.
 #' @export
-simulate.fit <- function(fit, esttype = "median", conditionalLV = TRUE){
+simulate_fit <- function(fit, esttype = "median", conditionalLV = TRUE){
   poccupy <- poccupy_species(fit, type = esttype, conditionalLV = conditionalLV)
   pdetectcond <- pdetect_condoccupied(fit, type = esttype)
   fit$data <- as.list.format(fit$data)
@@ -97,6 +97,9 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2, 
   fit$data <- data.list
   fit$data$n <- length(species)
   fit$species <- species
+  fit$XoccProcess <- XoccProcess
+  fit$XobsProcess <- XobsProcess
+  fit$ModelSite <- "ModelSite"
   fit$summary.available <- TRUE
 
   # set parameters
@@ -114,7 +117,7 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2, 
   fit$mcmc[[1]] <- t(as.matrix(theta))
 
   # simulate data
-  fit$data$y <- simulate.fit(fit, esttype = 1, conditionalLV = (nlv > 0) )
+  fit$data$y <- simulate_fit(fit, esttype = 1, conditionalLV = (nlv > 0) )
   colnames(fit$data$y) <- species
   return(fit)
 }

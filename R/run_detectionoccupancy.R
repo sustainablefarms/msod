@@ -53,6 +53,7 @@ run.detectionoccupany <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~ 
                           package = "sustfarmld")
     #Specify the parameters to be monitored
     monitor.params = c('u.b','v.b','mu.u.b','tau.u.b','mu.v.b','tau.v.b')
+    data.list[["nlv"]] <- NULL
   }
 
 

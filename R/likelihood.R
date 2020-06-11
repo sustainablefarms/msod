@@ -98,7 +98,7 @@ likelihoods.fit <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL, ch
   fit$data <- as.list.format(fit$data)
   draws <- do.call(rbind, fit$mcmc[chains])
   
-  if (fit$data$nlv == 0){ #make dummy lvsim and and 0 loadings to draws
+  if ( (is.null(fit$data$nlv)) || (fit$data$nlv == 0)){ #make dummy lvsim and and 0 loadings to draws
     lvsim <- matrix(rnorm(2 * 1), ncol = 2, nrow = 2) #dummy lvsim vars
     lv.coef.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$n, ncol = 2), "lv.coef")
     lv.coef.draws <- Rfast::rep_row(lv.coef.bugs, nrow(draws))
