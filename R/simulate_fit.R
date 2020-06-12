@@ -16,14 +16,14 @@
 #' @export
 simulate_fit <- function(fit, esttype = "median", UseFittedLV = TRUE){
   fit$data <- as.list.format(fit$data)
-  if (!UseFittedLV && !is.null(fit$data$nlv > 0) && fit$data$nlv > 0 ){# if not conditional on LV (and LV do exist) then simulate the LV
+  if (!UseFittedLV && !is.null(fit$data$nlv > 0) && fit$data$nlv > 0 ){# if not using fitted LV values (and LV do exist) then simulate the LV
     simLV <- matrix(rnorm(fit$data$nlv * nrow(fit$data$Xocc)), ncol = fit$data$nlv)
     simLVbugsname <- matrix2bugsvar(simLV, name = "LV")
     theta <- get_theta(fit, type = esttype)
     theta[names(simLVbugsname)] <- simLVbugsname
     esttype <- theta #a hack that uses that get_theta can accept theta itself.
   }
-  poccupy <- poccupy_species(fit, type = esttype, conditionalLV = TRUE)
+  poccupy <- poccupy_species(fit, type = esttype, conditionalLV = !is.null(fit$data$nlv > 0) && fit$data$nlv > 0) #don't use LV if they aren't in model
   pdetectcond <- pdetect_condoccupied(fit, type = esttype)
   
   occupied <- apply(poccupy, c(1, 2), function(x) rbinom(1, 1, x))
@@ -76,7 +76,7 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2, 
   sites <- 1:nrow(covardfs$Xocc)
   LV <- scale(cbind(sites %% 2,
               sites < (nsites / 2), 
-              sites > (nsites / 5),
+              sites < (nsites / 10),
                     ((sites %/% 5) * 5 == sites ) | (sites %/% 3) * 3 == sites))
   if (nlv == 0) {LV <- NULL}
   else {LV <- LV[, 1:nlv, drop = FALSE]}
@@ -113,7 +113,7 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2, 
   fit$mcmc[[1]] <- t(as.matrix(theta))
 
   # simulate data using the LV values given above
-  fit$data$y <- simulate_fit(fit, esttype = 1, UseFittedLV = TRUE)
+  fit$data$y <- simulate_fit(fit, esttype = 1, UseFittedLV = (nlv > 0))
   colnames(fit$data$y) <- species
   return(fit)
 }

@@ -62,3 +62,106 @@ test_that("lppds insample and outsample data similar on very artifical simple si
   expect_equal(lppd_pred_fromoutofsample, lppd_pred_fromwaic, tolerance = 0.5)
 })
 
+test_that("Likelihood computations match simulations without LV for nearly certain detection", {
+  artfit <- artificial_runjags(nspecies = 2, nsites = 1000, nvisitspersite = 1, nlv = 0,
+                                ObsFmla = "~ 1",
+                                OccFmla = "~ 1",
+                                u.b.min = -1,  u.b.max = -0.9, 
+                                v.b.min = 20, v.b.max = 20.1, #makes detection almost certain
+                                )
+  jointoutcomes <- apply(artfit$data$y, 1, paste0, collapse = ",")
+  
+  # theory likelihoods
+  poccupancy_all <- poccupy_species(artfit, type = 1, conditionalLV = FALSE)[1, ]
+  rvA <- discreteRV::RV(c(1, 0), poccupancy_all["A"], fractions = FALSE)
+  rvB <- discreteRV::RV(c(1, 0), poccupancy_all["B"], fractions = FALSE)
+  jointRV <- discreteRV::joint(rvA, rvB)
+  lkl_th <- vapply(jointoutcomes, function(x) discreteRV::P(jointRV == x), FUN.VALUE = 3.3) 
+  
+  # by simulation
+  sim_distr <- summary(factor(jointoutcomes))/1000
+  lkl_sim <- sim_distr[jointoutcomes]
+  
+  # from this package
+  lkl <- likelihoods.fit(artfit)
+  
+  # compare all
+  expect_equivalent(lkl_th, lkl)
+  expect_equivalent(lkl_th, lkl_sim, tolerance = 0.05)
+})
+
+test_that("Likelihood computations match simulations without LV for multiple visits", {
+  artfit <- artificial_runjags(nspecies = 2, nsites = 1000, nvisitspersite = 2, nlv = 0,
+                               ObsFmla = "~ 1",
+                               OccFmla = "~ 1",
+                               u.b.min = 0,  u.b.max = 0.001, 
+                               v.b.min = 0, v.b.max = 0.01)
+  my <- cbind(ModelSite = artfit$data$ModelSite, artfit$data$y)
+  obs_per_site <- lapply(1:nrow(artfit$data$Xocc), function(x) my[my[, "ModelSite"] == x, -1])
+  jointoutcomes <- vapply(obs_per_site, paste0, collapse = ",", FUN.VALUE = "achar")
+  
+  # likelihood by simulation
+  sim_distr <- summary(factor(jointoutcomes))/length(jointoutcomes)
+  lkl_sim <- sim_distr[jointoutcomes]
+  
+  # from this package
+  lkl <- likelihoods.fit(artfit)
+  
+  # compare 
+  expect_equivalent(lkl, lkl_sim, tolerance = 0.05)
+})
+
+test_that("Likelihood computations match simulations with LV, single visits", {
+  # the third LV is not evenly distributed across the sites
+  artfit <- artificial_runjags(nspecies = 2, nsites = 10000, nvisitspersite = 1, nlv = 3,
+                               ObsFmla = "~ 1",
+                               OccFmla = "~ 1",
+                               u.b.min = 0,  u.b.max = 0.001, 
+                               v.b.min = 1, v.b.max = 1.001,
+                               lv.coef.min = matrix(c(0, 0, 0.45), nrow = 2, ncol = 3, byrow = TRUE),
+                               lv.coef.max = matrix(c(0, 0, 0.65), nrow = 2, ncol = 3, byrow = TRUE))
+                               
+  # resimulate y as if LV are not known (which is the situation for likelihood compuations)
+  artfit$data$y <- simulate_fit(artfit, esttype = 1, UseFittedLV = FALSE)
+  
+  # get joint outcomes
+  my <- cbind(ModelSite = artfit$data$ModelSite, artfit$data$y)
+  obs_per_site <- lapply(1:nrow(artfit$data$Xocc), function(x) my[my[, "ModelSite"] == x, -1])
+  jointoutcomes <- vapply(obs_per_site, paste0, collapse = ",", FUN.VALUE = "achar")
+  
+  # likelihood by simulation
+  sim_distr <- summary(factor(jointoutcomes))/length(jointoutcomes)
+  lkl_sim <- sim_distr[jointoutcomes]
+  
+  # from this package
+  lkl <- likelihoods.fit(artfit)
+  
+  # compare 
+  expect_equivalent(lkl, lkl_sim, tolerance = 0.01)
+})
+
+test_that("Likelihood computations match simulations with LV, multiple visits", {
+  artfit <- artificial_runjags(nspecies = 2, nsites = 10000, nvisitspersite = 2, nlv = 2,
+                               ObsFmla = "~ 1",
+                               OccFmla = "~ 1",
+                               u.b.min = 0,  u.b.max = 0.001, 
+                               v.b.min = 1, v.b.max = 1.001)
+  # resimulate y as if LV are not known (which is the situation for likelihood compuations)
+  artfit$data$y <- simulate_fit(artfit, esttype = 1, UseFittedLV = TRUE)
+  
+  # get joint outcomes
+  my <- cbind(ModelSite = artfit$data$ModelSite, artfit$data$y)
+  obs_per_site <- lapply(1:nrow(artfit$data$Xocc), function(x) my[my[, "ModelSite"] == x, -1])
+  jointoutcomes <- vapply(obs_per_site, paste0, collapse = ",", FUN.VALUE = "achar")
+  
+  # likelihood by simulation
+  sim_distr <- summary(factor(jointoutcomes))/length(jointoutcomes)
+  lkl_sim <- sim_distr[jointoutcomes]
+  
+  # from this package
+  lkl <- likelihoods.fit(artfit)
+  
+  # compare 
+  expect_equivalent(lkl, lkl_sim, tolerance = 0.01)
+})
+

@@ -23,6 +23,7 @@ library(runjags); library(dplyr); library(tidyr); library(tibble);
 #' @param conditionalLV If TRUE returned probabilities are conditioned on estimated latent variable values (and species are independent due to model structure)
 #' If FALSE returned probabilities assume no knowledge of the latent variable values and that species are independent.
 #' @return A matrix of detection probabilities. Each row is a visit, corresponding to the rows in Xobs. Each column is a species.
+#' @export
 pdetect_indvisit <- function(fit, type = "median", Xocc = NULL, Xobs = NULL, ModelSite = NULL, conditionalLV = TRUE){
   if (!fit$summary.available){ fit <- add.summary(fit)}
   
