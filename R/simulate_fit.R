@@ -4,38 +4,27 @@
 #' @examples 
 #' fit <- readRDS("./tmpdata/deto_wind.rds")
 #' fit$data <- as.list.format(fit$data)
-#' detected <- simulate_fit(fit, esttype = "median")
+#' detected <- simulate_fit(fit, esttype = "median", UseFittedLV = TRUE)
 #' 
-#' ## Use to check residuals
-#' fit_sim <- fit
-#' fit_sim$data$y <- detected
-#' source("./R/DS_residuals.R")
-#' source("./R/DS_residuals_plots.R")
-#' resid_det <- ds_detection_residuals.fit(fit_sim, type = 100, seed = 321)
-#' resid_occ <- ds_occupancy_residuals.fit(fit_sim, type = "median", seed = 123)
-#' ## These residuals *should* be perfectly normally distributed for simulated data.
-
-#' resid_occ <- ds_occupancy_residuals.fit(fit_sim, seed = 123)
-#' plot_residuals_detection.fit(fit_sim, 
-#'                    detectionresiduals = resid_det,
-#'                    varidx = 2,
-#'                    plotfunction = facet_covariate) +
-#' coord_cartesian(ylim = c(-1, 1))
-#' plot_residuals_detection.fit(fit_sim, 
-#'                    detectionresiduals = resid_det,
-#'                    varidx = 2) +
-#' coord_cartesian(ylim = c(-1, 1))
 
 
 #' @title Simulate observations from parameters of a fitted object.
 #' @param fit A runjags fitted object created by [run.detectionoccupancy()]
 #' @param esttype Specifies parameter set to extract from fit, see [get_theta()]
-#' @param conditionalLV Logical. If TRUE, the simulation uses fitted LV values.
+#' @param UseFittedLV Logical. If TRUE, the simulation uses fitted latent variable values.
+#'  If FALSE, latent variable values will be simulated for each ModelSite
 #' @export
-simulate_fit <- function(fit, esttype = "median", conditionalLV = TRUE){
-  poccupy <- poccupy_species(fit, type = esttype, conditionalLV = conditionalLV)
-  pdetectcond <- pdetect_condoccupied(fit, type = esttype)
+simulate_fit <- function(fit, esttype = "median", UseFittedLV = TRUE){
   fit$data <- as.list.format(fit$data)
+  if (!UseFittedLV && !is.null(fit$data$nlv > 0) && fit$data$nlv > 0 ){# if not conditional on LV (and LV do exist) then simulate the LV
+    simLV <- matrix(rnorm(fit$data$nlv * nrow(fit$data$Xocc)), ncol = fit$data$nlv)
+    simLVbugsname <- matrix2bugsvar(simLV, name = "LV")
+    theta <- get_theta(fit, type = esttype)
+    theta[names(simLVbugsname)] <- simLVbugsname
+    esttype <- theta #a hack that uses that get_theta can accept theta itself.
+  }
+  poccupy <- poccupy_species(fit, type = esttype, conditionalLV = TRUE)
+  pdetectcond <- pdetect_condoccupied(fit, type = esttype)
   
   occupied <- apply(poccupy, c(1, 2), function(x) rbinom(1, 1, x))
   # array(NA, dim = c(replicates, dim(poccupy)[[1]], dim(poccupy)[[2]]),
@@ -61,8 +50,15 @@ simulate_fit <- function(fit, esttype = "median", conditionalLV = TRUE){
 #' @param ObsFmla Formula for detection. Available variables: Upvisit, Step
 #' @param u.b.min, u.b.max, v.b.min, v.b.max The upper and lower bouonds of the u.b and v.b parameters.
 #'  May be a single number or an array with rows corresponding to species and columns to covariates.
+#' @param lv.coef.min, lv.coef.max Same as u.b.min and u.b.max for the latent variable loadings.
 #'  @examples 
 #'  artfit <- artificial_runjags(nspecies = 2, nsites = 10, nvisitspersite = 4, nlv = 2)
+#'  # with high correlation between occupancy of species
+#'  artfit <- artificial_runjags(nspecies = 2, nsites = 10, nvisitspersite = 4, nlv = 2,
+#'                               OccFmla = "~ 1",
+#'                               u.b.min = 0.8,
+#'                               lv.coef.min = 0.3)
+#'  cor(artfit$data$y)
 #' @export
 artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2, nlv = 2,
                                OccFmla = "~ UpSite + Sine1 + Sine2",
@@ -116,8 +112,8 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2, 
   fit$mcmc <- list()
   fit$mcmc[[1]] <- t(as.matrix(theta))
 
-  # simulate data
-  fit$data$y <- simulate_fit(fit, esttype = 1, conditionalLV = (nlv > 0) )
+  # simulate data using the LV values given above
+  fit$data$y <- simulate_fit(fit, esttype = 1, UseFittedLV = TRUE)
   colnames(fit$data$y) <- species
   return(fit)
 }

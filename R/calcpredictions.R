@@ -90,6 +90,7 @@ pdetect_condoccupied <- function(fit, type = "median", Xobs = NULL){
 #' @param Xocc A matrix of occupancy coefficient, with each row corresponding to a ModelSite (i.e. a spatial location and year).
 #'  If \code{NULL} the Xocc data saved in \code{fit} will be used.
 #' @return A matrix of occupany probabilities. Each row is a ModelSite, corresponding to the rows in Xocc. Each column is a species.
+#' @export
 poccupy_species <- function(fit, type = "median", Xocc = NULL, conditionalLV = TRUE){
   if (!fit$summary.available){ fit <- add.summary(fit)}
   fitdata <- as.list.format(fit$data)
@@ -171,21 +172,26 @@ matrix2bugsvar <- function(theta, name){
 #' (e.g. type = 5 will return the vector of parameters in the 5th sample from the posterior, mcmc chains are concatenated)
 #' A charactor vector can be used to the parameters based on summarary statistics like quantiles and moments.
 #' Supported values so far "median" and "mean".
+#' @export
 get_theta <- function(fit, type){
-  if (type == "median"){theta <- fit$summary$quantiles[, "50%"]}
-  if (type == "mean"){theta <- fit$summary$statistics[, "Mean"]}
-  if (is.numeric(type)){
+  if (is.numeric(type) && length(type) > 1 && !is.null(names(type))){ #assumed passed 'type' is actually the desired theta
+    return(type)
+  }
+  if (is.numeric(type) && length(type) == 1){
     chainidx <- floor(type / 1000) + 1
     sampleinchain <- type - 1000 * (chainidx - 1)
     theta <- fit$mcmc[[chainidx]][sampleinchain, ]
+    return(theta)
   }
+  if (type == "median"){return(fit$summary$quantiles[, "50%"])}
+  if (type == "mean"){return(fit$summary$statistics[, "Mean"])}
   return(theta)
 }
 
 #' @title A quick replacement to [runjags::list.format()] that does nothing if the argument is already a list.
 #' @param data Same as [runjags::list.format()]. Typically found in the `data` slot of runjags object.
 #' @param checkvalid See [runjags::list.format()].
-#' @export
+#' @export as.list.format
 as.list.format <- function(data, checkvalid = TRUE){
   if ("list" %in% class(data)){return(data)}
   out <- runjags::list.format(data, checkvalid = checkvalid)
