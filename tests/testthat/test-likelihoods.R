@@ -50,7 +50,7 @@ test_that("lppds insample and outsample data similar on very artifical simple si
   waic <- loo::waic(log(lkl))
   
   
-  outofsample_y <- simulate_fit(artmodel, esttype = 1, conditionalLV = FALSE)
+  outofsample_y <- simulate_fit(artmodel, esttype = 1, UseFittedLV = FALSE)
   outofsample_lppd <- lppd.newdata(artmodel,
                Xocc = cbind(ModelSite = 1:nrow(artmodel$data$Xocc), artmodel$data$Xocc),
                yXobs = cbind(ModelSite = artmodel$data$ModelSite, artmodel$data$Xobs, outofsample_y),
