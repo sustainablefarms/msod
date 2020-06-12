@@ -54,6 +54,7 @@ pdetect_indvisit <- function(fit, type = "median", Xocc = NULL, Xobs = NULL, Mod
 #' @param Xobs A matrix of observation (detection) coefficients. Default is the observation coefficients saved in \code{fit}
 #' @param ModelSite A list mapping each row in \code{Xobs} to the row in \code{Xocc} that represents the ModelSite visited.
 #' @return A matrix of detection probabilities. Each row is a visit, corresponding to the rows in Xobs. Each column is a species.
+#' @export
 pdetect_condoccupied <- function(fit, type = "median", Xobs = NULL){
   if (!fit$summary.available){ fit <- add.summary(fit)}
   fitdata <- as.list.format(fit$data)
