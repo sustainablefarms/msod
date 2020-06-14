@@ -34,7 +34,7 @@ pdetect_indvisit <- function(fit, type = "median", Xocc = NULL, Xobs = NULL, Mod
   Visits.DetCond.Pred <- pdetect_condoccupied(fit, type = type, Xobs = Xobs)
  
   # combine with probability of occupancy 
-  fitdata <- as.list.format(fit$data)
+  fitdata <- as_list_format(fit$data)
   if (is.null(ModelSite)){
     if ("ObservedSite" %in% names(fitdata)){ModelSite <- fitdata$ObservedSite} #to enable calculation on the early fitted objects with different name
     if ("ModelSite" %in% names(fitdata)){ModelSite <- fitdata$ModelSite}
@@ -58,7 +58,7 @@ pdetect_indvisit <- function(fit, type = "median", Xocc = NULL, Xobs = NULL, Mod
 #' @export
 pdetect_condoccupied <- function(fit, type = "median", Xobs = NULL){
   if (!fit$summary.available){ fit <- add.summary(fit)}
-  fitdata <- as.list.format(fit$data)
+  fitdata <- as_list_format(fit$data)
   
   # build list of point estimates
   theta <- get_theta(fit, type = type)
@@ -94,7 +94,7 @@ pdetect_condoccupied <- function(fit, type = "median", Xobs = NULL){
 #' @export
 poccupy_species <- function(fit, type = "median", Xocc = NULL, conditionalLV = TRUE){
   if (!fit$summary.available){ fit <- add.summary(fit)}
-  fitdata <- as.list.format(fit$data)
+  fitdata <- as_list_format(fit$data)
   # build arrays of point estimates
   theta <- get_theta(fit, type = type)
   ## u.b (occupancy coefficients)
@@ -192,8 +192,8 @@ get_theta <- function(fit, type){
 #' @title A quick replacement to [runjags::list.format()] that does nothing if the argument is already a list.
 #' @param data Same as [runjags::list.format()]. Typically found in the `data` slot of runjags object.
 #' @param checkvalid See [runjags::list.format()].
-#' @export as.list.format
-as.list.format <- function(data, checkvalid = TRUE){
+#' @export as_list_format
+as_list_format <- function(data, checkvalid = TRUE){
   if ("list" %in% class(data)){return(data)}
   out <- runjags::list.format(data, checkvalid = checkvalid)
   return(out)

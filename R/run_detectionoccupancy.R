@@ -16,7 +16,7 @@
 #' Also include keep.jags.files to specify the directory that JAGS data will be saved.
 #' @param filename If non-null the runjags object (with some extra information) is saved to filename as an RDS.
 #' @return A runjags object with some modifications:
-#' *   the data slot is a in list.format, converted using [as.list.format()]
+#' *   the data slot is a in list.format, converted using [as_list_format()]
 #' *   elements in the data slot have dimension names given by the input data frames
 #' *   the slot XoccProcess is the process used to prepare the occupancy covariates (scaling and centering). 
 #' It can be applied using [apply.designmatprocess()]

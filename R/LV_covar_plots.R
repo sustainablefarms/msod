@@ -51,7 +51,7 @@ plotdf_LVvscovar.fit <- function(fit, esttype = "median", theta = NULL, covar, a
       summarise_all(aggregatefcn)
   }
   
-  fitdata <- as.list.format(fit$data)
+  fitdata <- as_list_format(fit$data)
   ## LV values
   LV <- bugsvar2matrix(theta, "LV", 1:fitdata$J, 1:fitdata$nlv) # rows are model sites, columns are latent variables
   colnames(LV) <- paste0("LV", 1:ncol(LV))

@@ -7,7 +7,7 @@
 #' @examples 
 #' fit <- readRDS("./tmpdata/7_1_mcmcchain_20200424.rds")
 #' fit <- runjags::add.summary(fit)
-#' fit$data <- as.list.format(fit$data)
+#' fit$data <- as_list_format(fit$data)
 #' source("./R/calcpredictions.R")
 #' detection_resids <- ds_detection_residuals.fit(fit, type = "median")
 #' occupancy_resids <- ds_occupancy_residuals.fit(fit, type = "median")
@@ -27,7 +27,7 @@
 ds_detection_residuals.fit <- function(fit, type = "median", seed = NULL){
   pDetection <- pdetect_condoccupied(fit, type = type)  #the detection probabilities, assuming occupied
   if (is.null(colnames(pDetection))){colnames(pDetection) <- paste0("S", 1:ncol(pDetection))} #name the species S1....Sn
-  fitdata <- as.list.format(fit$data)
+  fitdata <- as_list_format(fit$data)
   detections <-  fitdata$y
   if (is.null(colnames(detections))) {#name the columns if possible
     if (!is.null(fit$species)) {colnames(detections) <- fit$species}
@@ -66,7 +66,7 @@ ds_occupancy_residuals.fit <- function(fit, type = "median", seed = NULL, condit
   if (is.null(colnames(pOccupancy))){colnames(pOccupancy) <- paste0("S", 1:ncol(pOccupancy))} #name the species S1....Sn
   pDetected_cond <- pdetect_condoccupied(fit, type = type)  #the detection probabilities if sites occupied
   if (is.null(colnames(pDetected_cond))){colnames(pDetected_cond) <- paste0("S", 1:ncol(pDetected_cond))} #name the species S1....Sn
-  fitdata <- as.list.format(fit$data)
+  fitdata <- as_list_format(fit$data)
   detections <- fitdata$y
   if (is.null(colnames(detections))) {#name the columns if possible
     if (!is.null(fit$species)) {colnames(detections) <- fit$species}

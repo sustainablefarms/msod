@@ -3,7 +3,7 @@
 
 #' @examples 
 #' fit <- readRDS("./tmpdata/deto_wind.rds")
-#' fit$data <- as.list.format(fit$data)
+#' fit$data <- as_list_format(fit$data)
 #' detected <- simulate_fit(fit, esttype = "median", UseFittedLV = TRUE)
 #' 
 
@@ -15,7 +15,7 @@
 #'  If FALSE, latent variable values will be simulated for each ModelSite
 #' @export
 simulate_fit <- function(fit, esttype = "median", UseFittedLV = TRUE){
-  fit$data <- as.list.format(fit$data)
+  fit$data <- as_list_format(fit$data)
   if (!UseFittedLV && !is.null(fit$data$nlv > 0) && fit$data$nlv > 0 ){# if not using fitted LV values (and LV do exist) then simulate the LV
     simLV <- matrix(rnorm(fit$data$nlv * nrow(fit$data$Xocc)), ncol = fit$data$nlv)
     simLVbugsname <- matrix2bugsvar(simLV, name = "LV")
