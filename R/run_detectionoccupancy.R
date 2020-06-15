@@ -143,6 +143,7 @@ apply.designmatprocess <- function(designmatprocess, indata){
 #' @describeIn run.detectionoccupany Given the input data parameters of run.detectionoccupancy prepare the data list for JAGS
 #' @param XoccProcess An object create by prep.designmatprocess for the occupancy covariates
 #' @param XobsProcess An object create by prep.designmatprocess for the observation covariates
+#' @export
 prep.data <- function(Xocc, yXobs, ModelSite, species, nlv, XoccProcess, XobsProcess){
   # check data inputs
   stopifnot(all(ModelSite %in% colnames(Xocc)))
@@ -175,6 +176,7 @@ prep.data <- function(Xocc, yXobs, ModelSite, species, nlv, XoccProcess, XobsPro
 
 #' @describeIn run.detectionoccupany A short function that applies the prep.data function to new data, given an object created by run.detectionoccupancy
 #' Xocc, yXobs, ModelSite must follow some rules as for run.detectionoccupancy
+#' @export
 prep_new_data <- function(fit, Xocc, yXobs, ModelSite){
   data.list <- prep.data(Xocc, yXobs, ModelSite, fit$species, fit$nlv, fit$XoccProcess, fit$XobsProcess)
   return(data.list)
@@ -186,6 +188,7 @@ prep_new_data <- function(fit, Xocc, yXobs, ModelSite){
 #'  This functions is called by [run.detectionoccupancy()]
 #' @param chain Integer. Index of the chain.
 #' @param indata A list of data that is typically passed to [runjags::run.jags()]
+#' @export
 defaultinitsfunction <- function(chain, indata, ...) {
   if (!is.null(indata$nlv) && (indata$nlv > 0)){
     lv.coef<-matrix(1, indata$n, indata$nlv)
