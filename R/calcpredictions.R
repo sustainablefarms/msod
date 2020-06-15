@@ -132,6 +132,7 @@ poccupy_species <- function(fit, type = "median", Xocc = NULL, conditionalLV = T
 #' @param varname is the desired variable name (e.g. 'u.b')
 #' @param rowidx is a list of rows to extract, by number
 #' @param colidx is a list of columns to extract, by number
+#' @export
 bugsvar2array <- function(values, varname, rowidx, colidx){
   if (is.vector(values)) {
     values <- matrix(values, nrow = 1, dimnames = list(row = NULL, col = names(values)))
@@ -149,6 +150,7 @@ bugsvar2array <- function(values, varname, rowidx, colidx){
 #' @param varname is the desired variable name (e.g. 'u.b')
 #' @param rowidx is a list of rows to extract, by number
 #' @param colidx is a list of columns to extract, by number
+#' @export
 bugsvar2matrix <- function(values, varname, rowidx, colidx){
   arr <- bugsvar2array(values, varname, rowidx, colidx)
   mat <- drop_to_matrix(arr, 3)
@@ -159,6 +161,7 @@ bugsvar2matrix <- function(values, varname, rowidx, colidx){
 #' @param theta is a parameter arrays
 #' @param name parameter
 #' @return a named vector. Names are given by name and the index in the array
+#' @export
 matrix2bugsvar <- function(theta, name){
   values <- as.vector(theta) #runs through first dimension, then second dimension, then third dimension...
   idx <- expand.grid(row = 1:nrow(theta), col = 1:ncol(theta))
