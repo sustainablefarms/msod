@@ -76,7 +76,6 @@ ds_occupancy_residuals.fit <- function(fit, type = "median", seed = NULL, condit
   if ("ModelSite" %in% names(fitdata)){ModelSite <- fitdata$ModelSite}
   
   # convert to format for raw function
-  pOccupancy <- poccupy_species(fit, type = 1)
   pOccupancy <- cbind(ModelSite = 1:nrow(fitdata$Xocc), pOccupancy) %>%
     as_tibble() %>%
     pivot_longer(-ModelSite, names_to = "Species", values_to = "pOccupancy")

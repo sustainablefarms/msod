@@ -1,5 +1,6 @@
 library(testthat);
 library(discreteRV)
+library(sustfarmld)
 
 context("Tests of Dunn-Smyth Residuals")
 
@@ -25,7 +26,7 @@ test_that("PDF and CDF computations are correct", {
   expect_equal(numdet_cdf(0, c(0.1, 0.2)),  0.9 * 0.8)
   expect_equal(numdet_cdf(1, c(0.1, 0.2)),  1 - 0.1 * 0.2)
   
-  pDetected <- runif(5)
+  pDetected <- runif(5, min = 0.3, max = 0.7)
   expect_equal(numdet_cdf(0.3, pDetected),  numdet_cdf(0, pDetected))
   expect_equal(numdet_cdf(-0.1, pDetected),  0)
   expect_equal(numdet_cdf(length(pDetected), pDetected),  1)
@@ -77,7 +78,7 @@ test_that("Conditioning on Greater Than Zero Correct", {
   expect_equal(condition_nonzero.pdf(cdf[[length(pDetected)]], pdf[[1 + length(pDetected)]]), 1)
 })
 
-test_that("Occupancy and Detection Residuals match fresh conversion from fit to raw, with LV", {
+test_that("Occupancy and Detection Residuals Gaussian for fresh conversion from fit to raw, with LV", {
   ObsFmla = "~ 1"
   OccFmla = "~ 1"
   u.b.min <- matrix(runif(5) , ncol = 1)
