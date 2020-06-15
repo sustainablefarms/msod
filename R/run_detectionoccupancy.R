@@ -58,8 +58,11 @@ run.detectionoccupany <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~ 
 
 
   # set up initial values
-  if (is.null(MCMCparams$n.chains)){n.chains <- 1}
-  else {n.chains <- MCMCparams$n.chains}
+  if (is.null(MCMCparams$n.chains)){
+    n.chains <- 1
+  } else {
+    n.chains <- MCMCparams$n.chains
+  }
   inits <- lapply(1:n.chains, initsfunction, indata = data.list)
 
 #### RUNNING JAGS ######
