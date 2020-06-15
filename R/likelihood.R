@@ -143,6 +143,7 @@ prep_data_by_modelsite.newdata <- function(fit, Xocc, yXobs, ModelSite){
 #' @describeIn likelihoods.fit Given data prepared by prep.data (or prep_new_data),
 #'  convert to an array with each row a model site and elements that each a dataframe for 
 #'  the Xocc, Xobs, y. ModelSite must be a vector that indicates the row in Xocc corresponding to the observation in Xobs 
+#'  @export
 prep_data_by_modelsite <- function(Xocc, Xobs, y, ModelSite, outformat = "list"){
   Xocc <- Xocc %>%
     as_tibble(.name_repair = "minimal") %>%
