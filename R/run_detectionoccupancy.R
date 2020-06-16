@@ -247,6 +247,7 @@ defaultinitsfunction <- function(chain, indata, ...) {
   if (is.null(indata$nlv) || (indata$nlv == 0)){
     out[["LV"]] <- NULL
   }
+  return(out)
 }
 
 
