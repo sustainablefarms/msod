@@ -25,7 +25,7 @@
 #' *   ModelSite slot is the list with values for each visit (row in detection covariates) giving the row of the ModelSite in the occupancy covariates.
 #' *   species slot is the list of species names.
 #' @export
-run.detectionoccupany <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~ 1", ObsFmla = "~ 1", nlv = 2,
+run.detectionoccupancy <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~ 1", ObsFmla = "~ 1", nlv = 2,
                                   initsfunction = defaultinitsfunction,
                                   MCMCparams = list(n.chains = 1, adapt = 2000, burnin = 25000, sample = 1000, thin = 30),
                                   filename = NULL){
@@ -143,7 +143,7 @@ apply.designmatprocess <- function(designmatprocess, indata){
 }
 
 
-#' @describeIn run.detectionoccupany Given the input data parameters of run.detectionoccupancy prepare the data list for JAGS
+#' @describeIn run.detectionoccupancy Given the input data parameters of run.detectionoccupancy prepare the data list for JAGS
 #' @param XoccProcess An object create by prep.designmatprocess for the occupancy covariates
 #' @param XobsProcess An object create by prep.designmatprocess for the observation covariates
 #' @export
@@ -177,7 +177,7 @@ prep.data <- function(Xocc, yXobs, ModelSite, species, nlv, XoccProcess, XobsPro
   return(data.list)
 }
 
-#' @describeIn run.detectionoccupany A short function that applies the prep.data function to new data, given an object created by run.detectionoccupancy
+#' @describeIn run.detectionoccupancy A short function that applies the prep.data function to new data, given an object created by run.detectionoccupancy
 #' Xocc, yXobs, ModelSite must follow some rules as for run.detectionoccupancy
 #' @export
 prep_new_data <- function(fit, Xocc, yXobs, ModelSite){
@@ -187,7 +187,7 @@ prep_new_data <- function(fit, Xocc, yXobs, ModelSite){
 
 ### Initial conditions function
 #Specify the initial values using a function
-#' @describeIn run.detectionoccupany Specifies the initial conditions for the MCMC chains.
+#' @describeIn run.detectionoccupancy Specifies the initial conditions for the MCMC chains.
 #'  This functions is called by [run.detectionoccupancy()]
 #' @param chain Integer. Index of the chain.
 #' @param indata A list of data that is typically passed to [runjags::run.jags()]
@@ -255,7 +255,7 @@ defaultinitsfunction <- function(chain, indata, ...) {
 #' 
 #' @examples 
 #' inputdata <- readRDS("./private/data/clean/7_2_1_input_data.rds")
-#' fitjags <- run.detectionoccupany(
+#' fitjags <- run.detectionoccupancy(
 #'   Xocc = inputdata$occ_covariates,
 #'   yXobs = inputdata$plotsmerged_detection,
 #'   species = inputdata$detection_data_specieslist,
@@ -267,7 +267,7 @@ defaultinitsfunction <- function(chain, indata, ...) {
 #'                     keep.jags.files = "./runjags_smallB"),
 #'   filename = "./runjags_demo.rds"
 #' )
-#' fitjags_nolv <- run.detectionoccupany(
+#' fitjags_nolv <- run.detectionoccupancy(
 #'   Xocc = inputdata$occ_covariates,
 #'   yXobs = inputdata$plotsmerged_detection,
 #'   species = inputdata$detection_data_specieslist,

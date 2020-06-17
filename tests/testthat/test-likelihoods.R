@@ -8,7 +8,7 @@ test_that("Likelihood computations run in sample data with LV", {
   covars <- simulate_covar_data(nsites = 50, nvisitspersite = 2)
   y <- simulate_iid_detections(3, nrow(covars$Xocc))
   
-  suppressWarnings(fittedmodel <- run.detectionoccupany(
+  suppressWarnings(fittedmodel <- run.detectionoccupancy(
     Xocc = covars$Xocc,
     yXobs = cbind(covars$Xobs, y),
     species = colnames(y),
@@ -27,7 +27,7 @@ test_that("Likelihood computations run in sample data with out LV", {
   covars <- simulate_covar_data(nsites = 20, nvisitspersite = 2)
   y <- simulate_iid_detections(3, nrow(covars$Xocc))
   
-  suppressWarnings(fittedmodel <- run.detectionoccupany(
+  suppressWarnings(fittedmodel <- run.detectionoccupancy(
     Xocc = covars$Xocc,
     yXobs = cbind(covars$Xobs, y),
     species = colnames(y),

@@ -34,7 +34,7 @@
 #' covars <- simulate_covar_data(nsites = 50, nvisitspersite = 2)
 #' y <- simulate_iid_detections(3, nrow(covars$Xocc))
 #' 
-#' fittedmodel <- run.detectionoccupany(
+#' fittedmodel <- run.detectionoccupancy(
 #'   Xocc = covars$Xocc,
 #'   yXobs = cbind(covars$Xobs, y),
 #'   species = colnames(y),
@@ -126,7 +126,7 @@ likelihoods.fit <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL, ch
 
 
 #' @describeIn likelihoods.fit Given a fitted model, and input data, prepare the data for computing likelihood
-#' @param fit is an object created by run.detectionoccupany
+#' @param fit is an object created by run.detectionoccupancy
 #' @param Xocc A dataframe of covariates related to occupancy. One row per ModelSite.
 #' Must also include the ModelSiteVars columns to uniquely specify ModelSite.
 #' @param yXobs A dataframe of species observations (1 or 0) and covariates related to observations. One row per visit.
