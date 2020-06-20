@@ -1,0 +1,3 @@
+name: "Basic HTML"
+description: "A small template with a good set of parameters for title, table of contents and output for creating HTML documents. Also has chunk that sets correct working directory."
+
