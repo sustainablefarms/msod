@@ -11,7 +11,9 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = rprojroot::find_root(rprojroot::has_file("DESCRIPTION")))
+devtools::load_all(rprojroot::find_root(rprojroot::has_file("DESCRIPTION")))
+knitr::opts_chunk$set(echo = FALSE)
 library(tibble)
 library(dplyr)
 library(MCMCpack)
@@ -24,7 +26,6 @@ library(patchwork)
 ```
 
 ```{r varname2type}
-devtools::load_all() #load the sustfarmld package
 varname2type <- function(varnames){
   types <- case_when(
     grepl("lv.coef", varnames) ~ "LV Load",
@@ -68,7 +69,15 @@ stopifnot(all(a))
 fittedmods <- lapply(filenames, function(x) {
   fit <- readRDS(x)
   return(fit)})
+```
 
+```{r import_lpd}
+lpds_l <- readRDS("./tmpdata/7_2_4_lpds.rds")
+waics_l <- readRDS("./tmpdata/7_2_4_waics.rds")
+```
+
+```{r mcmctime}
+cat("MCMC time:\n")
 lapply(fittedmods, function(x) {
   if (!is.null(x$timetaken)) {return(runjags::timestring(as.numeric(x$timetaken, units="secs")))}
   else return(NULL)})
@@ -116,7 +125,8 @@ gwk %>%
   facet_grid(rows = vars(type), cols = vars(Model)) +
   geom_abline(slope = 1, intercept = 0, lty = "dashed") +
   geom_qq(aes(sample = value), shape = "+", size = 2) +
-  coord_cartesian(ylim = c(-5, 5))
+  coord_cartesian(ylim = c(-5, 5)) +
+  ggtitle("QQ Plots of Geweke Statistics for Each Parameter")
 ```
 
 
@@ -130,7 +140,9 @@ gwk %>%
   geom_vline(aes(xintercept = 0.01)) +
   geom_point(aes(y = Model, x = swp, col = Model)) + 
   scale_x_continuous(name = "Shapiro-Wilk p-value",
-                     trans = "identity")
+                     trans = "identity") +
+  ggtitle("Geweke Convergence Statistics Normality Tests",
+          subtitle = "0.01 threshold shown")
 ```
 
 *Comment on convergence using visual assessment and the Shapiro-Wilk test of normalisty*
@@ -158,7 +170,7 @@ psrfs_df %>%
 *Summarise behaviour of the MCMC chains*
 
 ## Compare Covariate Loadings
-```{r covariateloadings}
+```{r occupancycovariateloadings}
 u.b_median <- function(fit) {
   fit$data <- as_list_format(fit$data)
   theta <- get_theta(fit, type = "median")
@@ -178,11 +190,40 @@ df %>%
   facet_wrap(vars(Covariate), nrow = 1) +
   geom_point(aes(y = Species, x = CovariateValue,
                  col = Model,
-                 shape = Model)) +
+                 shape = Model),
+             position = position_jitter(height = 0.1)) +
   scale_color_viridis_d() +
-  scale_shape_manual(values = rep(0:5, 3))
+  scale_shape_manual(values = rep(0:5, 3)) +
+  ggtitle("Occupancy Covariate Loadings per Species and Model")
 ```
 
+
+```{r detectioncovariateloadings}
+v.b_median <- function(fit) {
+  fit$data <- as_list_format(fit$data)
+  theta <- get_theta(fit, type = "median")
+  v.b <- bugsvar2matrix(theta, "v.b", 1:fit$data$n, 1:fit$data$Vobs)
+  colnames(v.b) <- names(fit$XobsProcess$center)
+  rownames(v.b) <- fit$species
+  v.b <- as_tibble(v.b, rownames = "Species")
+  return(v.b)
+}
+v.b_l <- lapply(fittedmods, v.b_median)
+v.b_longer <- lapply(v.b_l,
+                     function(x) pivot_longer(x, -Species, names_to = "Covariate", values_to = "CovariateValue"))
+df <- bind_rows(v.b_longer, .id = "Model")
+
+df %>%
+  ggplot() +
+  facet_wrap(vars(Covariate), nrow = 1) +
+  geom_point(aes(y = Species, x = CovariateValue,
+                 col = Model,
+                 shape = Model),
+             position = position_jitter(height = 0.1)) +
+  scale_color_viridis_d() +
+  scale_shape_manual(values = rep(0:5, 3)) +
+  ggtitle("Detection Covariate Loadings per Species and Model")
+```
 
 
 ## Model Comparisons
@@ -192,6 +233,15 @@ lpds_df <- as_tibble(do.call(cbind, lapply(lpds_l, function(x) x$lpds)))
 melpd <- data.frame(Estimate = apply(lpds_df, 2, mean),
                     SE = apply(lpds_df, 2, sd) / sqrt(nrow(lpds_df)))
 
+mean_2se <- function(x, mult = 2){
+  n <- length(x)
+  xbar <- sum(x)/n
+  sd <- sqrt(sum((x - xbar)^2)/(n - 1))
+  return(c(ymin = xbar - mult * sd / sqrt(n),
+           y = xbar,
+           ymax = xbar + mult * sd / sqrt(n)))
+}
+
 lpds_df %>%
   as_tibble() %>%
   rowid_to_column(var = "HoldOutModelSite") %>%
@@ -200,11 +250,10 @@ lpds_df %>%
   facet_grid(rows = vars(model), scales = "free_y") +
   geom_violin(aes(x = Site_lpd, y = model)) +
   stat_summary(aes(x = Site_lpd, y = model),
-               fun = mean, geom = "point", shape = 23, size = 2) +
+               fun.data=mean_2se, fun.args = list(mult=2), geom="crossbar", width=0.2 ) +
   stat_summary(aes(x = Site_lpd, y = model),
-               fun = function(x) mean(x) - 2*sd(x)/sqrt(nrow(lpds_df)), geom = "crossbar") +
-  stat_summary(aes(x = Site_lpd, y = model),
-               fun = function(x) mean(x) + 2*sd(x)/sqrt(nrow(lpds_df)), geom = "crossbar")
+               fun = median, geom = "point", shape = 23, size = 2) +
+  ggtitle("Log-Posterior Density of Holdout ModelSites")
 ```
 
 Below is the lpd computed for each ModelSite for both the InSample and out of sample data.
@@ -217,23 +266,21 @@ df <- lpds_df %>% as_tibble() %>% mutate(InSample = FALSE)
 
 df <- bind_rows(insamplelpds_df, df)
 
+
 df %>%
   as_tibble() %>%
   tidyr::pivot_longer(-InSample, names_to = "model", values_to = "site_lpd") %>%
   ggplot() +
-  facet_grid(rows = vars(model, InSample), scales = "free_y") +
-  geom_violin(aes(x = site_lpd, y = model, col = InSample)) +
-  stat_summary(aes(x = site_lpd, y = model),
-               fun = mean, geom = "point", shape = 23, size = 2) +
-  stat_summary(aes(x = site_lpd, y = model),
-               fun = function(x) mean(x) - 2*sd(x)/sqrt(nrow(lpds_df)), geom = "crossbar") +
-  stat_summary(aes(x = site_lpd, y = model),
-               fun = function(x) mean(x) + 2*sd(x)/sqrt(nrow(lpds_df)), geom = "crossbar")
+  facet_grid(rows = vars(model), scales = "free_y", switch = "y") +
+  geom_violin(aes(x = site_lpd, y = InSample, col = InSample), position = position_dodge(1)) +
+  stat_summary(aes(x = site_lpd, y = InSample, group = InSample),
+               fun.data=mean_2se, fun.args = list(mult=2), geom="crossbar", width=0.2 ) +
+  theme(strip.text.y.left = element_text(angle = 0)) +
+  ggtitle("Log Posterior Density of ModelSites")
 ```
 
 
 ```{r waics}
-waics_l <- readRDS("./tmpdata/7_2_4_waics.rds")
 waics_average_elpd_per_point <- lapply(waics_l, function(x) x$waic$estimates["elpd_waic", ]/nrow(x$waic$pointwise))
 waics_average_elpd_per_point <- simplify2array(waics_average_elpd_per_point)
 waics_average_elpd_per_point <- t(waics_average_elpd_per_point) %>% as_tibble(rownames = "Model")
@@ -253,7 +300,8 @@ df %>%
   ggplot() +
   geom_errorbar(aes(x = Model, ymax = Estimate +  2*SE, ymin = Estimate - 2*SE, col = type, lty = type)) +
   geom_point(aes(x = Model, y = Estimate, col = type), position = position_jitter(width = 0.1)) +
-  coord_flip()
+  coord_flip() +
+  ggtitle("Estimates of Log Posterior Density for a new ModelSite")
 ```
 
 
@@ -269,7 +317,8 @@ as_tibble(lapply(resid_occ_l, function(x) unlist(x[, -1]))) %>%
   ggplot() +
   geom_qq(aes(sample = Residual)) +
   geom_abline(slope = 1, intercept = 0, lty = "dashed") +
-  facet_grid(cols = vars(Model))
+  facet_grid(cols = vars(Model)) +
+  ggtitle("Occupancy Residual Disribution: qq plots")
 ```
 
 
@@ -285,7 +334,8 @@ as_tibble(lapply(resid_det_l, function(x) unlist(x[, -1]))) %>%
   ggplot() +
   geom_qq(aes(sample = Residual)) +
   geom_abline(slope = 1, intercept = 0, lty = "dashed") +
-  facet_grid(cols = vars(Model))
+  facet_grid(cols = vars(Model)) +
+  ggtitle("Detection Residual Disribution: qq plots")
 ```
 
 
@@ -322,7 +372,7 @@ plt <- plt +
   ggplot2::geom_hline(yintercept = 0, col = "blue", lty = "dashed") +
   ggplot2::scale_x_continuous(name = "Covariate Value") +
   scale_y_continuous(name = "Occupancy Residual")
-plt + coord_cartesian(ylim = c(-0.1, 0.1))
+plt + coord_cartesian(ylim = c(-0.1, 0.1)) + ggtitle("Occupancy Residuals vs Covariates")
 ```
 
 
