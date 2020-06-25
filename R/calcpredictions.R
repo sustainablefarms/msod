@@ -1,5 +1,5 @@
 # library(runjags); library(dplyr); library(tidyr); library(tibble);
-#' @import tibble
+
 #' @title Predicted Probabilities
 #' ** would be great to test these functions by monitoring z, p and mu.p in runjags (perhaps using hidden.monitor parameter)
 
