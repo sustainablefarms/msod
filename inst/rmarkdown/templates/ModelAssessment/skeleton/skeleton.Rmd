@@ -85,11 +85,6 @@ lapply(fittedmods, function(x) {
 
 *Comment on time taken for the MCMC of each model:*
 
-```{r import_lpd}
-lpds_l <- readRDS("./tmpdata/7_2_4_lpds.rds")
-waics_l <- readRDS("./tmpdata/7_2_4_waics.rds")
-```
-
 ## MCMC Assessment
 ### Autocorrelation 
 ```{r autocorr_fromsummary}
