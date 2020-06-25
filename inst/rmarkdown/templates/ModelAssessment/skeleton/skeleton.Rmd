@@ -300,6 +300,33 @@ df %>%
 ```
 
 
+### Expected Number of Detections for Each Species
+```{r numdetections}
+obsdetections <- colSums(fittedmods[[1]]$data$y)
+
+Edetections <- lapply(fittedmods,
+                      function(x) colSums(Endetect_modelsite(x,
+                                            conditionalLV = (!is.null(x$data$nlv) && (x$data$nlv > 0) ))
+                                          )
+                      )
+Edetections <- simplify2array(Edetections)
+# Edetections[names(obsdetections), "Observed"] <- obsdetections
+
+Edetections %>% 
+  as_tibble(Edetections, rownames = "Species") %>%
+  tidyr::pivot_longer(cols = -Species, names_to = "Model", values_to = "E_Ndetections") %>%
+  ggplot() +
+  geom_col(aes(x = Detections, y = Species), data = obsdetections %>% enframe(name = "Species", value = "Detections"),
+             alpha = 0.2,
+             inherit.aes = FALSE) +
+  geom_point(aes(x = E_Ndetections, y = Species, col = Model, shape = Model), inherit.aes = FALSE) +
+  scale_color_viridis_d() +
+  scale_shape_manual(values = rep(0:5, 3)) +
+  theme(legend.position="bottom") +
+  scale_x_continuous(name = "Expected Detections") +
+  ggtitle("Expected Number of Detections vs Observed")
+```
+
 ### Quick check of residual distribution for all models
 Note that there are too many data points to apply the shapiro-Wilks normality test directly, however the Anderson-Darling test can be applied. I do not know enough about this test yet to know if it can be fully trusted.
 
