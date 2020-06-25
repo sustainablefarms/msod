@@ -34,7 +34,7 @@
 #' # Residuals against an unincluded covariate:
 #' source("./scripts/7_1_import_site_observations.R")
 #' covar <- occ_covariates[ , "ms_cover", drop = FALSE] %>%
-#'   rowid_to_column(var = "ModelSite")
+#'   tibble::rowid_to_column(var = "ModelSite")
 #' residuals <- ds_occupancy_residuals.fit(fit, type = "median", conditionalLV = FALSE)
 #' pltobj <- plot_residuals.residual(residuals, covar, 
 #'                  plotfunction = facet_species_covariate)
@@ -192,7 +192,7 @@ plot_residuals_occupancy.fit <- function(fit, occupancyresidual = NULL, varidx =
   occupancycovars <- fitdata$Xocc
   colnames(occupancycovars)[1:fitdata$Vocc] <- paste0("Xocc", 1:fitdata$Vocc)
   if (!is.null(varidx)){occupancycovars <- occupancycovars[, varidx, drop = FALSE]}  
-  occupancycovars <- occupancycovars %>% as_tibble() %>% rowid_to_column(var = "ModelSite")
+  occupancycovars <- occupancycovars %>% as_tibble() %>% tibble::rowid_to_column(var = "ModelSite")
   
   extraargs = list(...)
   if ("plotfunction" %in% names(extraargs)){

@@ -148,7 +148,7 @@ prep_data_by_modelsite.newdata <- function(fit, Xocc, yXobs, ModelSite){
 prep_data_by_modelsite <- function(Xocc, Xobs, y, ModelSite, outformat = "list"){
   Xocc <- Xocc %>%
     as_tibble(.name_repair = "minimal") %>%
-    rowid_to_column(var = "ModelSite") %>%
+    tibble::rowid_to_column(var = "ModelSite") %>%
     tidyr::nest(Xocc = -ModelSite)
   Xobs <- Xobs %>%
     as_tibble(.name_repair = "minimal") %>%
