@@ -88,14 +88,15 @@ lppd.newdata <- function(fit, Xocc, yXobs, ModelSite, chains = 1, numlvsims = 10
 }
 
 #' @describeIn likelihoods.fit Compute the likelihood of observations at each ModelSites. At data in the fitted model, or on new data supplied.
-#' @param chains is a vector indicator which mcmc chains to extract draws from
+#' @param chains is a vector indicator which mcmc chains to extract draws from. If NULL then all chains used.
 #' @param numlvsims the number of simulated latent variable values to use for computing likelihoods
 #' @param cl a cluster created by parallel::makeCluster()
 #' @return `likelihoods.fit` returns a matrix. Each row corresponds to a draw of the parameters from the posterior. Each column to a ModelSite
 #' Compute the likelihoods of each ModelSite's observations given each draw of parameters in the posterior.
 #' @export
-likelihoods.fit <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL, chains = 1, numlvsims = 1000, cl = NULL){
+likelihoods.fit <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL, chains = NULL, numlvsims = 1000, cl = NULL){
   fit$data <- as_list_format(fit$data)
+  if (is.null(chains)){chains <- 1:length(fit$mcmc)}
   draws <- do.call(rbind, fit$mcmc[chains])
   
   if ( (is.null(fit$data$nlv)) || (fit$data$nlv == 0)){ #make dummy lvsim and and 0 loadings to draws
