@@ -1,4 +1,4 @@
-library(runjags); library(dplyr); library(tidyr); library(tibble);
+# library(runjags); library(dplyr); library(tidyr); library(tibble);
 
 #' @title Predicted Probabilities
 #' ** would be great to test these functions by monitoring z, p and mu.p in runjags (perhaps using hidden.monitor parameter)
@@ -7,6 +7,52 @@ library(runjags); library(dplyr); library(tidyr); library(tibble);
 #' fit <- readRDS("./tmpdata/deto_wind.rds")
 #' pDetection <- pdetect_indvisit(fit, type = "median", conditionalLV = FALSE)
 #' pOccupancy <- poccupy_species(fit, type = "median", conditionalLV = FALSE)
+
+
+#' @describeIn predictedprobabilities  
+#'  For a point estimate of model parameters,
+#'  for each species and each ModelSite,
+#'  computes the expected number of detections of each species *independent* of other species.
+#' @param fit is a fitted runjags model
+#' @param type is the type of point estimate to use. See get_theta for supported options.
+#' @param Xocc A matrix of occupancy coefficient, with each row corresponding to a ModelSite (i.e. a spatial location and year).
+#'  If \code{NULL} the Xocc data saved in \code{fit} will be used.
+#' @param Xobs A matrix of observation (detection) coefficients. Default is the observation coefficients saved in \code{fit}
+#' @param ModelSite A list mapping each row in \code{Xobs} to the row in \code{Xocc} that represents the ModelSite visited.
+#' @param conditionalLV If TRUE returned probabilities are conditioned on estimated latent variable values (and species are independent due to model structure)
+#' If FALSE returned probabilities assume no knowledge of the latent variable values and that species are independent.
+#' @return A 2 dimensional array. For each species (column) and each model site (row), the expected number of detections.
+#' @export
+Endetect_modelsite <- function(fit, type = "median", Xocc = NULL, Xobs = NULL, ModelSite = NULL, conditionalLV = TRUE){
+  if (!fit$summary.available){ fit <- add.summary(fit)}
+  
+  # Get ModelSite Occupany Predictions
+  ModelSite.Occ.Pred <- poccupy_species(fit, type = type, Xocc = Xocc, conditionalLV = conditionalLV)
+  
+  # Get Detection Probabilities Assuming Occupied
+  Visits.DetCond.Pred <- pdetect_condoccupied(fit, type = type, Xobs = Xobs)
+  
+  # combine with probability of occupancy 
+  fitdata <- as_list_format(fit$data)
+  if (is.null(ModelSite)){
+    if ("ObservedSite" %in% names(fitdata)){ModelSite <- fitdata$ObservedSite} #to enable calculation on the early fitted objects with different name
+    if ("ModelSite" %in% names(fitdata)){ModelSite <- fitdata$ModelSite}
+  }
+  
+  
+  
+  # Expected num detections for each ModelSite conditional on occupied
+  E_ndetect_condocc <- cbind(ModelSite = ModelSite, Visits.DetCond.Pred) %>%
+    as_tibble() %>%
+    group_by(ModelSite) %>%
+    summarise_all(sum)
+  # Convert to marginal expected num detection, considering that no occupancy --> no detections
+  E_ndetect <- as.matrix(E_ndetect_condocc %>% dplyr::select(-ModelSite)) * ModelSite.Occ.Pred
+  if (!is.null(fit$species)){colnames(E_ndetect) <- fit$species} # a special modification of runjags with occupation detection meta info
+  return(E_ndetect)
+}
+
+
 
 # Getting to the probability of detecting a species at a particular site
 # marginal and otherwise too
