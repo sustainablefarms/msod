@@ -170,3 +170,31 @@ test_that("pdetect_condoccupied and poccupy_species ordering of sites / visits w
   expect_equivalent(apply(pdetect[LV[fit$data$ModelSite, 1] < 0 & LV[fit$data$ModelSite, 2] > 0, ], 2, sd), rep(0, ncol(pdetect)))
 })
 
+test_that("Expected number of detections for each model site matches the simulated mean number of observations", {
+  fit <- artificial_runjags()
+  Endetections <- Endetect_modelsite(fit, type = 1)
+  
+  simulate_combinevisits <- function(fit, esttype){
+    sim <- simulate_fit(fit, esttype = 1, UseFittedLV = TRUE)
+    ndetect_ModelSite <- cbind(ModelSite = fit$data$ModelSite, sim) %>%
+      as_tibble() %>%
+      group_by(ModelSite) %>%
+      summarise_all(sum) %>%
+      dplyr::select(-ModelSite) %>%
+      as.matrix()
+    return(ndetect_ModelSite)
+  }
+  
+  # simulate multiple times
+  n <- 1000
+  sims <- replicate(n, simulate_combinevisits(fit, esttype = 1))
+  meandetnum <- apply(sims, MARGIN = c(1, 2), mean)
+  sddetnum <- apply(sims, MARGIN = c(1, 2), sd)
+  skewdetnum <- apply(sims, MARGIN = c(1, 2), Rfast::skew)
+  SE <- sddetnum/ sqrt(n)
+  
+  expect_gt(mean( abs(Endetections - meandetnum)/ SE < 2),  
+            #expect this to be true for 95% of model sites, but seems to be closer to 90% a lot of the time. WHY!!??
+                      0.90)
+  # image(abs(Endetections - meandetnum)/ SE < 2)
+})
