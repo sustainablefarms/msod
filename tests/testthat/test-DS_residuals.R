@@ -103,14 +103,14 @@ test_that("Occupancy and Detection Residuals Gaussian for fresh conversion from 
   pOccupancy <- poccupy_species(fit, type = 1)
   pOccupancy <- cbind(ModelSite = 1:nrow(fit$data$Xocc), pOccupancy) %>%
     as_tibble() %>%
-    pivot_longer(-ModelSite, names_to = "Species", values_to = "pOccupancy")
+    tidyr::pivot_longer(-ModelSite, names_to = "Species", values_to = "pOccupancy")
   pDetCondOcc <- cbind(ModelSite = fit$data$ModelSite, VisitId = 1:nrow(fit$data$Xobs), pdetect_condoccupied(fit, type = 1)) %>%
     as_tibble() %>%
-    pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "pDetected_cond")
+    tidyr::pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "pDetected_cond")
   preds <- inner_join(pOccupancy, pDetCondOcc, by = c("ModelSite", "Species")) %>% arrange(VisitId, Species, ModelSite)
   obs <- cbind(ModelSite = as.numeric(fit$data$ModelSite), VisitId = 1:nrow(fit$data$Xobs), fit$data$y) %>%
     as_tibble() %>%
-    pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "Detected") %>%
+    tidyr::pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "Detected") %>%
     arrange(VisitId, Species, ModelSite)
   
   ds_residuals <- ds_occupancy_residuals.raw(preds, obs)
@@ -120,11 +120,11 @@ test_that("Occupancy and Detection Residuals Gaussian for fresh conversion from 
   #' @param obs is a dataframe with columns Species, ModelSite, and Detected
   preds <- cbind(ModelSite = fit$data$ModelSite, VisitId = 1:nrow(fit$data$Xobs), pdetect_indvisit(fit, type = 1)) %>%
     as_tibble() %>%
-    pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "pDetected") %>%
+    tidyr::pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "pDetected") %>%
     arrange(VisitId, Species, ModelSite)
   obs <- cbind(ModelSite = as.numeric(fit$data$ModelSite), VisitId = 1:nrow(fit$data$Xobs), fit$data$y) %>%
     as_tibble() %>%
-    pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "Detected") %>%
+    tidyr::pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "Detected") %>%
     arrange(VisitId, Species, ModelSite)
   
   ds_residuals <- ds_detection_residuals.raw(preds, obs)
