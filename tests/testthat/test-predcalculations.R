@@ -116,9 +116,8 @@ test_that("pdetect_condoccupied and poccupy_species keeps ordering of sites / vi
   pdetect <- pdetect_indvisit(fit, type = 1, conditionalLV = FALSE)
   # probability of occupancy and detection increases with Site and Visit, 
   # so full probability of detection increases except possibly whenever ModelSite returns back to 1
-  rowdiff <- pdetect[-1, ] - pdetect[-nrow(pDetCondOcc), ]
+  rowdiff <- pdetect[-1, ] - pdetect[-nrow(pdetect), ]
   expect_true(min( rowdiff[fit$data$ModelSite[-1] != 1, ] ) > 0)
-  expect_true(max(rowdiff[fit$data$ModelSite[-1] == 1, ]) < 0) # this is because the Site occupancy effect is stronger
   
   # across the rows (species) when UpSite < 0 and UpVisit < 0, I expect the full probability of detection to decrease
   coldiff <-  pdetect[, -1] - pdetect[, -ncol(pdetect)]
