@@ -108,12 +108,11 @@ likelihoods.fit <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL, ch
   } else {
     lvsim <- matrix(rnorm(fit$data$nlv * numlvsims), ncol = fit$data$nlv, nrow = numlvsims) #simulated lv values, should average over thousands
   }
-  if (is.null(Xocc)){ #Extract the Xocc, yXobs etc from the fitted object
-    Xocc <- cbind(ModelSite = 1:nrow(fit$data$Xocc), fit$data$Xocc)
-    yXobs <- cbind(ModelSite = fit$data$ModelSite, fit$data$Xobs, fit$data$y)
-    ModelSite <- "ModelSite"
+  if (is.null(Xocc)){ #Extract the Xocc, yXobs etc from the fitted object, no preprocessing required
+    arraydata.list <- prep_data_by_modelsite(fit$data$Xocc, fit$data$Xobs, fit$data$y, fit$data$ModelSite)
+  } else {
+    arraydata.list <- prep_data_by_modelsite.newdata(fit, Xocc, yXobs, ModelSite)
   }
-  arraydata.list <- prep_data_by_modelsite.newdata(fit, Xocc, yXobs, ModelSite)
   if (is.null(cl)) {
     likel.l <- lapply(arraydata.list, likelihood_joint_marginal.ModelSiteDataRow, draws = draws, lvsim = lvsim)
   }
