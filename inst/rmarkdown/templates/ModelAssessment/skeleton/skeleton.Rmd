@@ -76,6 +76,34 @@ lpds_l <- readRDS("./tmpdata/7_2_4_lpds.rds")
 waics_l <- readRDS("./tmpdata/7_2_4_waics.rds")
 ```
 
+```{r cleanersummaries}
+cleanersummary <- function(fit) {
+  vals <- fit$summaries %>%
+    as_tibble(rownames = "bugsvarname") %>%
+    mutate(AC_10 = case_when(
+      is.finite(AC.400) ~ AC.400,
+      TRUE ~ as.numeric(NA))) %>%
+    mutate(varname = gsub("\\[.*\\]", "", bugsvarname)) %>%
+    mutate(type = varname2type(bugsvarname))
+  suppressWarnings(vals <- vals %>%
+    mutate(SpeciesIdx = as.integer(gsub("(.*\\[|,.*\\])", "", bugsvarname))) %>%
+    mutate(CovarIdx = as.integer(gsub("(.*\\[.*,|\\])", "", bugsvarname))) )
+  vals <- vals %>%
+    mutate(Species = fit$species[SpeciesIdx]) %>%
+    mutate(Covariate = case_when(
+      varname == "u.b" ~ colnames(fit$data$Xocc)[CovarIdx],
+      varname == "v.b" ~ colnames(fit$data$Xobs)[CovarIdx],
+      varname == "LV" ~ as.character(CovarIdx),
+      TRUE ~ as.character(NA)
+    )) %>% 
+    dplyr::select(-SpeciesIdx, -CovarIdx)
+  return(vals)
+}
+cleanersummary_l <- lapply(fittedmods, cleanersummary)
+cleanersummaries <- bind_rows(cleanersummary_l, .id = "Model")
+```
+
+
 ```{r mcmctime}
 cat("MCMC time:\n")
 lapply(fittedmods, function(x) {
@@ -88,13 +116,7 @@ lapply(fittedmods, function(x) {
 ## MCMC Assessment
 ### Autocorrelation 
 ```{r autocorr_fromsummary}
-mergedsummaries <- bind_rows(lapply(fittedmods, function(x) as_tibble(x$summaries, rownames = "varname")),
-                             .id = "Model") %>%
-  mutate(AC_10 = case_when(
-    is.finite(AC.400) ~ AC.400,
-    TRUE ~ as.numeric(NA)))
-mergedsummaries %>%
-  mutate(type = varname2type(varname)) %>%
+cleanersummaries %>%
   ggplot() +
   facet_grid(rows = vars(type), cols = vars(Model), scales = "free_y") +
   geom_histogram(aes(x = AC_10), bins = 30) +
@@ -166,63 +188,47 @@ psrfs_df %>%
 
 ## Compare Covariate Loadings
 ```{r occupancycovariateloadings}
-u.b_median <- function(fit) {
-  fit$data <- as_list_format(fit$data)
-  theta <- get_theta(fit, type = "median")
-  u.b <- bugsvar2matrix(theta, "u.b", 1:fit$data$n, 1:fit$data$Vocc)
-  colnames(u.b) <- names(fit$XoccProcess$center)
-  rownames(u.b) <- fit$species
-  u.b <- as_tibble(u.b, rownames = "Species")
-  return(u.b)
-}
-u.b_l <- lapply(fittedmods, u.b_median)
-u.b_longer <- lapply(u.b_l,
-                     function(x) pivot_longer(x, -Species, names_to = "Covariate", values_to = "CovariateValue"))
-df <- bind_rows(u.b_longer, .id = "Model")
-
-df %>%
+cleanersummaries %>%
+  dplyr::filter(varname == "u.b") %>%
   ggplot() +
   facet_wrap(vars(Covariate), nrow = 1) +
-  geom_point(aes(y = Species, x = CovariateValue,
+  geom_hline(yintercept = 0) +
+  geom_pointrange(aes(x = Species,
+                 ymin = Lower95,
+                 ymax = Upper95,
+                 y = Median,
                  col = Model,
-                 shape = Model),
-             position = position_jitter(height = 0.1)) +
+                 group = Model),
+             shape = "|",
+             size = 1,
+             position = position_dodge(width = 1)) +
+  coord_flip() +
   scale_color_viridis_d() +
-  scale_shape_manual(values = rep(0:5, 3)) +
   ggtitle("Occupancy Covariate Loadings per Species and Model")
 ```
-
+  
 
 ```{r detectioncovariateloadings}
-v.b_median <- function(fit) {
-  fit$data <- as_list_format(fit$data)
-  theta <- get_theta(fit, type = "median")
-  v.b <- bugsvar2matrix(theta, "v.b", 1:fit$data$n, 1:fit$data$Vobs)
-  colnames(v.b) <- names(fit$XobsProcess$center)
-  rownames(v.b) <- fit$species
-  v.b <- as_tibble(v.b, rownames = "Species")
-  return(v.b)
-}
-v.b_l <- lapply(fittedmods, v.b_median)
-v.b_longer <- lapply(v.b_l,
-                     function(x) pivot_longer(x, -Species, names_to = "Covariate", values_to = "CovariateValue"))
-df <- bind_rows(v.b_longer, .id = "Model")
-
-df %>%
+cleanersummaries %>%
+  dplyr::filter(varname == "v.b") %>%
   ggplot() +
   facet_wrap(vars(Covariate), nrow = 1) +
-  geom_point(aes(y = Species, x = CovariateValue,
+  geom_hline(yintercept = 0) +
+  geom_pointrange(aes(x = Species,
+                 ymin = Lower95,
+                 ymax = Upper95,
+                 y = Median,
                  col = Model,
-                 shape = Model),
-             position = position_jitter(height = 0.1)) +
+                 group = Model),
+             shape = "|",
+             size = 1,
+             position = position_dodge(width = 1)) +
+  coord_flip() +
   scale_color_viridis_d() +
-  scale_shape_manual(values = rep(0:5, 3)) +
   ggtitle("Detection Covariate Loadings per Species and Model")
 ```
 
-
-## Model Comparisons
-### Log Posterior Density
+## Log Posterior Density
 ```{r holdoutlpd}
 lpds_df <- as_tibble(do.call(cbind, lapply(lpds_l, function(x) x$lpds)))
 melpd <- data.frame(Estimate = apply(lpds_df, 2, mean),
@@ -300,7 +306,7 @@ df %>%
 ```
 
 
-### Expected Number of Detections for Each Species
+## Expected Number of Detections for Each Species
 ```{r numdetections}
 obsdetections <- colSums(fittedmods[[1]]$data$y)
 
@@ -327,7 +333,7 @@ Edetections %>%
   ggtitle("Expected Number of Detections vs Observed")
 ```
 
-### Quick check of residual distribution for all models
+## Quick check of residual distribution for all models
 Note that there are too many data points to apply the shapiro-Wilks normality test directly, however the Anderson-Darling test can be applied. I do not know enough about this test yet to know if it can be fully trusted.
 
 ```{r all_resid_occ_normality}
@@ -362,7 +368,7 @@ as_tibble(lapply(resid_det_l, function(x) unlist(x[, -1]))) %>%
 
 
 
-### Occupancy Residuals
+## Occupancy Residuals
 ```{r residocc_plots_manymodels}
 seeds = c(321, 120, 6545, 65498, 63)
 df_l <- lapply(seeds, function(x) {
@@ -399,7 +405,7 @@ plt + coord_cartesian(ylim = c(-0.1, 0.1)) + ggtitle("Occupancy Residuals vs Cov
 ```
 
 
-### Detection Residuals
+## Detection Residuals
 ```{r residdet_plots_manymodels}
 seeds = c(321, 120, 6545, 65498, 63)
 df_l <- lapply(seeds, function(x) {
