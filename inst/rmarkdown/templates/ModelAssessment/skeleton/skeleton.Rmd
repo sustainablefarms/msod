@@ -47,7 +47,7 @@ inputdata <- readRDS("./private/data/clean/7_2_4_input_data.rds")
 detcovar <- model.matrix(~ ModelSiteID + MeanWind +  MeanTime + MeanClouds + MeanTemp + ObserverId - 1,
              data = inputdata$insampledata$yXobs) %>%
   as_tibble() %>% rename(ModelSite = ModelSiteID)
-occcovar <- model.matrix(~ ModelSiteID + os + ms * NMdetected + gc - 1,
+occcovar <- model.matrix(~ SurveyYear + StudyId + ModelSiteID + os + ms * NMdetected + gc - 1,
              data = inputdata$insampledata$Xocc) %>%
   as_tibble() %>% rename(ModelSite = ModelSiteID)
 ```
@@ -389,11 +389,33 @@ df_l <- lapply(seeds, function(x) {
 names(df_l) <- seeds
 df <- bind_rows(df_l, .id = "seed")
 
+treatfactor <- df %>%
+  group_by(Covariate) %>%
+  summarise(nvals = n_distinct(CovariateValue), .groups = "drop_last") %>%
+  filter(nvals <= 10) %>%
+  select(Covariate) %>%
+  unlist()
+
 plt <- df %>%
   ggplot() +
   ggplot2::geom_point(aes(x = CovariateValue, y = Residual), data = function(x) x[x$seed == seeds[[1]], ])
-  
-plt <- plt + ggplot2::geom_smooth(aes(x = CovariateValue, y = Residual, col = seed), method = "gam", level = 0.95, formula = y ~ s(x, bs = "cs"))
+
+# gam smooths for continuous variables
+plt <- plt + ggplot2::geom_smooth(aes(x = CovariateValue, y = Residual, col = seed),
+                                  data = function(x) x %>% dplyr::filter(!(Covariate %in% treatfactor)),
+                                  method = "gam", level = 0.95, formula = y ~ s(x, bs = "cs"))
+
+# mean + 2SE summaries for discrete variables
+plt <- plt + ggplot2::stat_summary(aes(x = CovariateValue, y = Residual, col = seed),
+                                  data = function(x) x %>% dplyr::filter(Covariate %in% treatfactor),
+                                  geom = "pointrange",
+                                  fun.data = mean_se,
+                                  fun.args = list(mult = 2),
+                                  position = position_dodge(width = 0.1, preserve = "total"),
+                                  alpha = 0.8,
+                                  lwd = 2,
+                                  fatten = 1,
+                                  show.legend = FALSE)
 
 plt <- plt +
   ggplot2::facet_grid(rows = vars(Model), cols = vars(Covariate), as.table = TRUE, scales = "free_x") +
@@ -426,12 +448,35 @@ df_l <- lapply(seeds, function(x) {
 names(df_l) <- seeds
 df_det <- bind_rows(df_l, .id = "seed")
 
+treatfactor <- df_det %>%
+  group_by(Covariate) %>%
+  summarise(nvals = n_distinct(CovariateValue), .groups = "drop_last") %>%
+  filter(nvals <= 10) %>%
+  select(Covariate) %>%
+  unlist()
+
 plt <- df_det %>%
   ggplot() +
   ggplot2::geom_point(aes(x = CovariateValue, y = Residual), data = function(x) x[x$seed == seeds[[1]], ])
-  
-plt <- plt + ggplot2::geom_smooth(aes(x = CovariateValue, y = Residual, col = seed), method = "gam", level = 0.95, formula = y ~ s(x, bs = "cs"))
 
+# gam smooths for continuous variables
+plt <- plt + ggplot2::geom_smooth(aes(x = CovariateValue, y = Residual, col = seed),
+                                  data = function(x) x %>% dplyr::filter(!(Covariate %in% treatfactor)),
+                                  method = "gam", level = 0.95, formula = y ~ s(x, bs = "cs"))
+
+# mean + 2SE summaries for discrete variables
+plt <- plt + ggplot2::stat_summary(aes(x = CovariateValue, y = Residual, col = seed),
+                                  data = function(x) x %>% dplyr::filter(Covariate %in% treatfactor),
+                                  geom = "pointrange",
+                                  fun.data = mean_se,
+                                  fun.args = list(mult = 2),
+                                  position = position_dodge(width = 0.1, preserve = "total"),
+                                  alpha = 0.8,
+                                  lwd = 2,
+                                  fatten = 1,
+                                  show.legend = FALSE)
+
+  
 plt <- plt +
   ggplot2::facet_grid(rows = vars(Model), cols = vars(Covariate), as.table = TRUE, scales = "free_x") +
   ggplot2::geom_hline(yintercept = 0, col = "blue", lty = "dashed") +
