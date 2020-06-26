@@ -39,17 +39,17 @@ ds_detection_residuals.fit <- function(fit, type = "median", seed = NULL){
   # Convert the above into format suitable for ds_detection_residuals.raw
   preds <- cbind(ModelSite = as.numeric(ModelSite), VisitId = 1:nrow(fitdata$Xobs), pDetection) %>%
     as_tibble() %>%
-    pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "pDetected") %>%
+    tidyr::pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "pDetected") %>%
     arrange(VisitId, Species, ModelSite)
   obs <- cbind(ModelSite = as.numeric(ModelSite), VisitId = 1:nrow(fitdata$Xobs), detections) %>%
     as_tibble() %>%
-    pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "Detected") %>%
+    tidyr::pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "Detected") %>%
     arrange(VisitId, Species, ModelSite)
   
   # Compute residuals
   detection_resids <- ds_detection_residuals.raw(preds, obs, seed = seed)
   detection_resids %>%
-    pivot_wider(names_from = "Species",
+    tidyr::pivot_wider(names_from = "Species",
                 values_from = "DetectionResidual") %>%
     return()
 }
@@ -78,20 +78,20 @@ ds_occupancy_residuals.fit <- function(fit, type = "median", seed = NULL, condit
   # convert to format for raw function
   pOccupancy <- cbind(ModelSite = 1:nrow(fitdata$Xocc), pOccupancy) %>%
     as_tibble() %>%
-    pivot_longer(-ModelSite, names_to = "Species", values_to = "pOccupancy")
+    tidyr::pivot_longer(-ModelSite, names_to = "Species", values_to = "pOccupancy")
   pDetCondOcc <- cbind(ModelSite = as.numeric(ModelSite), VisitId = 1:nrow(fitdata$Xobs), pDetected_cond) %>%
     as_tibble() %>%
-    pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "pDetected_cond")
+    tidyr::pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "pDetected_cond")
   preds <- inner_join(pOccupancy, pDetCondOcc, by = c("ModelSite", "Species")) %>% arrange(VisitId, Species, ModelSite)
   obs <- cbind(ModelSite = as.numeric(ModelSite), VisitId = 1:nrow(fitdata$Xobs), detections) %>%
     as_tibble() %>%
-    pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "Detected") %>%
+    tidyr::pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "Detected") %>%
     arrange(VisitId, Species, ModelSite)
   
   # apply raw occupancy residuals function
   residuals <- ds_occupancy_residuals.raw(preds, obs)
   residuals %>%
-    pivot_wider(names_from = "Species",
+    tidyr::pivot_wider(names_from = "Species",
                 values_from = "OccupancyResidual") %>%
     return()
 }

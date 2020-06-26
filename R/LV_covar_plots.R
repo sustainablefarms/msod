@@ -14,8 +14,8 @@ plot_LVvscovar.fit <- function(fit, esttype = "median", theta = NULL, covar, fac
       mutate_at(facetvars, ~cut(., cuts))
   } 
   dflong <- df %>%
-    pivot_longer(starts_with("LV"), names_to = "LV Name", values_to = "LV Value") %>%
-    pivot_longer(setdiff(names(covar), c("ModelSite", facetvars)), names_to = "Covariate Name", values_to = "Covariate Value")
+    tidyr::pivot_longer(starts_with("LV"), names_to = "LV Name", values_to = "LV Value") %>%
+    tidyr::pivot_longer(setdiff(names(covar), c("ModelSite", facetvars)), names_to = "Covariate Name", values_to = "Covariate Value")
   if (is.null(facetvars)){
     plt <- dflong %>%
       ggplot2::ggplot() +

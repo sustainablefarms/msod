@@ -87,13 +87,13 @@ plot_residuals.residual <- function(residuals, covar, plotfunction = facet_speci
   
   # prepare to print
   outframe <- left_join(residuals, covar, by = "ModelSite") %>%
-    pivot_longer(any_of(speciesnames),
+    tidyr::pivot_longer(any_of(speciesnames),
                  names_to = "Species",
                  values_to = "Residual",
                  values_drop_na = TRUE) %>%
     mutate(Species = ordered(Species, levels = speciesnames)) #to order species according to 'speciesnames'
   outframe <- outframe %>%
-    pivot_longer(any_of(covarnames),
+    tidyr::pivot_longer(any_of(covarnames),
                  names_to = "Covariate",
                  values_to = "CovariateValue") 
   if (is.null(plotfunction)){plotfunction <- facet_species_covariate} #for when plotfunction = NULL is passed
