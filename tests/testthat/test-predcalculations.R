@@ -115,9 +115,10 @@ test_that("pdetect_condoccupied and poccupy_species keeps ordering of sites / vi
   # I expect pdetect_indvisit to have the same rows as Xobs
   pdetect <- pdetect_indvisit(fit, type = 1, conditionalLV = FALSE)
   # probability of occupancy and detection increases with Site and Visit, 
-  # so full probability of detection increases except possibly whenever ModelSite returns back to 1
+  # so full probability of detection increases except possibly whenever ModelSite returns back to 1,
+  # which never happens in currently: simulated ModelSite is non-decreasing, all the ModelSite=1 visits occur in the first few rows
   rowdiff <- pdetect[-1, ] - pdetect[-nrow(pdetect), ]
-  expect_true(min( rowdiff[fit$data$ModelSite[-1] != 1, ] ) > 0)
+  expect_true(min( rowdiff ) > 0)
   
   # across the rows (species) when UpSite < 0 and UpVisit < 0, I expect the full probability of detection to decrease
   coldiff <-  pdetect[, -1] - pdetect[, -ncol(pdetect)]
