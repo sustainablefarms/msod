@@ -228,8 +228,8 @@ get_theta <- function(fit, type){
     return(type)
   }
   if (is.numeric(type) && length(type) == 1){
-    chainidx <- floor(type / 1000) + 1
-    sampleinchain <- type - 1000 * (chainidx - 1)
+    chainidx <- floor(type / fit$sample) + 1
+    sampleinchain <- type - fit$sample * (chainidx - 1)
     theta <- fit$mcmc[[chainidx]][sampleinchain, ]
     return(theta)
   }
