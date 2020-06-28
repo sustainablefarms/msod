@@ -124,8 +124,9 @@ prep.designmatprocess <- function(indata, fmla){
   sds <- ((nrow(designmat1) - 1) / nrow(designmat1)) * apply(designmat1, 2, sd)
   center <- means
   scale <- sds
-  center[sds * means < 1E-8] <- means[sds * means < 1E-8] - 1 #centering of constant columns to 1
-  scale[sds * means < 1E-8] <- 1 #no scaling of constant columns
+  isconstant <- (sds < 1E-8)
+  center[isconstant] <- means[isconstant] - 1 #centering of constant columns to 1
+  scale[isconstant] <- 1 #no scaling of constant columns - they are already set to 1
   preprocessobj <- list(fmla = fmla, center = center, scale = scale)
   return(preprocessobj)
 }
