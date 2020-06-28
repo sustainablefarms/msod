@@ -131,7 +131,7 @@ simulate_covar_data <- function(nsites, nvisitspersite){
   sites <- c(1:nsites)
   XoccIn <- data.frame(ModelSite = sites,
                      UpSite = sites,
-                     Sine1 = sin(2 * pi * sites / nsites),
+                     Sine1 = 10 * sin(2 * pi * sites / nsites) + 100,
                      Sine2 = sin(4 * pi * sites / nsites))
   XobsIn <- data.frame(ModelSite = rep(sites, nvisitspersite),
                      UpVisit = 1:(nvisitspersite*nsites),
