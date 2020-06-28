@@ -1,6 +1,7 @@
 # test likelihood computations
 
 library(testthat)
+library(runjags)
 runjags.options(silent.jags = TRUE)
 runjags.options(silent.runjags = TRUE)
 
