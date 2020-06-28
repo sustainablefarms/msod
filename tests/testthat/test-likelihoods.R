@@ -5,6 +5,8 @@ library(runjags)
 runjags.options(silent.jags = TRUE)
 runjags.options(silent.runjags = TRUE)
 
+context("Tests of Likelihood Computations")
+
 test_that("Likelihood computations run in sample data with LV", {
   covars <- simulate_covar_data(nsites = 50, nvisitspersite = 2)
   y <- simulate_iid_detections(3, nrow(covars$Xocc))
@@ -50,17 +52,23 @@ test_that("lppds insample and outsample data similar on very artifical simple si
   lkl <- Rfast::rep_row(lkl, 50)
   waic <- loo::waic(log(lkl))
   
+  originalXocc <- Rfast::eachrow(Rfast::eachrow(artmodel$data$Xocc, artmodel$XoccProcess$scale, oper = "*"),
+                                 artmodel$XoccProcess$center, oper = "+")
+  colnames(originalXocc) <- colnames(artmodel$data$Xocc)
+  originalXobs <- Rfast::eachrow(Rfast::eachrow(artmodel$data$Xobs, artmodel$XobsProcess$scale, oper = "*"),
+                                 artmodel$XobsProcess$center, oper = "+")
+  colnames(originalXobs) <- colnames(artmodel$data$Xobs)
   
   outofsample_y <- simulate_fit(artmodel, esttype = 1, UseFittedLV = FALSE)
   outofsample_lppd <- lppd.newdata(artmodel,
-               Xocc = cbind(ModelSite = 1:nrow(artmodel$data$Xocc), artmodel$data$Xocc),
-               yXobs = cbind(ModelSite = artmodel$data$ModelSite, artmodel$data$Xobs, outofsample_y),
+               Xocc = cbind(ModelSite = 1:nrow(originalXocc), originalXocc),
+               yXobs = cbind(ModelSite = artmodel$data$ModelSite, originalXobs, outofsample_y),
                ModelSite = "ModelSite")
   
   # of a randomly selected NEW ModelSite
   lppd_pred_fromoutofsample <- mean(outofsample_lppd$lpds)
   lppd_pred_fromwaic <- waic$estimates["elpd_waic", "Estimate"] / nrow(artmodel$data$Xocc)
-  expect_equal(lppd_pred_fromoutofsample, lppd_pred_fromwaic, tolerance = 0.5)
+  expect_equal(lppd_pred_fromoutofsample, lppd_pred_fromwaic, tolerance = 0.1)
 })
 
 test_that("Likelihood computations match simulations without LV for nearly certain detection", {
