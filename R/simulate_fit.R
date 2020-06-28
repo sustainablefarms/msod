@@ -97,6 +97,7 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2, 
   fit$XobsProcess <- XobsProcess
   fit$ModelSite <- "ModelSite"
   fit$summary.available <- TRUE
+  fit$sample <- 1
 
   # set parameters
   u.b <- matrix(runif( fit$data$n * fit$data$Vocc, min = u.b.min, max = u.b.max), nrow = fit$data$n, ncol = fit$data$Vocc, byrow = FALSE)
