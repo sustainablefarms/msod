@@ -121,6 +121,7 @@ cleanersummaries %>%
   facet_grid(rows = vars(type), cols = vars(Model), scales = "free_y") +
   geom_histogram(aes(x = AC_10), bins = 30) +
   geom_vline(aes(xintercept = 0.1), col = "red") +
+  theme(strip.text.x.top = element_text(angle = 90)) +
   scale_y_continuous(name = "Number of Parameters")
 ```
 
@@ -143,6 +144,7 @@ gwk %>%
   geom_abline(slope = 1, intercept = 0, lty = "dashed") +
   geom_qq(aes(sample = value), shape = "+", size = 2) +
   coord_cartesian(ylim = c(-5, 5)) +
+  theme(strip.text.x.top = element_text(angle = 90)) +
   ggtitle("QQ Plots of Geweke Statistics for Each Parameter")
 ```
 
@@ -204,6 +206,7 @@ cleanersummaries %>%
              position = position_dodge(width = 1)) +
   coord_flip() +
   scale_color_viridis_d() +
+  theme(strip.text.x.top = element_text(angle = 90)) +
   ggtitle("Occupancy Covariate Loadings per Species and Model")
 ```
   
@@ -225,6 +228,7 @@ cleanersummaries %>%
              position = position_dodge(width = 1)) +
   coord_flip() +
   scale_color_viridis_d() +
+  theme(strip.text.x.top = element_text(angle = 90)) +
   ggtitle("Detection Covariate Loadings per Species and Model")
 ```
 
@@ -248,8 +252,8 @@ lpds_df %>%
   rowid_to_column(var = "HoldOutModelSite") %>%
   tidyr::pivot_longer(-HoldOutModelSite, names_to = "model", values_to = "Site_lpd") %>%
   ggplot() +
-  facet_grid(rows = vars(model), scales = "free_y") +
-  geom_violin(aes(x = Site_lpd, y = model)) +
+  # facet_grid(rows = vars(model), scales = "free_y") +
+  geom_violin(aes(x = Site_lpd, y = model), adjust = 0.2) +
   stat_summary(aes(x = Site_lpd, y = model),
                fun.data=mean_2se, fun.args = list(mult=2), geom="crossbar", width=0.2 ) +
   stat_summary(aes(x = Site_lpd, y = model),
@@ -273,7 +277,7 @@ df %>%
   tidyr::pivot_longer(-InSample, names_to = "model", values_to = "site_lpd") %>%
   ggplot() +
   facet_grid(rows = vars(model), scales = "free_y", switch = "y") +
-  geom_violin(aes(x = site_lpd, y = InSample, col = InSample), position = position_dodge(1)) +
+  geom_violin(aes(x = site_lpd, y = InSample, col = InSample), adjust = 0.2, position = position_dodge(1)) +
   stat_summary(aes(x = site_lpd, y = InSample, group = InSample),
                fun.data=mean_2se, fun.args = list(mult=2), geom="crossbar", width=0.2 ) +
   theme(strip.text.y.left = element_text(angle = 0)) +
@@ -341,7 +345,7 @@ resid_occ_l <- lapply(fittedmods, ds_occupancy_residuals.fit, type = "median", s
 # vapply(resid_occ_l, function(x) shapiro.test(sample(unlist(x[, -1]), 5000))$p.value, FUN.VALUE = 3.3)
 vapply(resid_occ_l, function(x) goftest::ad.test(unlist(x[, -1]))$p.value, FUN.VALUE = 3.3)
 as_tibble(lapply(resid_occ_l, function(x) unlist(x[, -1]))) %>%
-  pivot_longer(everything(), names_to = "Model", values_to = "Residual") %>%
+  tidyr::pivot_longer(everything(), names_to = "Model", values_to = "Residual") %>%
   ggplot() +
   geom_qq(aes(sample = Residual)) +
   geom_abline(slope = 1, intercept = 0, lty = "dashed") +
@@ -358,7 +362,7 @@ vapply(resid_det_l, function(x) {
   goftest::ad.test(vals)$p.value},
   FUN.VALUE = 3.3)
 as_tibble(lapply(resid_det_l, function(x) unlist(x[, -1]))) %>%
-  pivot_longer(everything(), names_to = "Model", values_to = "Residual") %>%
+  tidyr::pivot_longer(everything(), names_to = "Model", values_to = "Residual") %>%
   ggplot() +
   geom_qq(aes(sample = Residual)) +
   geom_abline(slope = 1, intercept = 0, lty = "dashed") +
@@ -369,18 +373,28 @@ as_tibble(lapply(resid_det_l, function(x) unlist(x[, -1]))) %>%
 
 
 ## Occupancy Residuals
+```{r removelargeunneededobj}
+# bytes <- vapply(ls(), function(objname) object.size(get(objname)), FUN.VALUE = 213)
+# sort(bytes/1E9)
+rm(resid_det_l)
+rm(resid_occ_l)
+```
+
 ```{r residocc_plots_manymodels}
 seeds = c(321, 120, 6545, 65498, 63)
 df_l <- lapply(seeds, function(x) {
-  resid_occ_l <- lapply(fittedmods, ds_occupancy_residuals.fit, type = "median", seed = x, conditionalLV = FALSE)
+  resid_occ_l <- lapply(fittedmods, function(fit) {
+    resids <- ds_occupancy_residuals.fit(fit, type = "median", seed = x, conditionalLV = (!is.null(fit$nlv) && fit$nlv > 0))
+    resids$ModelSite <- occcovar$ModelSite
+    return(resids)})
   resid_occ_df <- bind_rows(resid_occ_l, .id = "Model")
   df <- resid_occ_df %>%
-    pivot_longer(-c(ModelSite, Model),
+    tidyr::pivot_longer(-c(ModelSite, Model),
                    names_to = "Species",
                    values_to = "Residual",
                    values_drop_na = TRUE) %>%
     left_join(occcovar %>% 
-                pivot_longer(-ModelSite,
+                tidyr::pivot_longer(-ModelSite,
                    names_to = "Covariate",
                    values_to = "CovariateValue"),
               by = "ModelSite")
@@ -388,12 +402,13 @@ df_l <- lapply(seeds, function(x) {
 })
 names(df_l) <- seeds
 df <- bind_rows(df_l, .id = "seed")
+rm(df_l)
 
 treatfactor <- df %>%
   group_by(Covariate) %>%
   summarise(nvals = n_distinct(CovariateValue), .groups = "drop_last") %>%
   filter(nvals <= 10) %>%
-  select(Covariate) %>%
+  dplyr::select(Covariate) %>%
   unlist()
 
 plt <- df %>%
@@ -431,15 +446,18 @@ plt + coord_cartesian(ylim = c(-0.1, 0.1)) + ggtitle("Occupancy Residuals vs Cov
 ```{r residdet_plots_manymodels}
 seeds = c(321, 120, 6545, 65498, 63)
 df_l <- lapply(seeds, function(x) {
-  resid_det_l <- lapply(fittedmods, ds_detection_residuals.fit, type = "median", seed = x)
+  resid_det_l <- lapply(fittedmods, function(fit) {
+    resids <- ds_detection_residuals.fit(fit, type = "median", seed = x)
+    resids$ModelSite <- occcovar$ModelSite
+    return(resids)})
   resid_det_df <- bind_rows(resid_det_l, .id = "Model")
   df <- resid_det_df %>%
-    pivot_longer(-c(ModelSite, Model),
+    tidyr::pivot_longer(-c(ModelSite, Model),
                    names_to = "Species",
                    values_to = "Residual",
                    values_drop_na = TRUE) %>%
     left_join(detcovar %>% 
-                pivot_longer(-ModelSite,
+                tidyr::pivot_longer(-ModelSite,
                    names_to = "Covariate",
                    values_to = "CovariateValue"),
               by = "ModelSite")
@@ -452,7 +470,7 @@ treatfactor <- df_det %>%
   group_by(Covariate) %>%
   summarise(nvals = n_distinct(CovariateValue), .groups = "drop_last") %>%
   filter(nvals <= 10) %>%
-  select(Covariate) %>%
+  dplyr::select(Covariate) %>%
   unlist()
 
 plt <- df_det %>%
