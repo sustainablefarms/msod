@@ -120,6 +120,12 @@ run.detectionoccupancy <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~
 #' @export
 prep.designmatprocess <- function(indata, fmla){
   designmat1 <- model.matrix(as.formula(fmla), as.data.frame(indata))
+  
+  ## Check correlation between covariates
+  if (max(abs(cor(designmat1)), na.rm = TRUE) > 0.75) {
+    warning("Very high correlation between covariates")
+  }
+  
   means <- colMeans(designmat1)
   sds <- ((nrow(designmat1) - 1) / nrow(designmat1)) * apply(designmat1, 2, sd)
   center <- means
