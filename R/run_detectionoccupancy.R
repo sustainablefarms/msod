@@ -122,7 +122,11 @@ prep.designmatprocess <- function(indata, fmla){
   designmat1 <- model.matrix(as.formula(fmla), as.data.frame(indata))
   
   ## Check correlation between covariates
-  if (max(abs(cor(designmat1)), na.rm = TRUE) > 0.75) {
+  cormat <- cor(designmat1[, colnames(designmat1) != "(Intercept)"])
+  diag(cormat) <- NA
+  if (max(abs(cormat), na.rm = TRUE) > 0.75) {
+    # cormat[upper.tri(cormat)] <- NA
+    # highcorr <- which(abs(cormat) > 0.2, arr.ind = TRUE)
     warning("Very high correlation between covariates")
   }
   
