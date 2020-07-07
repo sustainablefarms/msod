@@ -103,7 +103,7 @@ ds_occupancy_residuals.raw <- function(preds, obs, seed = NULL){
   stopifnot(all(c("Species", "ModelSite", "Detected") %in% names(obs)))
   stopifnot(isTRUE(all.equal(preds[, c("Species", "ModelSite")], obs[, c("Species", "ModelSite")])))
   combined <- cbind(preds, Detected = obs$Detected)
-  persite <- combined %>%
+  persite <- combined %>%  #### these operations account for about 3/4 of occupancy residual computation time! Using dtplyr reduces it by 50%
     dplyr::group_by(Species, ModelSite) %>%
     dplyr::summarise(anyDetected = sum(Detected) > 0,
                      pDetected_cond = list(pDetected_cond),
