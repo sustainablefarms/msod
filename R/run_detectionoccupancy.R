@@ -119,17 +119,19 @@ run.detectionoccupancy <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~
 #' @param stoponhighcorrelation If TRUE the preparations for a design matrix will fail if correlations between covariates are higher than 0.75
 #' @return A special list containing parameters for applying a preprocessing step to data.
 #' @export
-prep.designmatprocess <- function(indata, fmla, stoponhighcorrelation = TRUE){
+prep.designmatprocess <- function(indata, fmla, stoponhighcorrelation = FALSE){
   designmat1 <- model.matrix(as.formula(fmla), as.data.frame(indata))
   
   ## Check correlation between covariates
-  cormat <- cor(designmat1[, colnames(designmat1) != "(Intercept)"])
-  diag(cormat) <- NA
-  if (max(abs(cormat), na.rm = TRUE) > 0.75) {
-    # cormat[upper.tri(cormat)] <- NA
-    # highcorr <- which(abs(cormat) > 0.2, arr.ind = TRUE)
-    if (stoponhighcorrelation) {stop("Very high correlation between covariates")}
-    else {warning("Very high correlation between covariates")}
+  if (sum(colnames(designmat1) != "(Intercept)") >= 2){
+    cormat <- cor(designmat1[, colnames(designmat1) != "(Intercept)"])
+    diag(cormat) <- NA
+    if (max(abs(cormat), na.rm = TRUE) > 0.75) {
+      # cormat[upper.tri(cormat)] <- NA
+      # highcorr <- which(abs(cormat) > 0.2, arr.ind = TRUE)
+      if (stoponhighcorrelation) {stop("Very high correlation between covariates")}
+      else {warning("Very high correlation between covariates")}
+    }
   }
   
   means <- colMeans(designmat1)
