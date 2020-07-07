@@ -5,16 +5,9 @@
 
 #' @param fit Is a runjags object created by fitting using package runjags.
 #' @examples 
-#' fit <- readRDS("./tmpdata/7_1_mcmcchain_20200424.rds")
-#' fit <- runjags::add.summary(fit)
-#' fit$data <- as_list_format(fit$data)
-#' source("./R/calcpredictions.R")
+#' fit <- readRDS("./tmpdata/7_2_10_clim_year.rds")
 #' detection_resids <- ds_detection_residuals.fit(fit, type = "median")
-#' occupancy_resids <- ds_occupancy_residuals.fit(fit, type = "median")
-#' # More modern fitted object
-#' fit = readRDS("./tmpdata/deto_wind.rds")
-#' detection_resids <- ds_detection_residuals.fit(fit, type = "median")
-
+#' occupancy_resids <- ds_occupancy_residuals.fit(fit, type = "median", conditionalLV = FALSE)
 
 ##### Full Dunn-Smyth Residual Functions ####
 #' @describeIn DunnSmythResiduals Given a fitted occupancy detection model (variable names must match). Computes Dunn-Smyth residuals for detection, marginalising the latent variables.
