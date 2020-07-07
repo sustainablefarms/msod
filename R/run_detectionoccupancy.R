@@ -116,9 +116,10 @@ run.detectionoccupancy <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~
 #' @describeIn apply.designmatprocess Calculates the parameters required to build a centred and scaled design matrix from input data.
 #' @param indata Input dataframe to be processed.
 #' @param fmla A model formula (predictor side only).
+#' @param stoponhighcorrelation If TRUE the preparations for a design matrix will fail if correlations between covariates are higher than 0.75
 #' @return A special list containing parameters for applying a preprocessing step to data.
 #' @export
-prep.designmatprocess <- function(indata, fmla){
+prep.designmatprocess <- function(indata, fmla, stoponhighcorrelation = TRUE){
   designmat1 <- model.matrix(as.formula(fmla), as.data.frame(indata))
   
   ## Check correlation between covariates
@@ -127,7 +128,8 @@ prep.designmatprocess <- function(indata, fmla){
   if (max(abs(cormat), na.rm = TRUE) > 0.75) {
     # cormat[upper.tri(cormat)] <- NA
     # highcorr <- which(abs(cormat) > 0.2, arr.ind = TRUE)
-    warning("Very high correlation between covariates")
+    if (stoponhighcorrelation) {stop("Very high correlation between covariates")}
+    else {warning("Very high correlation between covariates")}
   }
   
   means <- colMeans(designmat1)
