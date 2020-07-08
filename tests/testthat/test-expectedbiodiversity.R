@@ -10,7 +10,7 @@ test_that("Correct for artifical fitted model with no LV and identical sites", {
   lvsim <- matrix(rnorm(2 * 1), ncol = 2, nrow = 2) #dummy lvsim vars
   lv.coef.bugs <- matrix2bugsvar(matrix(0, nrow = artfit$data$n, ncol = 2), "lv.coef")
   theta <- c(theta, lv.coef.bugs)
-  Enumspecdet <- expectedspeciesnum.ModelSite.theta(artfit$data$Xocc[1, , drop = FALSE],
+  EVsum_det_single <- expectedspeciesnum.ModelSite.theta(artfit$data$Xocc[1, , drop = FALSE],
                                                     artfit$data$Xobs[artfit$data$ModelSite == 1, , drop = FALSE],
                                                     numspecies = 4,
                                                     theta = theta,
@@ -25,7 +25,8 @@ test_that("Correct for artifical fitted model with no LV and identical sites", {
                                               theta = theta,
                                               LVvals = lvsim)
          })
-  expect_equal(unlist(Enumspecdet_l) - Enumspecdet, rep(0, length(Enumspecdet_l)))
+  Enumspecdet <- simplify2array(Enumspecdet_l)
+  expect_equivalent(Enumspecdet["Esum_det", ], rep(EVsum_det_single["Esum_det"], length(Enumspecdet_l)))
   
   # treat each model site as a repeat simulation of a ModelSite (cos all the parameters are nearly identical)
   my <- cbind(ModelSite = artfit$data$ModelSite, artfit$data$y)
@@ -37,15 +38,16 @@ test_that("Correct for artifical fitted model with no LV and identical sites", {
   cmeannumspecies <- dplyr::cummean(NumSpecies[, "numspecies"])
   
   # check within standard error
-  se <- sd(NumSpecies[, "numspecies"]) / sqrt(nrow(NumSpecies))
-  expect_equal(cmeannumspecies[length(cmeannumspecies)], Enumspecdet, tol = 3*se)
+  sd <- sd(NumSpecies[, "numspecies"]) / sqrt(nrow(NumSpecies))
+  expect_equivalent(cmeannumspecies[length(cmeannumspecies)], EVsum_det_single["Esum_det"], tol = 3*sd)
   
   # check that is getting closer with increasing data
-  expect_lt(abs(cmeannumspecies[length(cmeannumspecies)] - Enumspecdet),
-            abs( mean(cmeannumspecies[floor(length(cmeannumspecies) / 4) + 1:10]) - Enumspecdet))
+  expect_lt(abs(cmeannumspecies[length(cmeannumspecies)] -  EVsum_det_single["Esum_det"]),
+            abs( mean(cmeannumspecies[floor(length(cmeannumspecies) / 4) + 1:10]) - EVsum_det_single["Esum_det"]))
   
+  # Expect sd to be close to theoretical sd. Hopefully within 10%
+  expect_equivalent(sd(NumSpecies[, "numspecies"]), sqrt(EVsum_det_single["Vsum_det"]), tol = 0.1 *sqrt(EVsum_det_single["Vsum_det"]))
 })
-
 
 test_that("Correct for artifical fitted model with covariates but no LV", {
   nsites <- 1000
@@ -109,7 +111,7 @@ test_that("Correct for artifical fitted model with covariates and LVs", {
     ggplot2::ggplot() +
     ggplot2::geom_ribbon(ggplot2::aes(x= CumSites, ymin = -2 * sqrt(var), ymax = 2 * sqrt(var)), fill = "grey") +
     ggplot2::geom_line(ggplot2::aes(x = CumSites, y = diff), col = "blue", lwd = 2)
-  print(plt)
+  # print(plt)
 
   # check with predicted standard error once the software is computed
   sd_final <- sqrt(meanvar[ncol(Enumspecdet)])
