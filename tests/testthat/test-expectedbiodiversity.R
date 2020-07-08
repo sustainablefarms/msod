@@ -2,14 +2,14 @@
 
 context("Number of Species Expected")
 
-test_that("Number of species expected to be detected matches on artifical fitted model", {
-  artfit <- artificial_runjags(nspecies = 2, nsites = 10000, nvisitspersite = 2, nlv = 0,
+test_that("Number of detected species expected on artifical fitted model with no LV and no covariates", {
+  artfit <- artificial_runjags(nspecies = 4, nsites = 10000, nvisitspersite = 2, nlv = 0,
                                ObsFmla = "~ 1",
                                OccFmla = "~ 1")
   theta <- get_theta(artfit, type = 1)
   Enumspecdet <- expectedspeciesnum.ModelSite.theta(artfit$data$Xocc[1, , drop = FALSE],
                                                     artfit$data$Xobs[artfit$data$ModelSite == 1, , drop = FALSE],
-                                                    numspecies = 2,
+                                                    numspecies = 4,
                                                     theta = get_theta(artfit, type = 1))
   
   # check that many other sites have the same expected number of species
@@ -17,7 +17,7 @@ test_that("Number of species expected to be detected matches on artifical fitted
          function(idx){
            expectedspeciesnum.ModelSite.theta(artfit$data$Xocc[idx, , drop = FALSE],
                                               artfit$data$Xobs[artfit$data$ModelSite == idx, , drop = FALSE],
-                                              numspecies = 2,
+                                              numspecies = 4,
                                               theta = theta)
          })
   expect_equal(unlist(Enumspecdet_l) - Enumspecdet, rep(0, length(Enumspecdet_l)))
@@ -25,18 +25,48 @@ test_that("Number of species expected to be detected matches on artifical fitted
   # treat each model site as a repeat simulation of a ModelSite (cos all the parameters are nearly identical)
   my <- cbind(ModelSite = artfit$data$ModelSite, artfit$data$y)
   SpDetected <- my %>%
-    as_tibble() %>%
+    dplyr::as_tibble() %>%
     dplyr::group_by(ModelSite) %>%
-    summarise_all(~sum(.) > 0)
+    dplyr::summarise_all(~sum(.) > 0)
   NumSpecies <- cbind(SpDetected[, 1] , numspecies = rowSums(SpDetected[, -1]))
-  csum_numspecies <- cumsum(NumSpecies[, "numspecies"])
+  cmeannumspecies <- dplyr::cummean(NumSpecies[, "numspecies"])
   
   # check that is getting closer with increasing data
-  sim_Enumspecdet_small <- csum_numspecies[floor(nrow(artfit$data$Xocc)/4)] / floor(nrow(artfit$data$Xocc)/4)
-  sim_Enumspecdet_big <- csum_numspecies[nrow(artfit$data$Xocc)] / nrow(artfit$data$Xocc)
-  expect_gt(abs(sim_Enumspecdet_small - Enumspecdet), abs(sim_Enumspecdet_big - Enumspecdet))
+  expect_lt(abs(cmeannumspecies[length(cmeannumspecies)] - Enumspecdet),
+            abs( mean(cmeannumspecies[floor(length(cmeannumspecies) / 4) + 1:10]) - Enumspecdet))
   
   # check within standard error
   se <- sd(NumSpecies[, "numspecies"]) / sqrt(nrow(NumSpecies))
-  expect_equal(sim_Enumspecdet_big, Enumspecdet, tol = 3*se)
+  expect_equal(cmeannumspecies[length(cmeannumspecies)], Enumspecdet, tol = 3*se)
+})
+
+
+test_that("Number of detected species expected on artifical fitted model with covariates and no LV", {
+  nsites <- 2000
+  artfit <- artificial_runjags(nspecies = 5, nsites = nsites, nvisitspersite = 2, nlv = 0)
+  theta <- get_theta(artfit, type = 1)
+  # check that many other sites have the same expected number of species
+  Enumspecdet_l <- lapply(1:nsites,
+                          function(idx){
+                            expectedspeciesnum.ModelSite.theta(artfit$data$Xocc[idx, , drop = FALSE],
+                                                               artfit$data$Xobs[artfit$data$ModelSite == idx, , drop = FALSE],
+                                                               numspecies = 2,
+                                                               theta = theta)
+                          })
+
+  # treat each model site as a repeat simulation of a ModelSite (cos all the parameters are nearly identical)
+  my <- cbind(ModelSite = artfit$data$ModelSite, artfit$data$y)
+  SpDetected <- my %>%
+    dplyr::as_tibble() %>%
+    dplyr::group_by(ModelSite) %>%
+    dplyr::summarise_all(~sum(.) > 0)
+  NumSpecies <- cbind(SpDetected[, 1] , numspecies = rowSums(SpDetected[, -1]))
+  
+  # difference between expected and observed should be zero on average
+  meandiff <- dplyr::cummean(NumSpecies[, "numspecies"] - unlist(Enumspecdet_l))
+  
+  # check that is getting closer with increasing data
+  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 4) + 1:10 ])))
+  
+  # check with predicted standard error once the software is computed
 })
