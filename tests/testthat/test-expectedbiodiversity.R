@@ -48,7 +48,7 @@ test_that("Number of detected species expected on artifical fitted model with no
 
 
 test_that("Number of detected species expected on artifical fitted model with covariates and no LV", {
-  nsites <- 5000
+  nsites <- 1000
   artfit <- artificial_runjags(nspecies = 5, nsites = nsites, nvisitspersite = 2, nlv = 0)
   theta <- get_theta(artfit, type = 1)
   # check that many other sites have the same expected number of species
@@ -70,7 +70,7 @@ test_that("Number of detected species expected on artifical fitted model with co
   
   # difference between expected and observed should be zero on average
   meandiff <- dplyr::cummean(NumSpecies[, "numspecies"] - unlist(Enumspecdet_l))
-  plot(meandiff); abline(h = 0, col = "blue")
+  # plot(meandiff); abline(h = 0, col = "blue")
   
   # check that is getting closer with increasing data
   expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 4) + 1:10 ])))
