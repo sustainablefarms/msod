@@ -121,10 +121,60 @@ test_that("Correct for artifical fitted model with covariates and LVs", {
   expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 4) + 1:10 ])))
 })
 
-
+test_that("Correct for artifical fitted model marginal on LV", {
+  artfit <- artificial_runjags(nspecies = 4, nsites = 10000, nvisitspersite = 2, nlv = 4,
+                               ObsFmla = "~ 1",
+                               OccFmla = "~ 1")
+  theta <- get_theta(artfit, type = 1)
+  lvsim <- matrix(rnorm(artfit$data$nlv * 1000), ncol = artfit$data$nlv, nrow = 1000) #dummy lvsim vars
+  LVvals_fixed <- bugsvar2array(get_theta(artfit, type = 1), "LV", 1:nrow(artfit$data$Xocc), 1:artfit$data$nlv)[ , , 1]
+  EVsum_single <- expectedspeciesnum.ModelSite.theta(artfit$data$Xocc[1, , drop = FALSE],
+                                                         artfit$data$Xobs[artfit$data$ModelSite == 1, , drop = FALSE],
+                                                         numspecies = 4,
+                                                         theta = theta,
+                                                         LVvals = lvsim)
+  
+  # check that many other sites have the same expected number of species
+  Enumspecdet_l <- lapply(1:10,
+                          function(idx){
+                            expectedspeciesnum.ModelSite.theta(artfit$data$Xocc[idx, , drop = FALSE],
+                                                               artfit$data$Xobs[artfit$data$ModelSite == idx, , drop = FALSE],
+                                                               numspecies = 4,
+                                                               theta = theta,
+                                                               LVvals = lvsim)
+                          })
+  Enumspecdet <- simplify2array(Enumspecdet_l)
+  expect_equivalent(Enumspecdet["Esum_det", ], rep(EVsum_single["Esum_det"], length(Enumspecdet_l)))
+  
+  # simulate observations for each model site from iid LV values; treat each model site as a repeat simulation of a ModelSite (cos all the parameters are nearly identical)
+  my <- cbind(ModelSite = artfit$data$ModelSite, simulate_fit(artfit, esttype = 1, UseFittedLV = FALSE))
+  SpDetected <- my %>%
+    dplyr::as_tibble() %>%
+    dplyr::group_by(ModelSite) %>%
+    dplyr::summarise_all(~sum(.) > 0)
+  NumSpecies <- cbind(SpDetected[, 1] , numspecies = rowSums(SpDetected[, -1]))
+  cmeannumspecies <- dplyr::cummean(NumSpecies[, "numspecies"])
+  
+  # check within standard error
+  sd <- sqrt(EVsum_single["Vsum_det"]) / sqrt(nrow(NumSpecies))
+  expect_equivalent(cmeannumspecies[length(cmeannumspecies)], EVsum_single["Esum_det"], tol = 3*sd)
+  
+  # Expect sd to be close to theoretical sd. Hopefully within 10%
+  expect_equivalent(sd(NumSpecies[, "numspecies"]), sqrt(EVsum_single["Vsum_det"]), tol = 0.1 *sqrt(EVsum_single["Vsum_det"]))
+  
+  # simulate observations for each model site from prefixed non-symmatric LV values - should make the E and SD incorrect.
+  my <- cbind(ModelSite = artfit$data$ModelSite, simulate_fit(artfit, esttype = 1, UseFittedLV = TRUE))
+  SpDetected <- my %>%
+    dplyr::as_tibble() %>%
+    dplyr::group_by(ModelSite) %>%
+    dplyr::summarise_all(~sum(.) > 0)
+  NumSpecies <- cbind(SpDetected[, 1] , numspecies = rowSums(SpDetected[, -1]))
+  cmeannumspecies <- dplyr::cummean(NumSpecies[, "numspecies"])
+  
+  expect_gt(abs(cmeannumspecies[length(cmeannumspecies)] - EVsum_single["Esum_det"]), 3 * sd)
+})
 
 context("Number of Occupied Species Expected")
-
 
 test_that("Correct for artifical fitted model with covariates and LVs, certain detection.", {
   nsites <- 1000
