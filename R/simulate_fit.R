@@ -74,6 +74,7 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2, 
   covardfs <- simulate_covar_data(nsites, nvisitspersite)
 
   sites <- 1:nrow(covardfs$Xocc)
+  if ((nsites <= 10) && (nlv >= 2)) {stop("More than 10 sites required to use 3rd LV.")}
   LV <- scale(cbind(sites %% 2,
               sites < (nsites / 2), 
               sites < (nsites / 10),
