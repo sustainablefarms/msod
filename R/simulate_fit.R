@@ -70,7 +70,7 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2, 
                                lv.coef.min = -0.5,
                                lv.coef.max = 0.5
                                ){
-  species <- LETTERS[1:nspecies]
+  species <- make.names(rep(LETTERS, ceiling(nspecies / length(LETTERS))), unique = TRUE)[1:nspecies]
   covardfs <- simulate_covar_data(nsites, nvisitspersite)
 
   sites <- 1:nrow(covardfs$Xocc)

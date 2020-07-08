@@ -1,8 +1,8 @@
 # test expected number of species
 
-context("Number of Species Expected")
+context("Number of Detected Species Expected")
 
-test_that("Number of detected species expected on artifical fitted model with no LV and no covariates", {
+test_that("Correct for artifical fitted model with no LV and identical sites", {
   artfit <- artificial_runjags(nspecies = 4, nsites = 10000, nvisitspersite = 2, nlv = 0,
                                ObsFmla = "~ 1",
                                OccFmla = "~ 1")
@@ -47,7 +47,7 @@ test_that("Number of detected species expected on artifical fitted model with no
 })
 
 
-test_that("Number of detected species expected on artifical fitted model with covariates and no LV", {
+test_that("Correct for artifical fitted model with covariates but no LV", {
   nsites <- 1000
   artfit <- artificial_runjags(nspecies = 5, nsites = nsites, nvisitspersite = 2, nlv = 0)
   # check that many other sites have the same expected number of species
@@ -71,10 +71,50 @@ test_that("Number of detected species expected on artifical fitted model with co
   meandiff <- dplyr::cummean(NumSpecies[, "numspecies"] - Enumspecdet["Esum_det", ])
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
   expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 4) + 1:10 ])))
-  plot(meandiff); abline(h = 0, col = "blue")
+  # plot(meandiff); abline(h = 0, col = "blue")
   
   # check with predicted standard error once the software is computed
   meanvar <- cumsum(Enumspecdet["Vsum_det", ])/((1:ncol(Enumspecdet))^2)
   sd_final <- sqrt(meanvar[ncol(Enumspecdet)])
   expect_equal(meandiff[ncol(Enumspecdet)], 0, tol = 3 * sd_final)
+})
+
+test_that("Correct for artifical fitted model with covariates and LVs", {
+  nsites <- 1000
+  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 2, nlv = 2)
+  LVvals <- bugsvar2array(get_theta(artfit, type = 1), "LV", 1:nrow(artfit$data$Xocc), 1:artfit$data$nlv)[ , , 1]
+  # check that many other sites have the same expected number of species
+  Enumspecdet_l <- lapply(1:nsites,
+                          function(idx){
+                            expectedspeciesnum.ModelSite(artfit,
+                                                         artfit$data$Xocc[idx, , drop = FALSE],
+                                                         artfit$data$Xobs[artfit$data$ModelSite == idx, , drop = FALSE],
+                                                         LVvals = LVvals[idx, , drop = FALSE])
+                          })
+  Enumspecdet <- simplify2array(Enumspecdet_l)
+  
+  # treat each model site as a repeat simulation of a ModelSite (cos all the parameters are nearly identical)
+  my <- cbind(ModelSite = artfit$data$ModelSite, artfit$data$y)
+  SpDetected <- my %>%
+    dplyr::as_tibble() %>%
+    dplyr::group_by(ModelSite) %>%
+    dplyr::summarise_all(~sum(.) > 0)
+  NumSpecies <- cbind(SpDetected[, 1] , numspecies = rowSums(SpDetected[, -1]))
+  
+  meandiff <- dplyr::cummean(NumSpecies[, "numspecies"] - Enumspecdet["Esum_det", ])
+  meanvar <- cumsum(Enumspecdet["Vsum_det", ])/((1:ncol(Enumspecdet))^2)
+  plt <- cbind(diff = meandiff, var  = meanvar) %>% 
+    dplyr::as_tibble(rownames = "CumSites") %>% 
+    dplyr::mutate(CumSites = as.double(CumSites)) %>%
+    ggplot2::ggplot() +
+    ggplot2::geom_ribbon(ggplot2::aes(x= CumSites, ymin = -2 * sqrt(var), ymax = 2 * sqrt(var)), fill = "grey") +
+    ggplot2::geom_line(ggplot2::aes(x = CumSites, y = diff), col = "blue", lwd = 2)
+  print(plt)
+
+  # check with predicted standard error once the software is computed
+  sd_final <- sqrt(meanvar[ncol(Enumspecdet)])
+  expect_equal(meandiff[ncol(Enumspecdet)], 0, tol = 3 * sd_final)
+  
+  # difference between expected and observed should be zero on average; check that is getting closer with increasing data
+  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 4) + 1:10 ])))
 })
