@@ -50,7 +50,6 @@ test_that("Number of detected species expected on artifical fitted model with no
 test_that("Number of detected species expected on artifical fitted model with covariates and no LV", {
   nsites <- 1000
   artfit <- artificial_runjags(nspecies = 5, nsites = nsites, nvisitspersite = 2, nlv = 0)
-  theta <- get_theta(artfit, type = 1)
   # check that many other sites have the same expected number of species
   Enumspecdet_l <- lapply(1:nsites,
                           function(idx){
@@ -59,6 +58,7 @@ test_that("Number of detected species expected on artifical fitted model with co
                                                          artfit$data$Xobs[artfit$data$ModelSite == idx, , drop = FALSE],
                                                          LVvals = NULL)
                           })
+  Enumspecdet <- simplify2array(Enumspecdet_l)
 
   # treat each model site as a repeat simulation of a ModelSite (cos all the parameters are nearly identical)
   my <- cbind(ModelSite = artfit$data$ModelSite, artfit$data$y)
@@ -68,12 +68,13 @@ test_that("Number of detected species expected on artifical fitted model with co
     dplyr::summarise_all(~sum(.) > 0)
   NumSpecies <- cbind(SpDetected[, 1] , numspecies = rowSums(SpDetected[, -1]))
   
-  # difference between expected and observed should be zero on average
-  meandiff <- dplyr::cummean(NumSpecies[, "numspecies"] - unlist(Enumspecdet_l))
-  # plot(meandiff); abline(h = 0, col = "blue")
-  
-  # check that is getting closer with increasing data
+  meandiff <- dplyr::cummean(NumSpecies[, "numspecies"] - Enumspecdet["Esum_det", ])
+  # difference between expected and observed should be zero on average; check that is getting closer with increasing data
   expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 4) + 1:10 ])))
+  plot(meandiff); abline(h = 0, col = "blue")
   
   # check with predicted standard error once the software is computed
+  meanvar <- cumsum(Enumspecdet["Vsum_det", ])/((1:ncol(Enumspecdet))^2)
+  sd_final <- sqrt(meanvar[ncol(Enumspecdet)])
+  expect_equal(meandiff[ncol(Enumspecdet)], 0, tol = 3 * sd_final)
 })

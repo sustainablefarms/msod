@@ -24,27 +24,11 @@ expectedspeciesnum.ModelSite.theta <- function(Xocc, Xobs = NULL, numspecies, th
   ModelSite.Occ.Pred.CondLV <- poccupy.ModelSite.theta(Xocc, u.b, lv.coef, LVvals)
   
   ## Expected number of species occupying modelsite, given model and theta, and marginal across LV
-  Enumspecies_occ <- mean(Rfast::rowsums(ModelSite.Occ.Pred.CondLV))
+  EVnumspec_occ <- Erowsum_margrow(ModelSite.Occ.Pred.CondLV)
+  names(EVnumspec_occ) <- paste0(names(EVnumspec_occ), "_occ")
   if (is.null(Xobs)){
-    return(Enumspeciesocc = Enumspecies_occ)
+    return(EVnumspec_occ)
   }
-  
-  ## Expected number of species for each LV
-  Enocc_LV <- Rfast::rowsums(ModelSite.Occ.Pred.CondLV)
-  ## Variance of number of species for each LV (variance adds for species when conditioned on LV as species independent)
-  Vnocc_LV <- Rfast::rowsums(ModelSite.Occ.Pred.CondLV * (1 - ModelSite.Occ.Pred.CondLV))
-  ## second moment of number of species for each LV
-  M2nocc_LV <- Vnocc_LV + Enocc_LV^2
-  ## second moment of number of species marginal LV
-  M2nocc <- mean(M2nocc_LV)
-  ## 1st moment of number of species marginal LV
-  Enocc <- mean(Enocc_LV)
-  ##
-  Vnocc <- M2nocc - Enocc^2
-  
-  ## Variance of site occupancy. Given LV the species are independent.
-  ModelSite.OccVar.Pred.CondLV <- ModelSite.Occ.Pred.CondLV * (1 - ModelSite.Occ.Pred.CondLV)
-  Vnumspecies_occ <- Rfast::rowsums(ModelSite.OccVar.Pred.CondLV)
   
   ## Probability of Detection
   if (!is.null(Xobs)){
@@ -57,10 +41,10 @@ expectedspeciesnum.ModelSite.theta <- function(Xocc, Xobs = NULL, numspecies, th
     ## probability of no detections, marginal on occupancy
     NoDetections.Pred.marg_1 <- Rfast::eachrow(ModelSite.Occ.Pred.CondLV, NoDetections.Pred.Cond, oper = "*")  #occupied component
     NoDetections.Pred.marg_2 <- 1 - ModelSite.Occ.Pred.CondLV  #plus unoccupied component
-    NoDetections.Pred.marg <- NoDetections.Pred.marg_1 + NoDetections.Pred.marg_2
-    Enumspecies_detected <- numspecies - Rfast::rowsums(NoDetections.Pred.marg)
-    Enumspecies_detected_margLV <- mean(Enumspecies_detected)
-    return(Enumdetected = Enumspecies_detected_margLV)
+    AnyDetections.Pred.marg <- 1 - (NoDetections.Pred.marg_1 + NoDetections.Pred.marg_2)
+    EVnumspec_det <- Erowsum_margrow(AnyDetections.Pred.marg)
+    names(EVnumspec_det) <- paste0(names(EVnumspec_det), "_det")
+    return(c(EVnumspec_occ, EVnumspec_det))
   }
 }
 
@@ -96,6 +80,28 @@ poccupy.ModelSite.theta <- function(Xocc, u.b, lv.coef, LVvals){
   return(ModelSite.Occ.Pred.CondLV)
 }
 
+#' @param pmat A matrix of success probabilities for Bernoulli random variables.
+#' Each column corresponds to an independent Bernoulli random variable, each row is a different set of parameters.
+#' @return
+#' The expected sum of the Bernoulli random variables, marginal across rows, E[E[N | L]]
+#' The variance of the sum, marginal across rows E[N^2] - E[N]^2 = E[V[N | L] + E[N | L]^2] - E[E[N | L]]^2
+Erowsum_margrow <- function(pmat){
+  ## Expected sum of the Bournilli for each parameter set
+  En_row <- Rfast::rowsums(pmat)
+  ## Variance of sum for each parameter set (variance adds for species when independent)
+  Vn_row <- Rfast::rowsums(pmat * (1 - pmat))
+  ## second moment of sum for each row
+  M2n_row <- Vn_row + En_row^2
+  ## second moment of sum, marginal rows
+  M2n <- mean(M2n_row)
+  ## 1st moment of sum, marginal rows
+  En <- mean(En_row)
+  ## Variance of sum, marginal rows
+  Vn <- M2n - En^2
+  return(c(Esum = En, Vsum = Vn))
+}
+
+
 #' @describeIn expectedspeciesnum For ModelSite information, predicts both the expected number of species in occupation, and the expected number of species detected.
 #' @param LVvals A matrix of LV values. Each column corresponds to a LV. To condition on specific LV values, provide a matrix of row 1.
 #' If LVvals isn't provided then expections are marginalised across possible LVvalues through simulation
@@ -119,13 +125,23 @@ expectedspeciesnum.ModelSite <- function(fit, Xocc, Xobs, chains = NULL, LVvals 
     }
   }
   
-  Expectedspeciesnum.ModelSite.alltheta <- apply(draws, 1,
+  Moms.ModelSite.alltheta <- apply(draws, 1,
       function(theta) expectedspeciesnum.ModelSite.theta(Xocc, Xobs,
                                                          numspecies = numspecies,
                                                          theta = theta,
                                                          LVvals = LVvals))
-  # Expectedspeciesnum.ModelSite.alltheta is a matrix with two rows, each column is an entry from 'draws'.
-  # First row is expected number of species that will be detected, second row is expected number of species occupied
-  out <- mean(Expectedspeciesnum.ModelSite.alltheta)
-  return(out)
+  
+  M2n_det_theta <- Moms.ModelSite.alltheta["Vsum_det", ] + Moms.ModelSite.alltheta["Esum_det", , drop = FALSE]^2
+  M2n_det <- Rfast::rowmeans(M2n_det_theta)
+  En_det <- Rfast::rowmeans(Moms.ModelSite.alltheta["Esum_det", , drop = FALSE])
+  Vn_det <- M2n_det - En_det^2
+  
+  M2n_occ_theta <- Moms.ModelSite.alltheta["Vsum_occ", ] + Moms.ModelSite.alltheta["Esum_occ", , drop = FALSE]^2
+  M2n_occ <- Rfast::rowmeans(M2n_occ_theta)
+  En_occ <- Rfast::rowmeans(Moms.ModelSite.alltheta["Esum_occ", , drop = FALSE])
+  Vn_occ <- M2n_occ - En_occ^2
+  return(c(Esum_occ = En_occ,
+           Vsum_occ = Vn_occ,
+           Esum_det = En_det,
+           Vsum_det = Vn_det))
 }
