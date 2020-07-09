@@ -217,11 +217,13 @@ expectedspeciesnum.ModelSite <- function(fit, Xocc, Xobs, chains = NULL, LVvals 
 predsumspecies <- function(fit, usefittedLV = TRUE){
   if (usefittedLV){
     Enumspec_l <- lapply(1:nrow(fit$data$Xocc),
-                         function(idx){
-                           expectedspeciesnum.ModelSite(fit,
-                                                        fit$data$Xocc[idx, , drop = FALSE],
-                                                        fit$data$Xobs[fit$data$ModelSite == idx, , drop = FALSE],
-                                                        LVvals = LVvals[idx, , drop = FALSE])
-                         })
+                         function(idx){ expectedspeciesnum.ModelSiteIdx(fit, idx) })
+  } else {
+    lvsim <- matrix(rnorm(fit$data$nlv * 1000), ncol = fit$data$nlv, nrow = 1000)
+    Enumspec_l <- lapply(1:nrow(fit$data$Xocc),
+                         function(idx){ expectedspeciesnum.ModelSiteIdx(fit, idx) })
+    
   }
+  Enumspec <- simplify2array(Enumspec_l)
+  return(Enumspec)
 }
