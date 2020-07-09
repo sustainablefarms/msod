@@ -2,7 +2,7 @@
 #' @description The expected number of species occupying a ModelSite, or the expected number of species detected at a ModelSite.
 #' 
 #' @examples 
-#' fit <- readRDS("./tmpdata/7_2_10_clim_AnnTemp_AnnPrec.rds")
+#' fit <- readRDS("./tmpdata/7_2_9_addyear_msnm_year_time_2lv.rds")
 #' theta <- get_theta(fit, type = 1)
 #' Xocc <- fit$data$Xocc[2, , drop = FALSE]
 #' Xobs <- fit$data$Xobs[fit$data$ModelSite == 2, , drop = FALSE]
@@ -10,6 +10,8 @@
 #' lvsim <- matrix(rnorm(2 * 1), ncol = 2, nrow = 2) #dummy lvsim vars
 #' lv.coef.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$n, ncol = 2), "lv.coef")
 #' theta <- c(theta, lv.coef.bugs)
+#' 
+#' expectedspeciesnum.ModelSiteIdx(fit, 2, chains = NULL, LVvals = NULL)
 #' 
 #' @param Xocc A matrix of occupancy covariates. Must have a single row. Columns correspond to covariates.
 #' @param Xobs A matrix of detection covariates, each row is a visit. If NULL then expected number of species in occupation is returned
@@ -101,6 +103,71 @@ Erowsum_margrow <- function(pmat){
   return(c(Esum = En, Vsum = Vn))
 }
 
+# use supplied LVs for modelsite
+# use fitted LVs for modelsite for each theta
+# use simulated LVs for each theta
+
+#' @describeIn expectedspeciesnum For ModelSite information, predicts both the expected number of species in occupation, and the expected number of species detected.
+#' @param LVvals A matrix of LV values. Each column corresponds to a LV. To condition on specific LV values, provide a matrix of row 1.
+#' If LVvals isn't provided then the fitted LV values for each draw are used
+expectedspeciesnum.ModelSiteIdx <- function(fit, ModelSiteIdx, chains = NULL, LVvals = NULL){
+  Xocc <- as.matrix(fit$data$Xocc[ModelSiteIdx, , drop = FALSE])
+  stopifnot(nrow(Xocc) == 1)
+  Xobs <- as.matrix(fit$data$Xobs[fit$data$ModelSite == ModelSiteIdx, , drop = FALSE])
+  if (is.null(chains)){chains <- 1:length(fit$mcmc)}
+  draws <- do.call(rbind, fit$mcmc[chains])
+  numspecies <- fit$data$n
+  
+  if (!is.null(LVvals)) {
+    Moms.ModelSite.alltheta <- apply(draws, 1,
+                                     function(theta) expectedspeciesnum.ModelSite.theta(Xocc, Xobs,
+                                                                                        numspecies = numspecies,
+                                                                                        theta = theta,
+                                                                                        LVvals = LVvals))
+  }
+  
+  if (is.null(LVvals)) {
+    if ( (is.null(fit$data$nlv)) || (fit$data$nlv == 0)){ #make dummy lvsim and and 0 loadings to draws
+      LVvals <- matrix(rnorm(2 * 1), ncol = 2, nrow = 2) #dummy lvsim vars
+      lv.coef.bugs <- matrix2bugsvar(matrix(0, nrow = numspecies, ncol = 2), "lv.coef")
+      lv.coef.draws <- Rfast::rep_row(lv.coef.bugs, nrow(draws))
+      colnames(lv.coef.draws) <- names(lv.coef.bugs)
+      draws <- cbind(draws, lv.coef.draws)
+      Moms.ModelSite.alltheta <- apply(draws, 1,
+                                       function(theta) expectedspeciesnum.ModelSite.theta(Xocc, Xobs,
+                                                                                          numspecies = numspecies,
+                                                                                          theta = theta,
+                                                                                          LVvals = LVvals))
+    } else { #LVs are part of model!
+      Moms.ModelSite.alltheta <- apply(draws, 1,
+                                       function(theta) {
+                                         LVattheta <- bugsvar2matrix(theta, "LV", 1:nrow(fit$data$Xocc),
+                                                                     1:fit$data$nlv)[ModelSiteIdx, , drop = FALSE]
+                                         out <- expectedspeciesnum.ModelSite.theta(Xocc, Xobs,
+                                                         numspecies = numspecies,
+                                                         theta = theta,
+                                                         LVvals = LVattheta)
+                                         return(out)}
+      )
+    }
+  }
+  
+
+  
+  M2n_det_theta <- Moms.ModelSite.alltheta["Vsum_det", ] + Moms.ModelSite.alltheta["Esum_det", , drop = FALSE]^2
+  M2n_det <- Rfast::rowmeans(M2n_det_theta)
+  En_det <- Rfast::rowmeans(Moms.ModelSite.alltheta["Esum_det", , drop = FALSE])
+  Vn_det <- M2n_det - En_det^2
+  
+  M2n_occ_theta <- Moms.ModelSite.alltheta["Vsum_occ", ] + Moms.ModelSite.alltheta["Esum_occ", , drop = FALSE]^2
+  M2n_occ <- Rfast::rowmeans(M2n_occ_theta)
+  En_occ <- Rfast::rowmeans(Moms.ModelSite.alltheta["Esum_occ", , drop = FALSE])
+  Vn_occ <- M2n_occ - En_occ^2
+  return(c(Esum_occ = En_occ,
+           Vsum_occ = Vn_occ,
+           Esum_det = En_det,
+           Vsum_det = Vn_det))
+}
 
 #' @describeIn expectedspeciesnum For ModelSite information, predicts both the expected number of species in occupation, and the expected number of species detected.
 #' @param LVvals A matrix of LV values. Each column corresponds to a LV. To condition on specific LV values, provide a matrix of row 1.
@@ -144,4 +211,17 @@ expectedspeciesnum.ModelSite <- function(fit, Xocc, Xobs, chains = NULL, LVvals 
            Vsum_occ = Vn_occ,
            Esum_det = En_det,
            Vsum_det = Vn_det))
+}
+
+#' @param usefittedLV If TRUE the fitted LV variables are used, if false then 1000 LV values are simulated.
+predsumspecies <- function(fit, usefittedLV = TRUE){
+  if (usefittedLV){
+    Enumspec_l <- lapply(1:nrow(fit$data$Xocc),
+                         function(idx){
+                           expectedspeciesnum.ModelSite(fit,
+                                                        fit$data$Xocc[idx, , drop = FALSE],
+                                                        fit$data$Xobs[fit$data$ModelSite == idx, , drop = FALSE],
+                                                        LVvals = LVvals[idx, , drop = FALSE])
+                         })
+  }
 }
