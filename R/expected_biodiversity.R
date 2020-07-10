@@ -14,6 +14,10 @@
 #' expectedspeciesnum.ModelSiteIdx(fit, 2, chains = NULL, LVvals = NULL)
 #' Enumspec <- predsumspecies(fit, usefittedLV = TRUE)
 #' 
+#' 
+#' indata <- readRDS("./private/data/clean/7_2_10_input_data.rds")
+#' predsumspecies_newdata(fit, Xocc <- indata$holdoutdata$Xocc, Xobs = indata$holdoutdata$yXobs, ModelSiteVars = "ModelSiteID", draws, cl = NULL)
+#' 
 #' @param Xocc A matrix of occupancy covariates. Must have a single row. Columns correspond to covariates.
 #' @param Xobs A matrix of detection covariates, each row is a visit. If NULL then expected number of species in occupation is returned
 #' @param theta A vector of model parameters, labelled according to the BUGS labelling convention seen in runjags
@@ -115,21 +119,25 @@ Erowsum_margrow <- function(pmat){
 #' @param usefittedLV If TRUE the fitted LV variables are used, if false then 1000 LV values are simulated.
 #' @param chains The chains of MCMC to use. Default is all chains.
 #' @param cl A cluster object created by parallel::makeCluster. If NULL no cluster is used.
-predsumspecies <- function(fit, chains = NULL, usefittedLV = TRUE, cl = NULL){
+predsumspecies <- function(fit, chains = NULL, usefittedLV = TRUE, nLVsim = 1000, cl = NULL){
   fit$data <- as_list_format(fit$data)
   if (is.null(chains)){chains <- 1:length(fit$mcmc)}
   draws <- do.call(rbind, fit$mcmc[chains])
   if ( (is.null(fit$data$nlv)) || (fit$data$nlv == 0)){ #LVs not in model, add dummy variables
-    LVvals <- array(0, dim = c(nrow(fit$data$Xocc), 2, nrow(draws))) #dummy LVvals
+    LVbugs <- matrix2bugsvar(matrix(0, nrow = nrow(fit$data$Xocc), ncol = 2), "LV")
+    LVbugs.draws <- Rfast::rep_row(LVbugs, nrow(draws))
+    colnames(LVbugs.draws) <- names(LVbugs.draws)
+    
     lv.coef.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$n, ncol = 2), "lv.coef")
     lv.coef.draws <- Rfast::rep_row(lv.coef.bugs, nrow(draws))
     colnames(lv.coef.draws) <- names(lv.coef.bugs)
-    draws <- cbind(draws, lv.coef.draws)
+    draws <- cbind(draws, lv.coef.draws, LVbugs.draws)
     fit$data$nlv <- 2
     usefittedLV <- TRUE #calculations faster when not simulating 1000s of LV values, especially since they are all ignored here.
-  } else {
-    LVvals <- bugsvar2array(draws, "LV", 1:nrow(fit$data$Xocc), 1:fit$data$nlv)
-  }
+  } 
+  
+  if (usefittedLV){nLVsim <- NULL} #don't pass number of simulations if not going to use them
+  
   out <- predsumspecies_raw(
     Xocc = fit$data$Xocc,
     Xobs = fit$data$Xobs,
@@ -138,6 +146,7 @@ predsumspecies <- function(fit, chains = NULL, usefittedLV = TRUE, cl = NULL){
     nlv = fit$data$nlv,
     draws = draws,
     useLVindraws = usefittedLV,
+    nLVsim = nLVsim,
     cl = cl
   )
   return(out)
@@ -148,12 +157,13 @@ predsumspecies <- function(fit, chains = NULL, usefittedLV = TRUE, cl = NULL){
 #' @param Xobs A matrix of detection covariates. Each row is a visit. The visited ModelSite (row of Xocc) is given by ModelSite
 #' @param draws A matrix of posterior parameter draws. Each row is a draw. Column names follow the BUGS naming convention
 #' @param useLVindraws Use the LV values corresponding to each draw from within the \code{draws} object.
-#' If FALSE 1000 simulated LV values will be used for each draw.
+#' If FALSE nLVsim simulated LV values will be used for each draw.
+#' @param nLVsim The number of simulated LV values if not using fitted LV values (only applies if  useLVindraws = FALSE).
 #' @details No scaling or centering of Xocc or Xobs is performed by predsumspecies_raw
 #' @return A matrix. Each column is a model site, each row is a different summary of the number of species.
 #' There will be four rows: the expection and variance of the number of species occupied or detected.
 #' @export
-predsumspecies_raw <- function(Xocc, Xobs, ModelSite, numspecies, nlv, draws, useLVindraws = TRUE, cl = NULL){
+predsumspecies_raw <- function(Xocc, Xobs, ModelSite, numspecies, nlv, draws, useLVindraws = TRUE, nLVsim = NULL, cl = NULL){
   # prepare parameters
   nspecall <- numspecies
   ndraws <- nrow(draws)
@@ -167,12 +177,15 @@ predsumspecies_raw <- function(Xocc, Xobs, ModelSite, numspecies, nlv, draws, us
   u.b <- bugsvar2array(draws, "u.b", 1:nspecall, 1:noccvar)
   v.b <- bugsvar2array(draws, "v.b", 1:nspecall, 1:nobsvar)
   lv.coef <- bugsvar2array(draws, "lv.coef", 1:nspecall, 1:nlv)
+  
+  if (useLVindraws){stopifnot(is.null(nLVsim))}
+  if (!useLVindraws){stopifnot(is.numeric(nLVsim))}
 
   
   sitedrawidxs <- expand.grid(siteidx = 1:nsites, drawidx = 1:ndraws) 
   
   if (!useLVindraws){ # predicting as if LVs not known, so simulate from their distribution
-    lvsim <- matrix(rnorm(nlv * 1000), ncol = nlv, nrow = 1000)
+    lvsim <- matrix(rnorm(nlv * nLVsim), ncol = nlv, nrow = nLVsim)
   } else {
     LVvals <- bugsvar2array(draws, "LV", 1:nsites, 1:nlv)
   }
@@ -251,4 +264,35 @@ EVtheta2EVmarg <- function(Vsum, Esum){
     Esum = En,
     Vsum = Vn
   ))
+}
+
+predsumspecies_newdata <- function(fit, Xocc, Xobs, ModelSiteVars, chains = NULL, nLVsim = 1000, cl = NULL){
+  datalist <- prep_new_data(fit, Xocc, Xobs, ModelSite = ModelSiteVars)
+  usefittedLV <- FALSE # no LV available for new model sites
+  
+  fit$data <- as_list_format(fit$data)
+  if (is.null(chains)){chains <- 1:length(fit$mcmc)}
+  draws <- do.call(rbind, fit$mcmc[chains])
+  
+  if ( (is.null(fit$data$nlv)) || (fit$data$nlv == 0)){ #LVs not in model, add dummy variables
+    lv.coef.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$n, ncol = 2), "lv.coef")
+    lv.coef.draws <- Rfast::rep_row(lv.coef.bugs, nrow(draws))
+    colnames(lv.coef.draws) <- names(lv.coef.bugs)
+    draws <- cbind(draws, lv.coef.draws)
+    fit$data$nlv <- 2
+    nLVsim = 2 #calculations faster when not simulating 1000s of LV values, especially since they are all ignored here.
+  }
+  
+  out <- predsumspecies_raw(
+    Xocc = datalist$Xocc,
+    Xobs = datalist$Xobs,
+    ModelSite = datalist$ModelSite,
+    numspecies = fit$data$n,
+    nlv = fit$data$nlv,
+    draws = draws,
+    useLVindraws = FALSE,
+    nLVsim = nLVsim,
+    cl = cl
+  )
+  return(out)
 }

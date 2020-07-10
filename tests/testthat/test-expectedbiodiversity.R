@@ -1,6 +1,13 @@
 # test expected number of species
 
-context("Number of Detected Species Expected")
+context("Number of Detected Species Expected")# tests:
+# multiple different draws
+# model has LVs, use fitted LVs, in sample data
+# model has LVs, marginalise LVs, in sample data
+# model has no LVs, in sample data
+
+# model has LVs, marginalise LVs, holdout data
+# model has no LVs, holdout data
 
 test_that("Correct for artifical fitted model with no LV and identical sites", {
   artfit <- artificial_runjags(nspecies = 4, nsites = 10000, nvisitspersite = 2, nlv = 0,
@@ -82,10 +89,12 @@ test_that("Correct for artifical fitted model with covariates but no LV", {
 })
 
 test_that("Correct for artifical fitted model with covariates and LVs", {
-  nsites <- 10000
+  nsites <- 1000
   artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 2, nlv = 2)
+  artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
   Enumspecdet <- predsumspecies(artfit, usefittedLV = TRUE)
+  expect_equal(ncol(Enumspecdet), nsites)
   
   my <- cbind(ModelSite = artfit$data$ModelSite, artfit$data$y)
   SpDetected <- my %>%
