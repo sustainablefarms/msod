@@ -82,20 +82,11 @@ test_that("Correct for artifical fitted model with covariates but no LV", {
 })
 
 test_that("Correct for artifical fitted model with covariates and LVs", {
-  nsites <- 1000
+  nsites <- 10000
   artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 2, nlv = 2)
-  LVvals <- bugsvar2array(get_theta(artfit, type = 1), "LV", 1:nrow(artfit$data$Xocc), 1:artfit$data$nlv)[ , , 1]
-  # check that many other sites have the same expected number of species
-  Enumspecdet_l <- lapply(1:nsites,
-                          function(idx){
-                            expectedspeciesnum.ModelSite(artfit,
-                                                         artfit$data$Xocc[idx, , drop = FALSE],
-                                                         artfit$data$Xobs[artfit$data$ModelSite == idx, , drop = FALSE],
-                                                         LVvals = LVvals[idx, , drop = FALSE])
-                          })
-  Enumspecdet <- simplify2array(Enumspecdet_l)
   
-  # treat each model site as a repeat simulation of a ModelSite (cos all the parameters are nearly identical)
+  Enumspecdet <- predsumspecies(artfit, usefittedLV = TRUE)
+  
   my <- cbind(ModelSite = artfit$data$ModelSite, artfit$data$y)
   SpDetected <- my %>%
     dplyr::as_tibble() %>%

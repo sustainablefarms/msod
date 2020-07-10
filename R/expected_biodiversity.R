@@ -12,6 +12,7 @@
 #' theta <- c(theta, lv.coef.bugs)
 #' 
 #' expectedspeciesnum.ModelSiteIdx(fit, 2, chains = NULL, LVvals = NULL)
+#' Enumspec <- predsumspecies(fit, usefittedLV = TRUE)
 #' 
 #' @param Xocc A matrix of occupancy covariates. Must have a single row. Columns correspond to covariates.
 #' @param Xobs A matrix of detection covariates, each row is a visit. If NULL then expected number of species in occupation is returned
@@ -217,7 +218,9 @@ expectedspeciesnum.ModelSite <- function(fit, Xocc, Xobs, chains = NULL, LVvals 
 }
 
 #' @param usefittedLV If TRUE the fitted LV variables are used, if false then 1000 LV values are simulated.
-predsumspecies <- function(fit, chains = NULL, usefittedLV = TRUE){
+#' @param chains The chains of MCMC to use. Default is all chains.
+#' @param cl A cluster object created by parallel::makeCluster. If NULL no cluster is used.
+predsumspecies <- function(fit, chains = NULL, usefittedLV = TRUE, cl = NULL){
   fit$data <- as_list_format(fit$data)
   if (is.null(chains)){chains <- 1:length(fit$mcmc)}
   draws <- do.call(rbind, fit$mcmc[chains])
@@ -241,7 +244,7 @@ predsumspecies <- function(fit, chains = NULL, usefittedLV = TRUE){
   
 
   # for each modelsite and each draw apply the following function:
-  Enumspec <- apply(sitedrawidxs, MARGIN = 1,
+  Enumspec <- pbapply::pbapply(sitedrawidxs, MARGIN = 1,
         function(sitedrawidx){
           Xocc <- fit$data$Xocc[sitedrawidx[["siteidx"]], , drop = FALSE]
           Xobs <- fit$data$Xobs[fit$data$ModelSite == sitedrawidx[["siteidx"]], , drop = FALSE]
@@ -258,7 +261,8 @@ predsumspecies <- function(fit, chains = NULL, usefittedLV = TRUE){
                                                                    v.b = v.b_theta,
                                                                    lv.coef = lv.coef_theta,
                                                                    LVvals = LVvals_thetasite)
-        })
+        },
+        cl = cl)
   # each column of Enumspec is a model site
   # make each row a draw, each column a site.
   return(Enumspec)
