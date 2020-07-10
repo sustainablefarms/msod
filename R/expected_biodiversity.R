@@ -119,35 +119,75 @@ predsumspecies <- function(fit, chains = NULL, usefittedLV = TRUE, cl = NULL){
   fit$data <- as_list_format(fit$data)
   if (is.null(chains)){chains <- 1:length(fit$mcmc)}
   draws <- do.call(rbind, fit$mcmc[chains])
-  u.b <- bugsvar2array(draws, "u.b", 1:fit$data$n, 1:ncol(fit$data$Xocc))
-  v.b <- bugsvar2array(draws, "v.b", 1:fit$data$n, 1:ncol(fit$data$Xobs))
   if ( (is.null(fit$data$nlv)) || (fit$data$nlv == 0)){ #LVs not in model, add dummy variables
     LVvals <- array(0, dim = c(nrow(fit$data$Xocc), 2, nrow(draws))) #dummy LVvals
-    lv.coef <- array(0, dim = c(fit$data$n, 2, nrow(draws)))
+    lv.coef.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$n, ncol = 2), "lv.coef")
+    lv.coef.draws <- Rfast::rep_row(lv.coef.bugs, nrow(draws))
+    colnames(lv.coef.draws) <- names(lv.coef.bugs)
+    draws <- cbind(draws, lv.coef.draws)
     fit$data$nlv <- 2
     usefittedLV <- TRUE #calculations faster when not simulating 1000s of LV values, especially since they are all ignored here.
   } else {
-    lv.coef <- bugsvar2array(draws, "lv.coef", 1:fit$data$n, 1:fit$data$nlv)
     LVvals <- bugsvar2array(draws, "LV", 1:nrow(fit$data$Xocc), 1:fit$data$nlv)
   }
+  out <- predsumspecies_raw(
+    Xocc = fit$data$Xocc,
+    Xobs = fit$data$Xobs,
+    ModelSite = fit$data$ModelSite,
+    numspecies = fit$data$n,
+    nlv = fit$data$nlv,
+    draws = draws,
+    useLVindraws = usefittedLV,
+    cl = cl
+  )
+  return(out)
+}
+
+#' @param ModelSite is a list of integers giving the row in Xocc corresponding to a row in Xobs
+#' @param Xocc A matrix of occupancy covariates, each row is a ModelSite
+#' @param Xobs A matrix of detection covariates. Each row is a visit. The visited ModelSite (row of Xocc) is given by ModelSite
+#' @param draws A matrix of posterior parameter draws. Each row is a draw. Column names follow the BUGS naming convention
+#' @param useLVindraws Use the LV values corresponding to each draw from within the \code{draws} object.
+#' If FALSE 1000 simulated LV values will be used for each draw.
+#' @details No scaling or centering of Xocc or Xobs is performed by predsumspecies_raw
+#' @return A matrix. Each column is a model site, each row is a different summary of the number of species.
+#' There will be four rows: the expection and variance of the number of species occupied or detected.
+#' @export
+predsumspecies_raw <- function(Xocc, Xobs, ModelSite, numspecies, nlv, draws, useLVindraws = TRUE, cl = NULL){
+  # prepare parameters
+  nspecall <- numspecies
+  ndraws <- nrow(draws)
+  nsites <- nrow(Xocc)
+  noccvar <- ncol(Xocc)
+  nobsvar <- ncol(Xobs)
+  ModelSiteIdxs <- ModelSite
+  stopifnot(length(ModelSiteIdxs) == nrow(Xobs))
+  stopifnot(all(ModelSiteIdxs %in% 1:nsites))
+  if (!all(1:nsites %in% ModelSiteIdxs)){warning("Some ModelSite do not have observation covariate information.")}
+  u.b <- bugsvar2array(draws, "u.b", 1:nspecall, 1:noccvar)
+  v.b <- bugsvar2array(draws, "v.b", 1:nspecall, 1:nobsvar)
+  lv.coef <- bugsvar2array(draws, "lv.coef", 1:nspecall, 1:nlv)
+
   
-  sitedrawidxs <- expand.grid(siteidx = 1:nrow(fit$data$Xocc), drawidx = 1:nrow(draws)) 
+  sitedrawidxs <- expand.grid(siteidx = 1:nsites, drawidx = 1:ndraws) 
   
-  if (!usefittedLV){ # predicting as if LVs not known, so simulate from their distribution
-    lvsim <- matrix(rnorm(fit$data$nlv * 1000), ncol = fit$data$nlv, nrow = 1000)
+  if (!useLVindraws){ # predicting as if LVs not known, so simulate from their distribution
+    lvsim <- matrix(rnorm(nlv * 1000), ncol = nlv, nrow = 1000)
+  } else {
+    LVvals <- bugsvar2array(draws, "LV", 1:nsites, 1:nlv)
   }
   
 
   # for each modelsite and each draw apply the following function:
   Enumspec <- pbapply::pbapply(sitedrawidxs, MARGIN = 1,
         function(sitedrawidx){
-          Xocc <- fit$data$Xocc[sitedrawidx[["siteidx"]], , drop = FALSE]
-          Xobs <- fit$data$Xobs[fit$data$ModelSite == sitedrawidx[["siteidx"]], , drop = FALSE]
-          u.b_theta <- matrix(u.b[,, sitedrawidx[["drawidx"]] ], nrow = fit$data$n, ncol = ncol(Xocc))
-          v.b_theta <- matrix(v.b[,, sitedrawidx[["drawidx"]] ], nrow = fit$data$n, ncol = ncol(Xobs))
-          lv.coef_theta <- matrix(lv.coef[,, sitedrawidx[["drawidx"]] ], nrow = fit$data$n, ncol = fit$data$nlv)
-          if (usefittedLV){
-            LVvals_thetasite <- matrix(LVvals[sitedrawidx[["siteidx"]], , sitedrawidx[["drawidx"]], drop = FALSE], nrow = 1, ncol = ncol(lv.coef_theta))
+          Xocc <- Xocc[sitedrawidx[["siteidx"]], , drop = FALSE]
+          Xobs <- Xobs[ModelSiteIdxs == sitedrawidx[["siteidx"]], , drop = FALSE]
+          u.b_theta <- matrix(u.b[,, sitedrawidx[["drawidx"]] ], nrow = nspecall, ncol = noccvar)
+          v.b_theta <- matrix(v.b[,, sitedrawidx[["drawidx"]] ], nrow = nspecall, ncol = nobsvar)
+          lv.coef_theta <- matrix(lv.coef[,, sitedrawidx[["drawidx"]] ], nrow = nspecall, ncol = nlv)
+          if (useLVindraws){
+            LVvals_thetasite <- matrix(LVvals[sitedrawidx[["siteidx"]], , sitedrawidx[["drawidx"]], drop = FALSE], nrow = 1, ncol = nlv)
           } else {
             LVvals_thetasite <- lvsim
           }
@@ -162,19 +202,19 @@ predsumspecies <- function(fit, chains = NULL, usefittedLV = TRUE, cl = NULL){
   Enumspec <- rbind(Enumspec, t(sitedrawidxs))
   
   ## arrange Enumspec in a 3 dimensional array using existing arrangement of Enumspec
-  a <- array(Enumspec, dim = c(nrow(Enumspec), nrow(fit$data$Xocc), nrow(draws)),
+  a <- array(Enumspec, dim = c(nrow(Enumspec), nsites, ndraws),
              dimnames = list(
                Summaries = rownames(Enumspec),
-               ModelSites = 1:nrow(fit$data$Xocc),
-               Draws = 1:nrow(draws)
+               ModelSites = 1:nsites,
+               Draws = 1:ndraws
              ))
   Enumspec_drawsitesumm <- aperm(a, perm = c("Draws", "ModelSites", "Summaries")) # arrange Enumspec in a 3 dimensional array: rows = draws, cols = site, depth = summaries
   
   #following checks that conversion is correct
   stopifnot(all(Rfast::eachrow(Enumspec_drawsitesumm[ , , "siteidx", drop = TRUE],
-                               y = as.numeric(1:nrow(fit$data$Xocc)), oper = "==")))
+                               y = as.numeric(1:nsites), oper = "==")))
   stopifnot(sum(Rfast::eachcol.apply(Enumspec_drawsitesumm[ , , "drawidx", drop = TRUE],
-                               y = as.numeric(1:nrow(draws)), oper = "-")) == 0)
+                               y = as.numeric(1:ndraws), oper = "-")) == 0)
   
 
   # convert predictions for each site and theta into predictions for each site, marginal across theta distribution
@@ -183,10 +223,10 @@ predsumspecies <- function(fit, chains = NULL, usefittedLV = TRUE, cl = NULL){
   M2n_occ_theta <- Enumspec_drawsitesumm[, ,"Vsum_occ", drop = FALSE] + Enumspec_drawsitesumm[, , "Esum_occ", drop = FALSE]^2
   
   # marginal across draw moments
-  M2n_det <- Rfast::colmeans(matrix(M2n_det_theta, nrow = nrow(draws), ncol = nrow(fit$data$Xocc)))
-  M2n_occ <- Rfast::colmeans(matrix(M2n_occ_theta, nrow = nrow(draws), ncol = nrow(fit$data$Xocc)))
-  En_det <- Rfast::colmeans(matrix(Enumspec_drawsitesumm[, , "Esum_det", drop = FALSE], , nrow = nrow(draws), ncol = nrow(fit$data$Xocc)))
-  En_occ <- Rfast::colmeans(matrix(Enumspec_drawsitesumm[, , "Esum_occ", drop = FALSE], , nrow = nrow(draws), ncol = nrow(fit$data$Xocc)))
+  M2n_det <- Rfast::colmeans(matrix(M2n_det_theta, nrow = ndraws, ncol = nsites))
+  M2n_occ <- Rfast::colmeans(matrix(M2n_occ_theta, nrow = ndraws, ncol = nsites))
+  En_det <- Rfast::colmeans(matrix(Enumspec_drawsitesumm[, , "Esum_det", drop = FALSE], nrow = ndraws, ncol = nsites))
+  En_occ <- Rfast::colmeans(matrix(Enumspec_drawsitesumm[, , "Esum_occ", drop = FALSE], nrow = ndraws, ncol = nsites))
   Vn_det <- M2n_det - En_det^2
   Vn_occ <- M2n_occ - En_occ^2
   
