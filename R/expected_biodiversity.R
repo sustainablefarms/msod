@@ -17,12 +17,16 @@
 #' @param Xobs A matrix of detection covariates, each row is a visit. If NULL then expected number of species in occupation is returned
 #' @param theta A vector of model parameters, labelled according to the BUGS labelling convention seen in runjags
 #' @export
-expectedspeciesnum.ModelSite.theta <- function(Xocc, Xobs = NULL, numspecies, theta, LVvals){
+expectedspeciesnum.ModelSite.theta <- function(Xocc, Xobs = NULL, u.b, v.b = NULL, lv.coef = NULL, LVvals = NULL){
   ## Probability of Site Occupancy
   stopifnot(nrow(Xocc) == 1)
+  if (is.null(Xobs)) {stopifnot(is.null(v.b))}
   Xocc <- as.matrix(Xocc)
-  u.b <- bugsvar2array(theta, "u.b", 1:numspecies, 1:ncol(Xocc))[,,1]  # rows are species, columns are occupancy covariates
-  lv.coef <- bugsvar2array(theta, "lv.coef", 1:numspecies, 1:ncol(LVvals))[,,1] # rows are species, columns are lv
+  if (is.null(lv.coef)){ # create dummy LV  
+    stopifnot(is.null(LVvals))
+    lv.coef <- matrix(0, rows = nrow(u.b), ncol = 2)
+    LVvals <- matrix(0, rows = 2, ncol = 2)
+    } # dummy LV
   ModelSite.Occ.Pred.CondLV <- poccupy.ModelSite.theta(Xocc, u.b, lv.coef, LVvals)
   
   ## Expected number of species occupying modelsite, given model and theta, and marginal across LV
@@ -34,7 +38,6 @@ expectedspeciesnum.ModelSite.theta <- function(Xocc, Xobs = NULL, numspecies, th
   
   ## Probability of Detection
   if (!is.null(Xobs)){
-    v.b <- bugsvar2array(theta, "v.b", 1:numspecies, 1:ncol(Xobs))[,,1]  # rows are species, columns are observation covariates
     Detection.Pred.Cond <- pdetection_occupied.ModelSite.theta(Xobs, v.b) # probability conditional on occupied
     # probability of no detections, given occupied
     NoDetections.Pred.Cond <- Rfast::colprods(1 - Detection.Pred.Cond)
@@ -214,16 +217,49 @@ expectedspeciesnum.ModelSite <- function(fit, Xocc, Xobs, chains = NULL, LVvals 
 }
 
 #' @param usefittedLV If TRUE the fitted LV variables are used, if false then 1000 LV values are simulated.
-predsumspecies <- function(fit, usefittedLV = TRUE){
-  if (usefittedLV){
-    Enumspec_l <- lapply(1:nrow(fit$data$Xocc),
-                         function(idx){ expectedspeciesnum.ModelSiteIdx(fit, idx) })
+predsumspecies <- function(fit, chains = NULL, usefittedLV = TRUE){
+  fit$data <- as_list_format(fit$data)
+  if (is.null(chains)){chains <- 1:length(fit$mcmc)}
+  draws <- do.call(rbind, fit$mcmc[chains])
+  u.b <- bugsvar2array(draws, "u.b", 1:fit$data$n, 1:ncol(fit$data$Xocc))
+  v.b <- bugsvar2array(draws, "v.b", 1:fit$data$n, 1:ncol(fit$data$Xobs))
+  if ( (is.null(fit$data$nlv)) || (fit$data$nlv == 0)){ #LVs not in model, add dummy variables
+    LVvals <- array(0, dim = c(nrow(fit$data$Xocc), 2, nrow(draws))) #dummy LVvals
+    lv.coef <- array(0, dim = c(fit$data$n, 2, nrow(draws)))
+    fit$data$nlv <- 2
+    usefittedLV <- TRUE #calculations faster when not simulating 1000s of LV values, especially since they are all ignored here.
   } else {
-    lvsim <- matrix(rnorm(fit$data$nlv * 1000), ncol = fit$data$nlv, nrow = 1000)
-    Enumspec_l <- lapply(1:nrow(fit$data$Xocc),
-                         function(idx){ expectedspeciesnum.ModelSiteIdx(fit, idx) })
-    
+    lv.coef <- bugsvar2array(draws, "lv.coef", 1:fit$data$n, 1:fit$data$nlv)
+    LVvals <- bugsvar2array(draws, "LV", 1:nrow(fit$data$Xocc), 1:fit$data$nlv)
   }
-  Enumspec <- simplify2array(Enumspec_l)
+  
+  sitedrawidxs <- expand.grid(siteidx = 1:nrow(fit$data$Xocc), drawidx = 1:nrow(draws)) 
+  
+  if (!usefittedLV){ # predicting as if LVs not known, so simulate from their distribution
+    lvsim <- matrix(rnorm(fit$data$nlv * 1000), ncol = fit$data$nlv, nrow = 1000)
+  }
+  
+
+  # for each modelsite and each draw apply the following function:
+  Enumspec <- apply(sitedrawidxs, MARGIN = 1,
+        function(sitedrawidx){
+          Xocc <- fit$data$Xocc[sitedrawidx[["siteidx"]], , drop = FALSE]
+          Xobs <- fit$data$Xobs[fit$data$ModelSite == sitedrawidx[["siteidx"]], , drop = FALSE]
+          u.b_theta <- matrix(u.b[,, sitedrawidx[["drawidx"]] ], nrow = fit$data$n, ncol = ncol(Xocc))
+          v.b_theta <- matrix(v.b[,, sitedrawidx[["drawidx"]] ], nrow = fit$data$n, ncol = ncol(Xobs))
+          lv.coef_theta <- matrix(lv.coef[,, sitedrawidx[["drawidx"]] ], nrow = fit$data$n, ncol = fit$data$nlv)
+          if (usefittedLV){
+            LVvals_thetasite <- matrix(LVvals[sitedrawidx[["siteidx"]], , sitedrawidx[["drawidx"]], drop = FALSE], nrow = 1, ncol = ncol(lv.coef_theta))
+          } else {
+            LVvals_thetasite <- lvsim
+          }
+          Enumspec_sitetheta <- expectedspeciesnum.ModelSite.theta(Xocc = Xocc, Xobs = Xobs,
+                                                                   u.b = u.b_theta,
+                                                                   v.b = v.b_theta,
+                                                                   lv.coef = lv.coef_theta,
+                                                                   LVvals = LVvals_thetasite)
+        })
+  # each column of Enumspec is a model site
+  # make each row a draw, each column a site.
   return(Enumspec)
 }
