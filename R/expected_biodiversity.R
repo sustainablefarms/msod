@@ -263,7 +263,42 @@ predsumspecies <- function(fit, chains = NULL, usefittedLV = TRUE, cl = NULL){
                                                                    LVvals = LVvals_thetasite)
         },
         cl = cl)
-  # each column of Enumspec is a model site
-  # make each row a draw, each column a site.
-  return(Enumspec)
+  # each column of Enumspec is row of sitedrawidxs
+  Enumspec <- rbind(Enumspec, t(sitedrawidxs))
+  
+  ## arrange Enumspec in a 3 dimensional array using existing arrangement of Enumspec
+  a <- array(Enumspec, dim = c(nrow(Enumspec), nrow(fit$data$Xocc), nrow(draws)),
+             dimnames = list(
+               Summaries = rownames(Enumspec),
+               ModelSites = 1:nrow(fit$data$Xocc),
+               Draws = 1:nrow(draws)
+             ))
+  Enumspec_drawsitesumm <- aperm(a, perm = c("Draws", "ModelSites", "Summaries")) # arrange Enumspec in a 3 dimensional array: rows = draws, cols = site, depth = summaries
+  
+  #following checks that conversion is correct
+  stopifnot(all(Rfast::eachrow(Enumspec_drawsitesumm[ , , "siteidx", drop = TRUE],
+                               y = as.numeric(1:nrow(fit$data$Xocc)), oper = "==")))
+  stopifnot(sum(Rfast::eachcol.apply(Enumspec_drawsitesumm[ , , "drawidx", drop = TRUE],
+                               y = as.numeric(1:nrow(draws)), oper = "-")) == 0)
+  
+
+  # convert predictions for each site and theta into predictions for each site, marginal across theta distribution
+  # per draw the 2nd moments
+  M2n_det_theta <- Enumspec_drawsitesumm[, ,"Vsum_det", drop = FALSE] + Enumspec_drawsitesumm[, , "Esum_det", drop = FALSE]^2
+  M2n_occ_theta <- Enumspec_drawsitesumm[, ,"Vsum_occ", drop = FALSE] + Enumspec_drawsitesumm[, , "Esum_occ", drop = FALSE]^2
+  
+  # marginal across draw moments
+  M2n_det <- Rfast::colmeans(matrix(M2n_det_theta, nrow = nrow(draws), ncol = nrow(fit$data$Xocc)))
+  M2n_occ <- Rfast::colmeans(matrix(M2n_occ_theta, nrow = nrow(draws), ncol = nrow(fit$data$Xocc)))
+  En_det <- Rfast::colmeans(matrix(Enumspec_drawsitesumm[, , "Esum_det", drop = FALSE], , nrow = nrow(draws), ncol = nrow(fit$data$Xocc)))
+  En_occ <- Rfast::colmeans(matrix(Enumspec_drawsitesumm[, , "Esum_occ", drop = FALSE], , nrow = nrow(draws), ncol = nrow(fit$data$Xocc)))
+  Vn_det <- M2n_det - En_det^2
+  Vn_occ <- M2n_occ - En_occ^2
+  
+  out <- rbind(
+   Esum_occ = En_occ,
+   Vsum_occ = Vn_occ,
+   Esum_det = En_det,
+   Vsum_det = Vn_det)
+  return(out)
 }
