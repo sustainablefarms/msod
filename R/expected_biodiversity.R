@@ -126,7 +126,7 @@ predsumspecies <- function(fit, chains = NULL, usefittedLV = TRUE, nLVsim = 1000
   if ( (is.null(fit$data$nlv)) || (fit$data$nlv == 0)){ #LVs not in model, add dummy variables
     LVbugs <- matrix2bugsvar(matrix(0, nrow = nrow(fit$data$Xocc), ncol = 2), "LV")
     LVbugs.draws <- Rfast::rep_row(LVbugs, nrow(draws))
-    colnames(LVbugs.draws) <- names(LVbugs.draws)
+    colnames(LVbugs.draws) <- names(LVbugs)
     
     lv.coef.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$n, ncol = 2), "lv.coef")
     lv.coef.draws <- Rfast::rep_row(lv.coef.bugs, nrow(draws))
@@ -295,4 +295,21 @@ predsumspecies_newdata <- function(fit, Xocc, Xobs, ModelSiteVars, chains = NULL
     cl = cl
   )
   return(out)
+}
+
+#' @param y A matrix of species *observations* with each row a visit and each column a species. Entries must be either 0 or 1.
+#' @param ModelSite The list of ModelSite indexes corresponding to each row in y
+#' @return A vector of the number of species detected at each ModelSite. Names give the ModelSite index. 
+detectednumspec <- function(y, ModelSite){
+  stopifnot(length(ModelSite) == nrow(y))
+  stopifnot(all(y %in% c(1, 0)))
+  
+  my <- cbind(ModelSite = ModelSite, y)
+  SpDetected <- my %>%
+    dplyr::as_tibble() %>%
+    dplyr::group_by(ModelSite) %>%
+    dplyr::summarise_all(~sum(.) > 0)
+  NumSpecies <- as.vector(rowSums(SpDetected[, -1]))
+  names(NumSpecies) <- SpDetected[, 1, drop = TRUE]
+  return(NumSpecies)
 }

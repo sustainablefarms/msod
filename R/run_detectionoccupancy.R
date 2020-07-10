@@ -166,9 +166,8 @@ prep.data <- function(Xocc, yXobs, ModelSite, species, nlv, XoccProcess, XobsPro
   # check data inputs
   stopifnot(all(ModelSite %in% colnames(Xocc)))
   stopifnot(all(ModelSite %in% colnames(yXobs)))
-  stopifnot(all(species %in% colnames(yXobs)))
   stopifnot(anyDuplicated(Xocc[, ModelSite]) == 0) #model site uniquely specified
-  stopifnot(all(as.matrix(yXobs[, species]) %in% c(1, 0)))
+  if (all(species %in% colnames(yXobs))) {stopifnot(all(as.matrix(yXobs[, species]) %in% c(1, 0)))}
   
   # create model site indexes
   # if (ModelSiteID %in% c(names(yXobs), Xocc)){warning("Overwriting ModelSiteID column in input data.")}
@@ -183,7 +182,11 @@ prep.data <- function(Xocc, yXobs, ModelSite, species, nlv, XoccProcess, XobsPro
   
   n = length(species) #number of species
   J <- nrow(XoccDesign)  #number of unique sites should also be max(occ_covariates$SiteID)
-  y <- as.matrix(yXobs[, species])
+  if (all(species %in% colnames(yXobs))) { #if this is true the y is part of yXobs
+    y <- as.matrix(yXobs[, species])
+  } else { #if not then situation of prepping data of new ModelSites
+    y <- NULL
+  }
   ModelSite <- visitedModelSite
   data.list = list(n=n, J=J, y=y,
                   ModelSite = ModelSite, #a list of the site visited at each visit
@@ -193,7 +196,7 @@ prep.data <- function(Xocc, yXobs, ModelSite, species, nlv, XoccProcess, XobsPro
 }
 
 #' @describeIn run.detectionoccupancy A short function that applies the prep.data function to new data, given an object created by run.detectionoccupancy
-#' Xocc, yXobs, ModelSite must follow some rules as for run.detectionoccupancy
+#' Xocc, yXobs, ModelSite must follow some rules as for run.detectionoccupancy, except yXobs may omit the species detections
 #' @export
 prep_new_data <- function(fit, Xocc, yXobs, ModelSite){
   data.list <- prep.data(Xocc, yXobs, ModelSite, fit$species, fit$nlv, fit$XoccProcess, fit$XobsProcess)
