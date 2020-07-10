@@ -218,22 +218,37 @@ predsumspecies_raw <- function(Xocc, Xobs, ModelSite, numspecies, nlv, draws, us
   
 
   # convert predictions for each site and theta into predictions for each site, marginal across theta distribution
-  # per draw the 2nd moments
-  M2n_det_theta <- Enumspec_drawsitesumm[, ,"Vsum_det", drop = FALSE] + Enumspec_drawsitesumm[, , "Esum_det", drop = FALSE]^2
-  M2n_occ_theta <- Enumspec_drawsitesumm[, ,"Vsum_occ", drop = FALSE] + Enumspec_drawsitesumm[, , "Esum_occ", drop = FALSE]^2
-  
-  # marginal across draw moments
-  M2n_det <- Rfast::colmeans(matrix(M2n_det_theta, nrow = ndraws, ncol = nsites))
-  M2n_occ <- Rfast::colmeans(matrix(M2n_occ_theta, nrow = ndraws, ncol = nsites))
-  En_det <- Rfast::colmeans(matrix(Enumspec_drawsitesumm[, , "Esum_det", drop = FALSE], nrow = ndraws, ncol = nsites))
-  En_occ <- Rfast::colmeans(matrix(Enumspec_drawsitesumm[, , "Esum_occ", drop = FALSE], nrow = ndraws, ncol = nsites))
-  Vn_det <- M2n_det - En_det^2
-  Vn_occ <- M2n_occ - En_occ^2
+  out_det <- EVtheta2EVmarg(
+    Vsum = matrix(Enumspec_drawsitesumm[, ,"Vsum_det", drop = FALSE],  nrow = ndraws, ncol = nsites),
+    Esum = matrix(Enumspec_drawsitesumm[, , "Esum_det", drop = FALSE], nrow = ndraws, ncol = nsites)
+  )
+  rownames(out_det) <- paste0(rownames(out_det), "_det")
+  out_occ <- EVtheta2EVmarg(
+    Vsum = matrix(Enumspec_drawsitesumm[, ,"Vsum_occ", drop = FALSE],  nrow = ndraws, ncol = nsites),
+    Esum = matrix(Enumspec_drawsitesumm[, , "Esum_occ", drop = FALSE], nrow = ndraws, ncol = nsites)
+  )
+  rownames(out_occ) <- paste0(rownames(out_occ), "_occ")
   
   out <- rbind(
-   Esum_occ = En_occ,
-   Vsum_occ = Vn_occ,
-   Esum_det = En_det,
-   Vsum_det = Vn_det)
+   occ = out_occ,
+   det = out_det)
   return(out)
+}
+
+#' @param Vsum A matrix of variance of sum of species. Each row corresponds to a different theta. Each column a ModelSite.
+#' @param Esum A matrix of expected sum of species. Each row corresponds to a different theta. Each column a ModelSite.
+#' @return The expectation and variance of the sum of species marginal across theta (across the supplied rows)
+EVtheta2EVmarg <- function(Vsum, Esum){
+  stopifnot(all(dim(Vsum) == dim(Esum)))
+  # per draw the 2nd moments
+  M2n_theta <- Vsum + Esum^2
+  
+  # marginal across draw moments
+  M2n <- Rfast::colmeans(M2n_theta)
+  En <- Rfast::colmeans(Esum)
+  Vn <- M2n - En^2
+  return(rbind(
+    Esum = En,
+    Vsum = Vn
+  ))
 }
