@@ -40,21 +40,6 @@ varname2type <- function(varnames){
 ```
 
 ## Data Import
-
-```{r importdata, echo = FALSE, include = FALSE}
-inputdata <- readRDS("./private/data/clean/7_2_10_input_data.rds")
-# the following whittle out the covariates that we are interested in the residual diagnostics
-detcovar <- model.matrix(~ ModelSiteID + MeanWind +  MeanTime + MeanClouds + MeanTemp + ObserverId - 1,
-             data = inputdata$insampledata$yXobs) %>%
-  as_tibble() %>% rename(ModelSite = ModelSiteID)
-occcovar <- model.matrix(~ SurveyYear + StudyId + ModelSiteID 
-                         + AnnMeanTemp + AnnPrec + AnnTempRange + PrecSeasonality +
-                         longitude + latitude +
-                         MinTColdMonth + PrecColdQ +
-                         MaxTWarmMonth + PrecWarmQ  - 1,
-             data = inputdata$insampledata$Xocc) %>%
-  as_tibble() %>% rename(ModelSite = ModelSiteID)
-```
 ```{r importmodelfits}
 modelspecs <- readRDS("./tmpdata/7_2_10_modelspecs.rds")
 filenames <- lapply(modelspecs, function(x) x$filename)
@@ -67,6 +52,20 @@ stopifnot(all(a))
 fittedmods <- lapply(filenames, function(x) {
   fit <- readRDS(x)
   return(fit)})
+```
+
+```{r importdata, echo = FALSE, include = FALSE}
+inputdata <- readRDS("./private/data/clean/7_2_10_input_data.rds")
+# the following whittle out the covariates that we are interested in the residual diagnostics
+detcovar <- model.matrix(~ ModelSiteID + MeanWind +  MeanTime + MeanClouds + MeanTemp + ObserverId - 1,
+             data = inputdata$insampledata$yXobs) %>%
+  as_tibble() %>% rename(ModelSite = ModelSiteID)
+occcovar <- model.matrix(as.formula(modelspecs[[3]]$OccFmla),
+             data = inputdata$insampledata$Xocc) %>%
+  as_tibble() %>%
+  mutate(ModelSite = inputdata$insampledata$Xocc$ModelSiteID,
+         StudyId = inputdata$insampledata$Xocc$StudyId) %>%
+  dplyr::select(-`(Intercept)`)
 ```
 
 ```{r import_lpd}
@@ -131,7 +130,7 @@ The Geweke values are Z-scores (technically t-distributed in this situation?).
 95% of (independent) Geweke values should be within 2 standard deviations (i.e. just 2 for Z-scores) of the mean.
 The below assumes the Geweke value for parameter is also *independent*, even in the situation of converged MCMC.
 
-```{r gewekesumm}
+```{r gewekesumm, fig.width = 4, fig.height = 8}
 gwk <- bind_rows(lapply(fittedmods, 
        function(x) enframe(geweke.diag(x, frac1=0.1, frac2=0.5)$z, name = "varname")),
        .id = "Model")
@@ -377,7 +376,8 @@ lpds_df_diagnose %>%
   ggplot() +
   facet_wrap(vars(Covariate), scales = "free") +
   theme(strip.text.y.right = element_text(angle = 0)) +
-  geom_point(aes(x = CovariateValue, y = factor(ModelSite), col = model, shape = factor(ModelSite))) +
+  geom_point(aes(x = CovariateValue, y = factor(ModelSite), col = model),
+             shape = "+", position = "jitter") +
   scale_x_continuous(trans = scales::modulus_trans(0))
 ```
 
@@ -504,7 +504,7 @@ rm(resid_occ_l)
 ```
 
 ```{r residocc_plots_manymodels, fig.width = 14}
-seeds = c(321, 120)
+seeds = c(321, 120, 333)
 df_l <- lapply(seeds, function(x) {
   resid_occ_l <- lapply(fittedmods, function(fit) {
     resids <- ds_occupancy_residuals.fit(fit, type = "median", seed = x, conditionalLV = (!is.null(fit$nlv) && fit$nlv > 0))
@@ -570,7 +570,7 @@ rm(df)
 
 ## Detection Residuals
 ```{r residdet_plots_manymodels}
-seeds = c(321, 120)
+seeds = c(321, 120, 333)
 df_l <- lapply(seeds, function(x) {
   resid_det_l <- lapply(fittedmods, function(fit) {
     resids <- ds_detection_residuals.fit(fit, type = "median", seed = x)
