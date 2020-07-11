@@ -42,24 +42,22 @@ varname2type <- function(varnames){
 ## Data Import
 
 ```{r importdata, echo = FALSE, include = FALSE}
-inputdata <- readRDS("./private/data/clean/7_2_4_input_data.rds")
+inputdata <- readRDS("./private/data/clean/7_2_10_input_data.rds")
 # the following whittle out the covariates that we are interested in the residual diagnostics
 detcovar <- model.matrix(~ ModelSiteID + MeanWind +  MeanTime + MeanClouds + MeanTemp + ObserverId - 1,
              data = inputdata$insampledata$yXobs) %>%
   as_tibble() %>% rename(ModelSite = ModelSiteID)
-occcovar <- model.matrix(~ SurveyYear + StudyId + ModelSiteID + os + ms * NMdetected + gc - 1,
+occcovar <- model.matrix(~ SurveyYear + StudyId + ModelSiteID 
+                         + AnnMeanTemp + AnnPrec + AnnTempRange + PrecSeasonality +
+                         longitude + latitude +
+                         MinTColdMonth + PrecColdQ +
+                         MaxTWarmMonth + PrecWarmQ  - 1,
              data = inputdata$insampledata$Xocc) %>%
   as_tibble() %>% rename(ModelSite = ModelSiteID)
 ```
 ```{r importmodelfits}
-filenames <- list(
-  os = "./tmpdata/grnd_os_nolv.rds",
-  ms = "./tmpdata/grnd_os_ms_nolv.rds",
-  os_gc = "./tmpdata/grnd_os_gc_nolv.rds",
-  nm = "./tmpdata/grnd_nm_nolv.rds",
-  msnm = "./tmpdata/grnd_msnm_nolv.rds",
-  pars = "./tmpdata/grnd_pars_nolv.rds"
-)
+modelspecs <- readRDS("./tmpdata/7_2_10_modelspecs.rds")
+filenames <- lapply(modelspecs, function(x) x$filename)
 
 # test loading models
 a <- vapply(filenames, file.exists, FUN.VALUE = FALSE)
@@ -72,8 +70,8 @@ fittedmods <- lapply(filenames, function(x) {
 ```
 
 ```{r import_lpd}
-lpds_l <- readRDS("./tmpdata/7_2_4_lpds.rds")
-waics_l <- readRDS("./tmpdata/7_2_4_waics.rds")
+lpds_l <- readRDS("./tmpdata/7_2_10_lpds.rds")
+waics_l <- readRDS("./tmpdata/7_2_10_waics.rds")
 ```
 
 ```{r cleanersummaries}
@@ -176,7 +174,7 @@ psrfs_df <- bind_rows(psrfs, .id = "Model")
 psrfs_df %>%
   mutate(type = varname2type(varname)) %>%
   ggplot() +
-  facet_grid(rows = vars(type), cols = vars(Model), scales = "free_y") +
+  facet_grid(rows = vars(type), cols = vars(Model), scales = "free") +
   geom_point(aes(y = varname, x = value) ) +
   geom_vline(xintercept = 1.1, col = "blue", lty = "dashed") +
   scale_y_discrete(name = "Variable Name") +
@@ -189,7 +187,7 @@ psrfs_df %>%
 *Summarise behaviour of the MCMC chains*
 
 ## Compare Covariate Loadings
-```{r occupancycovariateloadings}
+```{r occupancycovariateloadings, fig.width = 15, fig.height = 12}
 cleanersummaries %>%
   dplyr::filter(varname == "u.b") %>%
   ggplot() +
@@ -271,7 +269,7 @@ Below is the lpd computed for each ModelSite for both the InSample and out of sa
 insamplelpds_df <- do.call(cbind, lapply(waics_l, function(x) x$waic$pointwise[, "elpd_waic"])) %>%
   as_tibble() %>% mutate(InSample = TRUE)
 
-df <- lpds_df %>% as_tibble() %>% mutate(InSample = FALSE)
+df <- lpds_df %>% as_tibble() %>% mutate(InSample = FALSE) # %>% tidyr::pivot_longer(-InSample, names_to = "model", values_to = "site_lpd")
 
 df <- bind_rows(insamplelpds_df, df)
 
@@ -377,9 +375,9 @@ lpds_df_diagnose %>%
   dplyr::select(-elpd_waic, -p_waic, -elpd_loo, -n_eff) %>%
   tidyr::pivot_longer(c(-model, -ModelSite, -p_loo, -pareto_k, -is_ok), names_to = "Covariate", values_to = "CovariateValue") %>%
   ggplot() +
-  # facet_grid(rows = vars(Covariate), scales = "free") +
+  facet_wrap(vars(Covariate), scales = "free") +
   theme(strip.text.y.right = element_text(angle = 0)) +
-  geom_point(aes(x = CovariateValue, y = Covariate, col = model, shape = factor(ModelSite))) +
+  geom_point(aes(x = CovariateValue, y = factor(ModelSite), col = model, shape = factor(ModelSite))) +
   scale_x_continuous(trans = scales::modulus_trans(0))
 ```
 
@@ -396,9 +394,9 @@ lpdholdout_compare <- function(lpds_modsbycolumn){
     summarise_all(sum)
   sediff <- lpds_diff_df %>%
     summarise_all(~sd(.) * sqrt(nrow(lpds_diff_df)))
-  holdoutcompare_summary <- bind_cols(holdout_diff = t(diff), se_diff = t(sediff)) %>%
+  holdoutcompare_summary <- bind_cols(elpd_diff = t(diff), se_diff = t(sediff)) %>%
     mutate(model =  names(sediff)) %>%
-    arrange(-holdout_diff)
+    arrange(-elpd_diff)
   mat <- as.matrix(holdoutcompare_summary[, 1:2])
   rownames(mat) <- holdoutcompare_summary$model
   return(mat)
@@ -409,6 +407,30 @@ lpdholdout_compare <- function(lpds_modsbycolumn){
 lpdholdout_compare(lpds_df)
 loo::loo_compare(lapply(waics_l, function(x) x$waic))
 loo::loo_compare(lapply(waics_l, function(x) x$loo))
+
+plot_compare_loo <- function(compare.loo.obj){
+  plt <- compare.loo.obj %>%
+    as_tibble(rownames = "Model") %>%
+    ggplot() +
+    geom_errorbarh(aes(xmin = elpd_diff - 2 * se_diff, xmax = elpd_diff + 2 * se_diff,
+                       y = Model)) +
+    geom_point(aes(x = elpd_diff, y = Model)) +
+    geom_vline(xintercept = 0, col = "blue") +
+    scale_x_continuous("Pointwise Difference in Expected Log Posterior Density")
+  return(plt)
+}
+
+lpdholdout_compare(lpds_df) %>%
+  plot_compare_loo() +
+  ggtitle("Holdout elpd Differences")
+
+loo::loo_compare(lapply(waics_l, function(x) x$waic)) %>%
+  plot_compare_loo() +
+  ggtitle("WAICS Differences")
+
+loo::loo_compare(lapply(waics_l, function(x) x$loo)) %>%
+  plot_compare_loo() +
+  ggtitle("LOO-PSIS Differences")
 ```
 
 ## Expected Number of Detections for Each Species
@@ -481,12 +503,11 @@ rm(resid_det_l)
 rm(resid_occ_l)
 ```
 
-```{r residocc_plots_manymodels}
-seeds = c(321, 120, 6545, 65498, 63)
+```{r residocc_plots_manymodels, fig.width = 14}
+seeds = c(321, 120)
 df_l <- lapply(seeds, function(x) {
   resid_occ_l <- lapply(fittedmods, function(fit) {
     resids <- ds_occupancy_residuals.fit(fit, type = "median", seed = x, conditionalLV = (!is.null(fit$nlv) && fit$nlv > 0))
-    resids$ModelSite <- occcovar$ModelSite
     return(resids)})
   resid_occ_df <- bind_rows(resid_occ_l, .id = "Model")
   df <- resid_occ_df %>%
@@ -529,7 +550,7 @@ plt <- plt + ggplot2::stat_summary(aes(x = CovariateValue, y = Residual, col = s
                                   fun.args = list(mult = 2),
                                   position = position_dodge(width = 0.1, preserve = "total"),
                                   alpha = 0.8,
-                                  lwd = 2,
+                                  lwd = 1.2,
                                   fatten = 1,
                                   show.legend = FALSE)
 
@@ -538,8 +559,10 @@ plt <- plt +
   ggplot2::geom_hline(yintercept = 0, col = "blue", lty = "dashed") +
   ggplot2::scale_x_continuous(name = "Covariate Value") +
   scale_y_continuous(name = "Occupancy Residual")
-plt + coord_cartesian(ylim = c(-0.1, 0.1)) + ggtitle("Occupancy Residuals vs Covariates") +
+plt <- plt + coord_cartesian(ylim = c(-0.1, 0.1)) + ggtitle("Occupancy Residuals vs Covariates") +
   theme(strip.text.y.right = element_text(angle = 0))
+
+print(plt)
 
 rm(df)
 ```
@@ -547,7 +570,7 @@ rm(df)
 
 ## Detection Residuals
 ```{r residdet_plots_manymodels}
-seeds = c(321, 120, 6545, 65498, 63)
+seeds = c(321, 120)
 df_l <- lapply(seeds, function(x) {
   resid_det_l <- lapply(fittedmods, function(fit) {
     resids <- ds_detection_residuals.fit(fit, type = "median", seed = x)
