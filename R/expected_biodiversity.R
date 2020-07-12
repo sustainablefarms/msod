@@ -316,7 +316,7 @@ predsumspecies_newdata <- function(fit, Xocc, Xobs, ModelSiteVars, chains = NULL
 #' @export
 detectednumspec <- function(y, ModelSite){
   stopifnot(length(ModelSite) == nrow(y))
-  stopifnot(all(y %in% c(1, 0)))
+  stopifnot(all(as.matrix(y) %in% c(1, 0)))
   
   my <- cbind(ModelSite = ModelSite, y)
   SpDetected <- my %>%
