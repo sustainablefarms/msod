@@ -25,7 +25,7 @@ test_that("In sample data; fitted LV values; different draws", {
   artfit$mcmc[[2]][1, grepl("^LV\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^LV\\[.*", bugvarnames)] * runif(4, min = 0.5, max = 1)
   
   # Predicted number of species detected and in occupation
-  Enumspec <- predsumspecies(artfit, usefittedLV = TRUE)
+  Enumspec <- predsumspecies(artfit, UseFittedLV = TRUE)
   meanvar <- cumsum(Enumspec["Vsum_det", ])/((1:ncol(Enumspec))^2)
   sd_final <- sqrt(meanvar[ncol(Enumspec)])
   expect_equal(ncol(Enumspec), nsites)
@@ -40,11 +40,11 @@ test_that("In sample data; fitted LV values; different draws", {
     ggplot2::ggplot() +
     ggplot2::geom_ribbon(ggplot2::aes(x= CumSites, ymin = -2 * sqrt(var), ymax = 2 * sqrt(var)), fill = "grey") +
     ggplot2::geom_line(ggplot2::aes(x = CumSites, y = diff), col = "blue", lwd = 2)
-  print(plt)
+  # print(plt)
   expect_gt(abs(meandiff_1st[ncol(Enumspec)]), 3 * sd_final)
   
   # Anticipate the Enumspec is correct when using only first draw (chain), as simulated data in artfit is from the first draw
-  Enumspec_1stonly <- predsumspecies(artfit, chain = 1, usefittedLV = TRUE)
+  Enumspec_1stonly <- predsumspecies(artfit, chain = 1, UseFittedLV = TRUE)
   meanvar_1stonly <- cumsum(Enumspec_1stonly["Vsum_det", ])/((1:ncol(Enumspec_1stonly))^2)
   sd_final_1st <- sqrt(meanvar[ncol(Enumspec_1stonly)])
   
@@ -55,14 +55,14 @@ test_that("In sample data; fitted LV values; different draws", {
     ggplot2::ggplot() +
     ggplot2::geom_ribbon(ggplot2::aes(x= CumSites, ymin = -2 * sqrt(var), ymax = 2 * sqrt(var)), fill = "grey") +
     ggplot2::geom_line(ggplot2::aes(x = CumSites, y = diff), col = "blue", lwd = 2)
-  print(plt)
+  # print(plt)
   
   expect_lt(abs(meandiff_1st[ncol(Enumspec)]), 3 * sd_final_1st)
   
   # Anticipate that it is correct for 2nd draw separated from the 1st draw
   y_2nd <- simulate_fit(artfit, esttype = 2, UseFittedLV = TRUE)
   NumSpecies_2nd <- detectednumspec(y = y_2nd, ModelSite = artfit$data$ModelSite)
-  Enumspec_2ndonly <- predsumspecies(artfit, chain = 2, usefittedLV = TRUE)
+  Enumspec_2ndonly <- predsumspecies(artfit, chain = 2, UseFittedLV = TRUE)
   meanvar_2ndonly <- cumsum(Enumspec_2ndonly["Vsum_det", ])/((1:ncol(Enumspec_2ndonly))^2)
   sd_final_2nd <- sqrt(meanvar[ncol(Enumspec_2ndonly)])
   meandiff_2nd <- dplyr::cummean(NumSpecies_2nd - Enumspec_2ndonly["Esum_det", ])
@@ -72,7 +72,7 @@ test_that("In sample data; fitted LV values; different draws", {
     ggplot2::ggplot() +
     ggplot2::geom_ribbon(ggplot2::aes(x= CumSites, ymin = -2 * sqrt(var), ymax = 2 * sqrt(var)), fill = "grey") +
     ggplot2::geom_line(ggplot2::aes(x = CumSites, y = diff), col = "blue", lwd = 2)
-  print(plt)
+  # print(plt)
   expect_lt(abs(meandiff_2nd[ncol(Enumspec)]), 3 * sd_final_2nd)
   
   
@@ -90,7 +90,7 @@ test_that("In sample data; fitted LV values; different draws", {
     ggplot2::ggplot() +
     ggplot2::geom_ribbon(ggplot2::aes(x= CumSites, ymin = -2 * sqrt(var), ymax = 2 * sqrt(var)), fill = "grey") +
     ggplot2::geom_line(ggplot2::aes(x = CumSites, y = diff), col = "blue", lwd = 2)
-  print(plt)
+  # print(plt)
   
   sd_final <- sqrt(meanvar[ncol(Enumspec)])
   expect_lt(abs(meandiff[ncol(Enumspec)]), 3 * sd_final)
@@ -102,7 +102,7 @@ test_that("In sample data; fitted LV values", {
   artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, nlv = 4)
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
-  Enumspecdet <- predsumspecies(artfit, usefittedLV = TRUE)
+  Enumspecdet <- predsumspecies(artfit, UseFittedLV = TRUE)
   expect_equal(ncol(Enumspecdet), nsites)
   
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
@@ -122,7 +122,7 @@ test_that("In sample data; fitted LV values", {
   expect_equal(meandiff[ncol(Enumspecdet)], 0, tol = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
-  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 4) + 1:10 ])))
+  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:10 ])))
 })
 
 test_that("In sample data; marginal on LV values", {
@@ -137,7 +137,7 @@ test_that("In sample data; marginal on LV values", {
                                )
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
-  Enumspecdet <- predsumspecies(artfit, usefittedLV = FALSE, nLVsim = 1000)
+  Enumspecdet <- predsumspecies(artfit, UseFittedLV = FALSE, nLVsim = 1000)
   expect_equal(ncol(Enumspecdet), nsites)
   
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
@@ -174,7 +174,7 @@ test_that("In sample data; marginal on LV values", {
   expect_equal(meandiff[ncol(Enumspecdet)], 0, tol = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
-  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 4) + 1:10 ])))
+  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:10 ])))
 })
 
 test_that("In sample data; no LV", {
@@ -182,7 +182,7 @@ test_that("In sample data; no LV", {
   artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, nlv = 0)
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
-  Enumspecdet <- predsumspecies(artfit, usefittedLV = FALSE)
+  Enumspecdet <- predsumspecies(artfit, UseFittedLV = FALSE)
   expect_equal(ncol(Enumspecdet), nsites)
   
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
@@ -202,7 +202,7 @@ test_that("In sample data; no LV", {
   expect_equal(meandiff[ncol(Enumspecdet)], 0, tol = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
-  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 4) + 1:10 ])))
+  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:10 ])))
 })
 
 
@@ -242,7 +242,7 @@ test_that("Holdout data; has LVs", {
   expect_equal(meandiff[ncol(Enumspec)], 0, tol = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
-  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 4) + 1:10 ])))
+  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:10 ])))
 })
 
 
@@ -283,7 +283,7 @@ test_that("Holdout data; no LVs", {
   expect_equal(meandiff[ncol(Enumspec)], 0, tol = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
-  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 4) + 1:10 ])))
+  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:10 ])))
 })
 
 #########################################################################################
@@ -292,7 +292,7 @@ test_that("No LV and identical sites", {
   artfit <- artificial_runjags(nspecies = 4, nsites = 1000, nvisitspersite = 2, nlv = 0,
                                ObsFmla = "~ 1",
                                OccFmla = "~ 1")
-  EVsum <- predsumspecies(artfit, usefittedLV = FALSE)
+  EVsum <- predsumspecies(artfit, UseFittedLV = FALSE)
   
   # check that many other sites have the same expected number of species
   expect_equivalent(EVsum["Esum_det", ], rep(EVsum["Esum_det", 1], ncol(EVsum)))
@@ -315,10 +315,10 @@ test_that("No LV and identical sites", {
   expect_equal(meandiff[ncol(EVsum)], 0, tol = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
-  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 4) + 1:10 ])))
+  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:10 ])))
 
   # Expect sd to be close to theoretical sd. Hopefully within 10%
-  expect_equivalent(sd(NumSpecies[, "numspecies"]), sqrt(EVsum["Vsum_det", 1]), tol = 0.1 *sqrt(EVsum["Vsum_det", 1]))
+  expect_equivalent(sd(NumSpecies), sqrt(EVsum["Vsum_det", 1]), tol = 0.1 * sqrt(EVsum["Vsum_det", 1]))
 })
 
 test_that("Expected occupied number for in sample data; fitted LV values", {
@@ -327,7 +327,7 @@ test_that("Expected occupied number for in sample data; fitted LV values", {
                                v.b.min = 20, v.b.max = 20.1) #makes detection almost certain)
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
-  Enumspecdet <- predsumspecies(artfit, usefittedLV = TRUE)
+  Enumspecdet <- predsumspecies(artfit, UseFittedLV = TRUE)
   expect_equal(ncol(Enumspecdet), nsites)
   
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)

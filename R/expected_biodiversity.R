@@ -12,16 +12,19 @@
 #' theta <- c(theta, lv.coef.bugs)
 #' 
 #' expectedspeciesnum.ModelSiteIdx(fit, 2, chains = NULL, LVvals = NULL)
-#' Enumspec <- predsumspecies(fit, usefittedLV = TRUE)
+#' Enumspec <- predsumspecies(fit, UseFittedLV = TRUE)
 #' 
 #' 
 #' indata <- readRDS("./private/data/clean/7_2_10_input_data.rds")
 #' predsumspecies_newdata(fit, Xocc <- indata$holdoutdata$Xocc, Xobs = indata$holdoutdata$yXobs, ModelSiteVars = "ModelSiteID", draws, cl = NULL)
 #' 
+#' @describeIn predsumspecies Computes expected numbers of species for a single parameter set and single ModelSite
 #' @param Xocc A matrix of occupancy covariates. Must have a single row. Columns correspond to covariates.
 #' @param Xobs A matrix of detection covariates, each row is a visit. If NULL then expected number of species in occupation is returned
 #' @param theta A vector of model parameters, labelled according to the BUGS labelling convention seen in runjags
 #' @param LVvals A matrix of LV values. Each column corresponds to a LV. To condition on specific LV values, provide a matrix of row 1.
+#' @return A named vector of the expectation and variance of the numbers of species occupying the ModelSite and given parameter set.
+#' If observational covariates are supplied then the expection and variance of numbers of species detected is also returned.
 #' @export
 expectedspeciesnum.ModelSite.theta <- function(Xocc, Xobs = NULL, u.b, v.b = NULL, lv.coef = NULL, LVvals = NULL){
   ## Probability of Site Occupancy
@@ -63,7 +66,6 @@ expectedspeciesnum.ModelSite.theta <- function(Xocc, Xobs = NULL, u.b, v.b = NUL
 #' @param v.b Covariate loadings. Each row is a species, each column a detection covariate
 #' @return A matrix of detection probabilities for each row of Xobs and each species.
 #' Rows in returned value correspond to rows in Xobs, columns correspond to species.
-#' @export
 pdetection_occupied.ModelSite.theta <- function(Xobs, v.b){
   Xobs <- as.matrix(Xobs)
   Detection.LinPred <- as.matrix(Xobs) %*% t(v.b)
@@ -121,9 +123,9 @@ Erowsum_margrow <- function(pmat){
 #' @param cl A cluster object created by parallel::makeCluster. If NULL no cluster is used.
 #' @return A matrix with each column a ModelSite.
 #' Each row is labelled and corresponds to the predicted expection and variance of the number of species occupied or detected.
-#' These expectations are with respect to the full posterior distribution of the model parameters, with the exception of the LV values which depends on usefittedLV.
+#' These expectations are with respect to the full posterior distribution of the model parameters, with the exception of the LV values which depends on UseFittedLV.
 #' @export
-predsumspecies <- function(fit, chains = NULL, usefittedLV = TRUE, nLVsim = 1000, cl = NULL){
+predsumspecies <- function(fit, chains = NULL, UseFittedLV = TRUE, nLVsim = 1000, cl = NULL){
   fit$data <- as_list_format(fit$data)
   if (is.null(chains)){chains <- 1:length(fit$mcmc)}
   draws <- do.call(rbind, fit$mcmc[chains])
@@ -137,10 +139,10 @@ predsumspecies <- function(fit, chains = NULL, usefittedLV = TRUE, nLVsim = 1000
     colnames(lv.coef.draws) <- names(lv.coef.bugs)
     draws <- cbind(draws, lv.coef.draws, LVbugs.draws)
     fit$data$nlv <- 2
-    usefittedLV <- TRUE #calculations faster when not simulating 1000s of LV values, especially since they are all ignored here.
+    UseFittedLV <- TRUE #calculations faster when not simulating 1000s of LV values, especially since they are all ignored here.
   } 
   
-  if (usefittedLV){nLVsim <- NULL} #don't pass number of simulations if not going to use them
+  if (UseFittedLV){nLVsim <- NULL} #don't pass number of simulations if not going to use them
   
   out <- predsumspecies_raw(
     Xocc = fit$data$Xocc,
@@ -149,13 +151,15 @@ predsumspecies <- function(fit, chains = NULL, usefittedLV = TRUE, nLVsim = 1000
     numspecies = fit$data$n,
     nlv = fit$data$nlv,
     draws = draws,
-    useLVindraws = usefittedLV,
+    useLVindraws = UseFittedLV,
     nLVsim = nLVsim,
     cl = cl
   )
   return(out)
 }
 
+#' @describeIn predsumspecies Called by predsumspecies and predsumspecies_newdata.
+#' Given ModelSite data and model information, compute expected and variance of the number of species.
 #' @param ModelSite is a list of integers giving the row in Xocc corresponding to a row in Xobs
 #' @param Xocc A matrix of occupancy covariates, each row is a ModelSite
 #' @param Xobs A matrix of detection covariates. Each row is a visit. The visited ModelSite (row of Xocc) is given by ModelSite
@@ -272,9 +276,11 @@ EVtheta2EVmarg <- function(Vsum, Esum){
   ))
 }
 
+#' @describeIn predsumspecies For new ModelSite occupancy covariates and detection covariates, predicted number of expected species
+#' @export
 predsumspecies_newdata <- function(fit, Xocc, Xobs, ModelSiteVars, chains = NULL, nLVsim = 1000, cl = NULL){
   datalist <- prep_new_data(fit, Xocc, Xobs, ModelSite = ModelSiteVars)
-  usefittedLV <- FALSE # no LV available for new model sites
+  UseFittedLV <- FALSE # no LV available for new model sites
   
   fit$data <- as_list_format(fit$data)
   if (is.null(chains)){chains <- 1:length(fit$mcmc)}
@@ -303,9 +309,11 @@ predsumspecies_newdata <- function(fit, Xocc, Xobs, ModelSiteVars, chains = NULL
   return(out)
 }
 
+#' @title The number of observed species in a matrix of observation recordings
 #' @param y A matrix of species *observations* with each row a visit and each column a species. Entries must be either 0 or 1.
 #' @param ModelSite The list of ModelSite indexes corresponding to each row in y
 #' @return A vector of the number of species detected at each ModelSite. Names give the ModelSite index. 
+#' @export
 detectednumspec <- function(y, ModelSite){
   stopifnot(length(ModelSite) == nrow(y))
   stopifnot(all(y %in% c(1, 0)))
