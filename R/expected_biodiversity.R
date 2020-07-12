@@ -116,9 +116,13 @@ Erowsum_margrow <- function(pmat){
 # use fitted LVs for modelsite for each theta
 # use simulated LVs for each theta
 
-#' @param usefittedLV If TRUE the fitted LV variables are used, if false then 1000 LV values are simulated.
+#' @param UseFittedLV If TRUE the fitted LV variables are used, if false then 1000 LV values are simulated.
 #' @param chains The chains of MCMC to use. Default is all chains.
 #' @param cl A cluster object created by parallel::makeCluster. If NULL no cluster is used.
+#' @return A matrix with each column a ModelSite.
+#' Each row is labelled and corresponds to the predicted expection and variance of the number of species occupied or detected.
+#' These expectations are with respect to the full posterior distribution of the model parameters, with the exception of the LV values which depends on usefittedLV.
+#' @export
 predsumspecies <- function(fit, chains = NULL, usefittedLV = TRUE, nLVsim = 1000, cl = NULL){
   fit$data <- as_list_format(fit$data)
   if (is.null(chains)){chains <- 1:length(fit$mcmc)}
@@ -224,9 +228,11 @@ predsumspecies_raw <- function(Xocc, Xobs, ModelSite, numspecies, nlv, draws, us
   Enumspec_drawsitesumm <- aperm(a, perm = c("Draws", "ModelSites", "Summaries")) # arrange Enumspec in a 3 dimensional array: rows = draws, cols = site, depth = summaries
   
   #following checks that conversion is correct
-  stopifnot(all(Rfast::eachrow(Enumspec_drawsitesumm[ , , "siteidx", drop = TRUE],
+  stopifnot(all(Rfast::eachrow(matrix(Enumspec_drawsitesumm[ , , "siteidx", drop = FALSE],
+                                      nrow = dim(Enumspec_drawsitesumm)[[1]], ncol = dim(Enumspec_drawsitesumm)[[2]]), # call to matrix keeps the input in the correct dimension
                                y = as.numeric(1:nsites), oper = "==")))
-  stopifnot(sum(Rfast::eachcol.apply(Enumspec_drawsitesumm[ , , "drawidx", drop = TRUE],
+  stopifnot(sum(Rfast::eachcol.apply(matrix(Enumspec_drawsitesumm[ , , "drawidx", drop = TRUE],
+                                            nrow = dim(Enumspec_drawsitesumm)[[1]], ncol = dim(Enumspec_drawsitesumm)[[2]]),
                                y = as.numeric(1:ndraws), oper = "-")) == 0)
   
 

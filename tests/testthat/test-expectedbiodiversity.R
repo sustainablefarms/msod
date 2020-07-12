@@ -11,6 +11,92 @@ context("Number of Detected Species Expected")
 # model has LVs, marginalise LVs, holdout data
 # model has no LVs, holdout data
 
+test_that("In sample data; fitted LV values; different draws", {
+  nsites <- 1000
+  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 1, nlv = 4)
+  
+  # make a new, different, second parameter set
+  artfit$mcmc[[2]] <- artfit$mcmc[[1]]
+  artfit$sample <- 1
+  bugvarnames <- names(artfit$mcmc[[1]][1, ])
+  artfit$mcmc[[2]][1, grepl("^u.b\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^u.b\\[.*", bugvarnames)] * runif(3, min = 5, max = 10)
+  artfit$mcmc[[2]][1, grepl("^v.b\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^v.b\\[.*", bugvarnames)] * runif(3, min = 5, max = 10)
+  artfit$mcmc[[2]][1, grepl("^lv.coef\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^lv.coef\\[.*", bugvarnames)] * runif(3, min = 0.1, max = 0.2)
+  artfit$mcmc[[2]][1, grepl("^LV\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^LV\\[.*", bugvarnames)] * runif(4, min = 0.5, max = 1)
+  
+  # Predicted number of species detected and in occupation
+  Enumspec <- predsumspecies(artfit, usefittedLV = TRUE)
+  meanvar <- cumsum(Enumspec["Vsum_det", ])/((1:ncol(Enumspec))^2)
+  sd_final <- sqrt(meanvar[ncol(Enumspec)])
+  expect_equal(ncol(Enumspec), nsites)
+  
+  # Anticipate the Enumspec is wrong when using both draws, as simulated data in artfit is from the first draw
+  NumSpecies_1st <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
+  
+  meandiff_1st <- dplyr::cummean(NumSpecies_1st - Enumspec["Esum_det", ])
+  plt <- cbind(diff = meandiff_1st, var  = meanvar) %>% 
+    dplyr::as_tibble(rownames = "CumSites") %>% 
+    dplyr::mutate(CumSites = as.double(CumSites)) %>%
+    ggplot2::ggplot() +
+    ggplot2::geom_ribbon(ggplot2::aes(x= CumSites, ymin = -2 * sqrt(var), ymax = 2 * sqrt(var)), fill = "grey") +
+    ggplot2::geom_line(ggplot2::aes(x = CumSites, y = diff), col = "blue", lwd = 2)
+  print(plt)
+  expect_gt(abs(meandiff_1st[ncol(Enumspec)]), 3 * sd_final)
+  
+  # Anticipate the Enumspec is correct when using only first draw (chain), as simulated data in artfit is from the first draw
+  Enumspec_1stonly <- predsumspecies(artfit, chain = 1, usefittedLV = TRUE)
+  meanvar_1stonly <- cumsum(Enumspec_1stonly["Vsum_det", ])/((1:ncol(Enumspec_1stonly))^2)
+  sd_final_1st <- sqrt(meanvar[ncol(Enumspec_1stonly)])
+  
+  meandiff_1st <- dplyr::cummean(NumSpecies_1st - Enumspec_1stonly["Esum_det", ])
+  plt <- cbind(diff = meandiff_1st, var  = meanvar) %>% 
+    dplyr::as_tibble(rownames = "CumSites") %>% 
+    dplyr::mutate(CumSites = as.double(CumSites)) %>%
+    ggplot2::ggplot() +
+    ggplot2::geom_ribbon(ggplot2::aes(x= CumSites, ymin = -2 * sqrt(var), ymax = 2 * sqrt(var)), fill = "grey") +
+    ggplot2::geom_line(ggplot2::aes(x = CumSites, y = diff), col = "blue", lwd = 2)
+  print(plt)
+  
+  expect_lt(abs(meandiff_1st[ncol(Enumspec)]), 3 * sd_final_1st)
+  
+  # Anticipate that it is correct for 2nd draw separated from the 1st draw
+  y_2nd <- simulate_fit(artfit, esttype = 2, UseFittedLV = TRUE)
+  NumSpecies_2nd <- detectednumspec(y = y_2nd, ModelSite = artfit$data$ModelSite)
+  Enumspec_2ndonly <- predsumspecies(artfit, chain = 2, usefittedLV = TRUE)
+  meanvar_2ndonly <- cumsum(Enumspec_2ndonly["Vsum_det", ])/((1:ncol(Enumspec_2ndonly))^2)
+  sd_final_2nd <- sqrt(meanvar[ncol(Enumspec_2ndonly)])
+  meandiff_2nd <- dplyr::cummean(NumSpecies_2nd - Enumspec_2ndonly["Esum_det", ])
+  plt <- cbind(diff = meandiff_2nd, var  = meanvar) %>% 
+    dplyr::as_tibble(rownames = "CumSites") %>% 
+    dplyr::mutate(CumSites = as.double(CumSites)) %>%
+    ggplot2::ggplot() +
+    ggplot2::geom_ribbon(ggplot2::aes(x= CumSites, ymin = -2 * sqrt(var), ymax = 2 * sqrt(var)), fill = "grey") +
+    ggplot2::geom_line(ggplot2::aes(x = CumSites, y = diff), col = "blue", lwd = 2)
+  print(plt)
+  expect_lt(abs(meandiff_2nd[ncol(Enumspec)]), 3 * sd_final_2nd)
+  
+  
+  # Anticipate prediction from combined draw is similar when occupancy + detection simulated with parameters chosen with equal chance from artfit$mcmc[[1]]
+  ## combine observations for model sites to simulate the equal credence on each parameter set
+  NumSpecies_interleaved <- NumSpecies_1st
+  drawselect <- as.logical(rbinom(1000, size = 1, prob = 0.5))
+  NumSpecies_interleaved[drawselect] <- NumSpecies_2nd[drawselect]
+  
+  meandiff <- dplyr::cummean(NumSpecies_interleaved - Enumspec["Esum_det", ])
+  meanvar <- cumsum(Enumspec["Vsum_det", ])/((1:ncol(Enumspec))^2)
+  plt <- cbind(diff = meandiff, var = meanvar) %>% 
+    dplyr::as_tibble(rownames = "CumSites") %>% 
+    dplyr::mutate(CumSites = as.double(CumSites)) %>%
+    ggplot2::ggplot() +
+    ggplot2::geom_ribbon(ggplot2::aes(x= CumSites, ymin = -2 * sqrt(var), ymax = 2 * sqrt(var)), fill = "grey") +
+    ggplot2::geom_line(ggplot2::aes(x = CumSites, y = diff), col = "blue", lwd = 2)
+  print(plt)
+  
+  sd_final <- sqrt(meanvar[ncol(Enumspec)])
+  expect_lt(abs(meandiff[ncol(Enumspec)]), 3 * sd_final)
+})
+
+
 test_that("In sample data; fitted LV values", {
   nsites <- 10000
   artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, nlv = 4)
@@ -203,7 +289,7 @@ test_that("Holdout data; no LVs", {
 #########################################################################################
 
 test_that("No LV and identical sites", {
-  artfit <- artificial_runjags(nspecies = 4, nsites = 10000, nvisitspersite = 2, nlv = 0,
+  artfit <- artificial_runjags(nspecies = 4, nsites = 1000, nvisitspersite = 2, nlv = 0,
                                ObsFmla = "~ 1",
                                OccFmla = "~ 1")
   EVsum <- predsumspecies(artfit, usefittedLV = FALSE)
