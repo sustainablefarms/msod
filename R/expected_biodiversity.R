@@ -93,11 +93,11 @@ poccupy.ModelSite.theta <- function(Xocc, u.b, lv.coef, LVvals){
   return(ModelSite.Occ.Pred.CondLV)
 }
 
-#' @param pmat A matrix of success probabilities for Bernoulli random variables.
-#' Each column corresponds to an independent Bernoulli random variable, each row is a different set of parameters.
-#' @return
-#' The expected sum of the Bernoulli random variables, marginal across rows, E[E[N | L]]
-#' The variance of the sum, marginal across rows E[N^2] - E[N]^2 = E[V[N | L] + E[N | L]^2] - E[E[N | L]]^2
+# @param pmat A matrix of success probabilities for Bernoulli random variables.
+# Each column corresponds to an independent Bernoulli random variable, each row is a different set of parameters.
+# @return
+# The expected sum of the Bernoulli random variables, marginal across rows, E[E[N | L]]
+# The variance of the sum, marginal across rows E[N^2] - E[N]^2 = E[V[N | L] + E[N | L]^2] - E[E[N | L]]^2
 Erowsum_margrow <- function(pmat){
   ## Expected sum of the Bournilli for each parameter set
   En_row <- Rfast::rowsums(pmat)
@@ -258,9 +258,9 @@ predsumspecies_raw <- function(Xocc, Xobs, ModelSite, numspecies, nlv, draws, us
   return(out)
 }
 
-#' @param Vsum A matrix of variance of sum of species. Each row corresponds to a different theta. Each column a ModelSite.
-#' @param Esum A matrix of expected sum of species. Each row corresponds to a different theta. Each column a ModelSite.
-#' @return The expectation and variance of the sum of species marginal across theta (across the supplied rows)
+# @param Vsum A matrix of variance of sum of species. Each row corresponds to a different theta. Each column a ModelSite.
+# @param Esum A matrix of expected sum of species. Each row corresponds to a different theta. Each column a ModelSite.
+# @return The expectation and variance of the sum of species marginal across theta (across the supplied rows)
 EVtheta2EVmarg <- function(Vsum, Esum){
   stopifnot(all(dim(Vsum) == dim(Esum)))
   # per draw the 2nd moments
