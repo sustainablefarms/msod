@@ -96,7 +96,6 @@ test_that("In sample data; fitted LV values; different draws", {
   expect_lt(abs(meandiff[ncol(Enumspec)]), 3 * sd_final)
 })
 
-
 test_that("In sample data; fitted LV values", {
   nsites <- 10000
   artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, nlv = 4)
@@ -122,7 +121,7 @@ test_that("In sample data; fitted LV values", {
   expect_equal(meandiff[ncol(Enumspecdet)], 0, tol = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
-  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:10 ])))
+  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:50 ])))
 })
 
 test_that("In sample data; marginal on LV values", {
@@ -174,7 +173,7 @@ test_that("In sample data; marginal on LV values", {
   expect_equal(meandiff[ncol(Enumspecdet)], 0, tol = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
-  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:10 ])))
+  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:50 ])))
 })
 
 test_that("In sample data; no LV", {
@@ -202,7 +201,7 @@ test_that("In sample data; no LV", {
   expect_equal(meandiff[ncol(Enumspecdet)], 0, tol = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
-  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:10 ])))
+  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:50 ])))
 })
 
 
@@ -242,7 +241,7 @@ test_that("Holdout data; has LVs", {
   expect_equal(meandiff[ncol(Enumspec)], 0, tol = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
-  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:10 ])))
+  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:50 ])))
 })
 
 
@@ -283,7 +282,7 @@ test_that("Holdout data; no LVs", {
   expect_equal(meandiff[ncol(Enumspec)], 0, tol = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
-  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:10 ])))
+  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:50 ])))
 })
 
 #########################################################################################
@@ -315,7 +314,7 @@ test_that("No LV and identical sites", {
   expect_equal(meandiff[ncol(EVsum)], 0, tol = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
-  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:10 ])))
+  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:50 ])))
 
   # Expect sd to be close to theoretical sd. Hopefully within 10%
   expect_equivalent(sd(NumSpecies), sqrt(EVsum["Vsum_det", 1]), tol = 0.1 * sqrt(EVsum["Vsum_det", 1]))
