@@ -101,13 +101,13 @@ test_that("In sample data; fitted LV values", {
   artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, nlv = 4)
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
-  Enumspecdet <- predsumspecies(artfit, UseFittedLV = TRUE)
-  expect_equal(ncol(Enumspecdet), nsites)
+  Enumspec <- predsumspecies(artfit, UseFittedLV = TRUE)
+  expect_equal(ncol(Enumspec), nsites)
   
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
   
-  meandiff <- dplyr::cummean(NumSpecies - Enumspecdet["Esum_det", ])
-  meanvar <- cumsum(Enumspecdet["Vsum_det", ])/((1:ncol(Enumspecdet))^2)
+  meandiff <- dplyr::cummean(NumSpecies - Enumspec["Esum_det", ])
+  meanvar <- cumsum(Enumspec["Vsum_det", ])/((1:ncol(Enumspec))^2)
   plt <- cbind(diff = meandiff, var  = meanvar) %>% 
     dplyr::as_tibble(rownames = "CumSites") %>% 
     dplyr::mutate(CumSites = as.double(CumSites)) %>%
@@ -117,11 +117,19 @@ test_that("In sample data; fitted LV values", {
   # print(plt)
   
   # check with predicted standard error once the software is computed
-  sd_final <- sqrt(meanvar[ncol(Enumspecdet)])
-  expect_equal(meandiff[ncol(Enumspecdet)], 0, tol = 3 * sd_final)
+  sd_final <- sqrt(meanvar[ncol(Enumspec)])
+  expect_equal(meandiff[ncol(Enumspec)], 0, tol = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
   expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:50 ])))
+  
+  Enum_compare_sum <- Enum_compare(NumSpecies,
+               as.matrix(Enumspec["Esum_det", ], ncol = 1),
+               as.matrix(Enumspec["Vsum_det", ], ncol = 1)
+               )
+  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * sqrt(Enum_compare_sum[["V[D]_model"]] / length(NumSpecies)))
+  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * sqrt(Enum_compare_sum[["V[D]_obs"]] / length(NumSpecies)))
+  expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
 })
 
 test_that("In sample data; marginal on LV values", {

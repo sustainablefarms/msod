@@ -1,0 +1,60 @@
+#' @title Compare Expected Number of Species at ModelSites
+#' @details Very similar to elpd_compare(). 
+#' Assume each ModelSite with detection parameters are iid samples from a common distribution.
+#' In this regime the expected number of species for a ModelSite and the observed number of species, are both random variables.
+#' 
+#' For a correct model and given covariates for a ModelSite, the difference between the observed number of species and expected number of species is a random variable
+#'  with mean 0, and fixed variance.
+#' For a ModelSite drawn from the common distribution, the mean is still 0, and the variance is a random variable.
+#' The variance of species numbers for a ModelSite drawn at random can be estimated from
+#'  the fixed variance computed for many iid ModelSite covariate draws by averaging:
+#' \deqn{ V[D] = E[D^2] - E[D]^2 = E[E[D^2|X]] - E[E[D|X]]^2 = E[E[D^2|X]] = E[E[(N - E[N|X])^2|X]] = E[E[N^2|X] - E[N|X]^2] = E[V[N|X]] }
+#' The variance of species numbers for a ModelSite drawn at random can also be estimated from many observed ModelSites by averaging:
+#' \deqn{ V[D] = V[N - E[N|X]]}
+#' The mean difference can also be estimated from observations (and should be zero):
+#' \deqn{ 0 = E[D] = E[E[D|X]] ~ \frac{1}{m}\sum_{i = 1}^m d_i }
+#' 
+#' *No bias correction for use of insample data is included.*
+#' @return A matrix with a column for the aggregate (summed) difference of model sites between models,
+#'  and the standard error of this difference (computed as the sample standard deviation of difference, multiplied by the square root of the number of ModelSites)
+#' @examples 
+#' inputdata <- readRDS("./private/data/clean/7_2_10_input_data.rds")
+#' observed <- detectednumspec(inputdata$holdoutdata$yXobs[, inputdata$species], 
+#'                             inputdata$holdoutdata$yXobs[, "ModelSiteID", drop = TRUE])
+
+#' modelspecs <- readRDS("./tmpdata/7_3_00_modelspecs.rds")
+#' filenames <- lapply(modelspecs, function(x) x$filename)
+#' a <- vapply(filenames, file.exists, FUN.VALUE = FALSE)
+#' fittedmods <- lapply(filenames, function(x) {
+#'   fit <- readRDS(x)
+#'   return(fit)})
+#' prednumbers_l <- lapply(
+#'   fittedmods, function(fit) {
+#'     predsumspecies_newdata(fit,
+#'                            inputdata$holdoutdata$Xocc,
+#'                            inputdata$holdoutdata$yXobs,
+#'                            ModelSiteVars = "ModelSiteID")
+#'   })
+#' predicted <- do.call(cbind, lapply(prednumbers_l, function(x) x["Esum_det", , drop = TRUE]))
+#' predictedV <- do.call(cbind, lapply(prednumbers_l, function(x) x["Vsum_det", , drop = TRUE]))
+
+#' @param observed A list of the number of species observed for each ModelSite
+#' @param predicted A dataframe or matrix with each column the expected number of species detected from a single model. Each row is a ModelSite in the same order as [observed].
+#' @param predictedV Same as [predicted], but the variance of the number of species detected.
+#' @export
+Enum_compare <- function(observed, predicted, predictedV){
+  observed <- as.matrix(observed, nrow = nrow(predicted), ncol = 1)
+  resids <- observed - predicted
+  Eresid_fromobs <- colMeans(resids)
+  Eresid_frommodel <- Eresid_fromobs * 0
+  Vresid_fromobs <- apply(resids, MARGIN = 2, var)
+  Vresid_frommodel <- colMeans(predictedV)
+  
+  out <- data.frame("E[D]_model" = Eresid_frommodel,
+             "E[D]_obs" = Eresid_fromobs,
+             "V[D]_model" = Vresid_frommodel,
+             "V[D]_obs" = Vresid_fromobs,
+             check.names = FALSE
+             )
+  return(out)
+}
