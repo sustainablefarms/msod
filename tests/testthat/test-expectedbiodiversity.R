@@ -127,8 +127,8 @@ test_that("In sample data; fitted LV values", {
                as.matrix(Enumspec["Esum_det", ], ncol = 1),
                as.matrix(Enumspec["Vsum_det", ], ncol = 1)
                )
-  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * sqrt(Enum_compare_sum[["V[D]_model"]] / length(NumSpecies)))
-  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * sqrt(Enum_compare_sum[["V[D]_obs"]] / length(NumSpecies)))
+  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
+  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
   expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
 })
 

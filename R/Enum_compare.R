@@ -49,9 +49,13 @@ Enum_compare <- function(observed, predicted, predictedV){
   Eresid_frommodel <- Eresid_fromobs * 0
   Vresid_fromobs <- apply(resids, MARGIN = 2, var)
   Vresid_frommodel <- colMeans(predictedV)
+  SE_Eresid_obs_frommodel <- sqrt(Vresid_frommodel/length(drop(observed)))
+  SE_Eresid_obs_fromobs <- sqrt(Vresid_fromobs/length(drop(observed)))
   
   out <- data.frame("E[D]_model" = Eresid_frommodel,
              "E[D]_obs" = Eresid_fromobs,
+             "SE(E[D]_obs)_model" = SE_Eresid_obs_frommodel,
+             "SE(E[D]_obs)_obs" = SE_Eresid_obs_fromobs,
              "V[D]_model" = Vresid_frommodel,
              "V[D]_obs" = Vresid_fromobs,
              check.names = FALSE
