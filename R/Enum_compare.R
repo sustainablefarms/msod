@@ -37,14 +37,14 @@
 #'   })
 #' predicted <- do.call(cbind, lapply(prednumbers_l, function(x) x["Esum_det", , drop = TRUE]))
 #' predictedV <- do.call(cbind, lapply(prednumbers_l, function(x) x["Vsum_det", , drop = TRUE]))
+#' Enum_compare(observed, predicted, predictedV)
 
 #' @param observed A list of the number of species observed for each ModelSite
 #' @param predicted A dataframe or matrix with each column the expected number of species detected from a single model. Each row is a ModelSite in the same order as [observed].
 #' @param predictedV Same as [predicted], but the variance of the number of species detected.
 #' @export
 Enum_compare <- function(observed, predicted, predictedV){
-  observed <- as.matrix(observed, nrow = nrow(predicted), ncol = 1)
-  resids <- observed - predicted
+  resids <- drop(observed) - predicted
   Eresid_fromobs <- colMeans(resids)
   Eresid_frommodel <- Eresid_fromobs * 0
   Vresid_fromobs <- apply(resids, MARGIN = 2, var)
