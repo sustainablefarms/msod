@@ -250,6 +250,14 @@ test_that("Holdout data; has LVs", {
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
   expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:50 ])))
+  
+  Enum_compare_sum <- Enum_compare(NumSpecies,
+                                   as.matrix(Enumspec["Esum_det", ], ncol = 1),
+                                   as.matrix(Enumspec["Vsum_det", ], ncol = 1)
+  )
+  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
+  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
+  expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
 })
 
 
@@ -291,6 +299,14 @@ test_that("Holdout data; no LVs", {
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
   expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:50 ])))
+  
+  Enum_compare_sum <- Enum_compare(NumSpecies,
+                                   as.matrix(Enumspec["Esum_det", ], ncol = 1),
+                                   as.matrix(Enumspec["Vsum_det", ], ncol = 1)
+  )
+  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
+  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
+  expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
 })
 
 #########################################################################################
