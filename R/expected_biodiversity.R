@@ -33,8 +33,8 @@ expectedspeciesnum.ModelSite.theta <- function(Xocc, Xobs = NULL, u.b, v.b = NUL
   Xocc <- as.matrix(Xocc)
   if (is.null(lv.coef)){ # create dummy LV  
     stopifnot(is.null(LVvals))
-    lv.coef <- matrix(0, rows = nrow(u.b), ncol = 2)
-    LVvals <- matrix(0, rows = 2, ncol = 2)
+    lv.coef <- matrix(0, nrow = nrow(u.b), ncol = 2)
+    LVvals <- matrix(0, nrow = 2, ncol = 2)
     } # dummy LV
   ModelSite.Occ.Pred.CondLV <- poccupy.ModelSite.theta(Xocc, u.b, lv.coef, LVvals)
   
