@@ -22,7 +22,7 @@ fit_runjags <- run.detectionoccupancy(originalXocc, cbind(originalXobs, artmodel
                                       OccFmla = artmodel$XoccProcess$fmla,
                                       ObsFmla = artmodel$XobsProcess$fmla,
                                       # initsfunction = function(chain, indata){return(NULL)},
-                                      # MCMCparams = list(n.chains = 2 - as.numeric(x$nlv > 0), adapt = 1000, burnin = 10000, sample = 500, thin = 40),
+                                      # MCMCparams = list(n.chains = 2, adapt = 1000, burnin = 10000, sample = 500, thin = 40),
                                       nlv = 4)
 save(fit_runjags, artmodel, originalXocc, originalXobs, file = "./tests/testthat/benchmark_varietysitesmodel_initsgiven.Rdata")
 

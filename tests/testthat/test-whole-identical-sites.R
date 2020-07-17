@@ -4,7 +4,7 @@
 context("Wholistic tests using identical, independent, ModelSites")
 
 # Create a process with known parameters
-artmodel <- artificial_runjags(nspecies = 2, nsites = 4000, nvisitspersite = 2, nlv = 0,
+artmodel <- artificial_runjags(nspecies = 60, nsites = 4000, nvisitspersite = 2, nlv = 0,
                                ObsFmla = "~ 1",
                                OccFmla = "~ 1")
 
@@ -24,6 +24,7 @@ fit_runjags <- run.detectionoccupancy(originalXocc, cbind(originalXobs, artmodel
                        OccFmla = artmodel$XoccProcess$fmla,
                        ObsFmla = artmodel$XobsProcess$fmla,
                        initsfunction = function(chain, indata){return(NULL)},
+                       MCMCparams = list(n.chains = 2, adapt = 1000, burnin = 10000, sample = 500, thin = 40),
                        nlv = 0)
 
 save(fit_runjags, artmodel, originalXocc, originalXobs, file = "./tests/testthat/benchmark_identicalsitesmodel.Rdata")
