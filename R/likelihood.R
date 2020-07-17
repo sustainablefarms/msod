@@ -199,9 +199,9 @@ stopifnot(nrow(Xobs) == nrow(y))
 y <- as.matrix(y)
 Xocc <- as.matrix(Xocc)
 Xobs <- as.matrix(Xobs)
-u.b <- bugsvar2array(theta, "u.b", 1:ncol(y), 1:ncol(Xocc))[,,1]  # rows are species, columns are occupancy covariates
-v.b <- bugsvar2array(theta, "v.b", 1:ncol(y), 1:ncol(Xobs))[,,1]  # rows are species, columns are observation covariates
-lv.coef <- bugsvar2array(theta, "lv.coef", 1:ncol(y), 1:ncol(lvsim))[,,1] # rows are species, columns are lv
+u.b <- bugsvar2matrix(theta, "u.b", 1:ncol(y), 1:ncol(Xocc))  # rows are species, columns are occupancy covariates
+v.b <- bugsvar2matrix(theta, "v.b", 1:ncol(y), 1:ncol(Xobs))  # rows are species, columns are observation covariates
+lv.coef <- bugsvar2matrix(theta, "lv.coef", 1:ncol(y), 1:ncol(lvsim)) # rows are species, columns are lv
 sd_u_condlv <- sqrt(1 - rowSums(lv.coef^2)) #for each species the standard deviation of the indicator random variable 'u', conditional on values of LV
 
 ## Probability of Detection, CONDITIONAL on occupied
