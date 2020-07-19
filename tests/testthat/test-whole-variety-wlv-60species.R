@@ -4,7 +4,7 @@
 context("Wholistic tests on model with different ModelSites and LVs")
 
 # Create a process with known parameters
-artmodel <- artificial_runjags(nspecies = 10, nsites = 2000, nvisitspersite = 2, nlv = 4)
+artmodel <- artificial_runjags(nspecies = 60, nsites = 2000, nvisitspersite = 2, nlv = 4)
 
 # fit to data and simulations using runjags
 originalXocc <- Rfast::eachrow(Rfast::eachrow(artmodel$data$Xocc, artmodel$XoccProcess$scale, oper = "*"),
@@ -55,8 +55,8 @@ gwk %>%
                               trans = "identity") +
   ggplot2::ggtitle("Geweke Convergence Statistics Normality Tests",
                    subtitle = "0.01 threshold shown")
-# LV values did not converge! --> more burnin and higher filter?
-hist(fit_runjags$summaries[,"AC.300"]) #Autocorellation looks ok.
+# LV loads did not converge!
+hist(fit_runjags$summaries[,"AC.300"]) #Some autocorrelation
 
 
 test_that("Posterior credible distribution overlaps true parameters", {
@@ -78,8 +78,8 @@ test_that("Median of Posterior is close to true", {
   expect_equivalent(relres[!grepl("^LV", names(res))],
                     rep(0, sum(!grepl("^LV", names(res)))),
                     tol = 0.1)
-  expect_equivalent(relres[!grepl("LV", names(res))],
-                    rep(0, sum(!grepl("LV", names(res)))),
+  expect_equivalent(relres[grepl("^LV", names(res))],
+                    rep(0, sum(grepl("^LV", names(res)))),
                     tol = 0.2)
 })
 
@@ -100,10 +100,10 @@ test_that("Expected Number of Detected Species", {
   Enumspec_art <- predsumspecies(artmodel, UseFittedLV = TRUE, cl = cl)
   parallel::stopCluster(cl)
   cbind(rj = t(Enumspec), art = t(Enumspec_art)) %>%
-    as_tibble() %>%
+    tibble::as_tibble() %>%
     tibble::rowid_to_column() %>%
-    ggplot()
-  expect_equivalent(Enumspec, Enumspec_art)
+    ggplot2::ggplot()
+  expect_equivalent(Enumspec, Enumspec_art, tol = 0.1)
   
   NumSpecies <- detectednumspec(y = fit_runjags$data$y, ModelSite = fit_runjags$data$ModelSite)
   

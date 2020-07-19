@@ -1,10 +1,7 @@
-############### Wholistic Test on different ModelSites and LVs #########
-# compare artmodel generated likelihood and Enum species to fit_runjags versions, and Enum species to observations
-
-context("Wholistic tests on model with different ModelSites and LVs")
+context("Wholistic tests on model with different ModelSites and no LVs")
 
 # Create a process with known parameters
-artmodel <- artificial_runjags(nspecies = 10, nsites = 2000, nvisitspersite = 2, nlv = 4)
+artmodel <- artificial_runjags(nspecies = 10, nsites = 2000, nvisitspersite = 2, nlv = 0)
 
 # fit to data and simulations using runjags
 originalXocc <- Rfast::eachrow(Rfast::eachrow(artmodel$data$Xocc, artmodel$XoccProcess$scale, oper = "*"),
@@ -21,10 +18,10 @@ fit_runjags <- run.detectionoccupancy(originalXocc, cbind(originalXobs, artmodel
                                       ModelSite = "ModelSite",
                                       OccFmla = artmodel$XoccProcess$fmla,
                                       ObsFmla = artmodel$XobsProcess$fmla,
-                                      # initsfunction = function(chain, indata){return(NULL)},
-                                      # MCMCparams = list(n.chains = 2, adapt = 1000, burnin = 10000, sample = 500, thin = 40),
-                                      nlv = 4)
-save(fit_runjags, artmodel, originalXocc, originalXobs, file = "./tests/testthat/benchmark_varietysitesmodel_initsgiven.Rdata")
+                                      initsfunction = function(chain, indata){return(NULL)},
+                                      MCMCparams = list(n.chains = 2, adapt = 1000, burnin = 10000, sample = 500, thin = 40),
+                                      nlv = 0)
+save(fit_runjags, artmodel, originalXocc, originalXobs, file = "./tests/testthat/benchmark_varietysitesmodel_nolv.Rdata")
 
 gwk <- tibble::enframe(coda::geweke.diag(fit_runjags, frac1=0.1, frac2=0.5)$z, name = "varname")
 qqnorm(gwk$value)
@@ -55,8 +52,7 @@ gwk %>%
                               trans = "identity") +
   ggplot2::ggtitle("Geweke Convergence Statistics Normality Tests",
                    subtitle = "0.01 threshold shown")
-# LV values did not converge! --> more burnin and higher filter?
-hist(fit_runjags$summaries[,"AC.300"]) #Autocorellation looks ok.
+hist(fit_runjags$summaries[,"AC.400"]) #Autocorellation looks ok.
 
 
 test_that("Posterior credible distribution overlaps true parameters", {
@@ -72,15 +68,10 @@ test_that("Median of Posterior is close to true", {
   res <- artmodel$mcmc[[1]][1, var2compare] - fit_runjags$summaries[var2compare, "Median"] 
   relres <- res / artmodel$mcmc[[1]][1, var2compare]
   plot(res[!grepl("^LV", names(res))])
-  plot(res[grepl("^LV", names(res))])
   plot(relres[!grepl("^LV", names(relres))])
-  plot(relres[grepl("^LV", names(relres))])
   expect_equivalent(relres[!grepl("^LV", names(res))],
                     rep(0, sum(!grepl("^LV", names(res)))),
                     tol = 0.1)
-  expect_equivalent(relres[!grepl("LV", names(res))],
-                    rep(0, sum(!grepl("LV", names(res)))),
-                    tol = 0.2)
 })
 
 test_that("Fitted likelihood matches true likelihood", {
@@ -96,14 +87,14 @@ test_that("Fitted likelihood matches true likelihood", {
 
 test_that("Expected Number of Detected Species", {
   cl <- parallel::makeCluster(10)
-  Enumspec <- predsumspecies(fit_runjags, UseFittedLV = TRUE, cl = cl)
-  Enumspec_art <- predsumspecies(artmodel, UseFittedLV = TRUE, cl = cl)
+  Enumspec <- predsumspecies(fit_runjags, UseFittedLV = FALSE, cl = cl)
+  Enumspec_art <- predsumspecies(artmodel, UseFittedLV = FALSE, cl = cl)
   parallel::stopCluster(cl)
   cbind(rj = t(Enumspec), art = t(Enumspec_art)) %>%
-    as_tibble() %>%
+    tibble::as_tibble() %>%
     tibble::rowid_to_column() %>%
-    ggplot()
-  expect_equivalent(Enumspec, Enumspec_art)
+    ggplot2::ggplot()
+  expect_equivalent(Enumspec, Enumspec_art, tol = 0.1)
   
   NumSpecies <- detectednumspec(y = fit_runjags$data$y, ModelSite = fit_runjags$data$ModelSite)
   
