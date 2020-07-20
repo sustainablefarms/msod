@@ -6,16 +6,16 @@
 #' @examples
 #' indata <- readRDS("./private/data/clean/7_2_10_input_data.rds")
 #' Xocc <- indata$holdoutdata$Xocc[1:5, ]
-#' fit <- readRDS("./tmpdata/7_2_13_rsonly_woody500m.rds")
+#' fit <- readRDS("./tmpdata/7_3_02_clim_someclimate_year_woody500m_msnm_det1stO.rds")
 #' XoccProcess <- fit$XoccProcess
 #' u.b <- bugsvar2matrix(get_theta(fit, type = "median"), "u.b", rowidx = 1:fit$data$n, colidx = 1:ncol(fit$data$Xocc))
 #' rownames(u.b) <- fit$species
 #' 
+#' multisiterichness_nolv(Xocc, XoccProcess, u.b)
 #' poccupancy <- poccupancy_standalone_nolv(Xocc, XoccProcess, u.b)
 #' pocc_any <- poccupancy_indsites_nolv(poccupancy)
 #' Erichness <- sum(pocc_any) #number of species
 #' Vrichness <- sum(pocc_any * (1 - pocc_any))
-#' multisiterichness_nolv(Xocc, XoccProcess, u.b)
 
 #' @describeIn predict_standalone Predicts occupancy of species at each site for a model without latent variables.
 #' @return A matrix. Each row is a row of Xocc (a model site), each column is a species. Values are the probabilty a species occupies the model site.
