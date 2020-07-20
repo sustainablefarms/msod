@@ -111,29 +111,66 @@ lapply(fittedmods, function(x) {
 *Comment on time taken for the MCMC of each model:*
 
 ## MCMC Assessment
-### Autocorrelation 
-```{r autocorr_fromsummary}
+
+### Multi Chain Gelman-Rubin Statistic (aka "Rhat" or psrf)
+Values less than 1.1 are desired.
+
+```{r gelmanrubin, fig.height = 10}
 cleanersummaries %>%
+  mutate(type = varname2type(varname)) %>%
   ggplot() +
-  facet_grid(rows = vars(type), cols = vars(Model), scales = "free_y") +
-  geom_histogram(aes(x = AC_10), bins = 30) +
-  geom_vline(aes(xintercept = 0.1), col = "red") +
+  facet_grid(rows = vars(type), cols = vars(Model), scales = "free") +
+  geom_point(aes(y = bugsvarname, x = psrf) ) +
+  geom_vline(xintercept = 1.1, col = "blue", lty = "dashed") +
+  scale_y_discrete(name = "Variable Name") +
   theme(strip.text.x.top = element_text(angle = 90)) +
-  scale_y_continuous(name = "Number of Parameters")
+  scale_x_continuous(name = "Gelman-Rubin Statistic")
 ```
 
-*Comment on autocorrelation of model parameters. A threshold of 0.1 has been arbitrarily chosen.*
+*Comment on convergence using the Gelman-Rubin statistic*
+### Effective Sample Size
+```{r SSeff_fromsummary, fig.height = 10}
+cleanersummaries %>%
+  mutate(type = varname2type(varname)) %>%
+  ggplot() +
+  facet_grid(rows = vars(type), cols = vars(Model), scales = "free") +
+  geom_point(aes(y = bugsvarname, x = SSeff) ) +
+  geom_vline(xintercept = fittedmods[[1]]$sample * length(fittedmods[[1]]$mcmc) / 4, col = "blue", lty = "dashed") +
+  scale_y_discrete(name = "Variable Name") +
+  theme(strip.text.x.top = element_text(angle = 90)) +
+  scale_x_continuous(name = "Effective Sample Size", trans = "log10")
+```
 
-### Convegence (Geweke)
+*Comment on effective sample size. Should be similar order of magnitude to the number of MCMC samples.*
+
+### Convergence (Geweke)
 See http://www.ugrad.stat.ubc.ca/R/library/coda/html/geweke.diag.html for a very quick description of this.
 The Geweke values are Z-scores (technically t-distributed in this situation?).
 95% of (independent) Geweke values should be within 2 standard deviations (i.e. just 2 for Z-scores) of the mean.
-The below assumes the Geweke value for parameter is also *independent*, even in the situation of converged MCMC.
+The below assumes the Geweke value for parameter is also *independent*, even in the situation of converged MCMC. 
 
-```{r gewekesumm, fig.width = 4, fig.height = 8}
+```{r gewekesumm}
 gwk <- bind_rows(lapply(fittedmods, 
        function(x) enframe(geweke.diag(x, frac1=0.1, frac2=0.5)$z, name = "varname")),
        .id = "Model")
+
+
+gwk %>%
+  mutate(type = varname2type(varname)) %>%
+  ggplot() +
+  facet_grid(rows = vars(type), cols = vars(Model), scales = "free") +
+  geom_histogram(aes(x = value, y = ..density..), bins = 30) +
+  geom_vline(xintercept = c(-2, 2), col = "blue", lty = "dashed") +
+  theme(strip.text.x.top = element_text(angle = 90)) +
+  ggtitle("Geweke Diagnostic Statistics")
+```
+
+Geweke statistic values between -2 and 2 are good.
+
+#### Less Standard Assessment
+Below visualisations of Geweke values is not standard. Relies of Geweke values being independen, which is not true in general.
+
+```{r gwkasnormvalues}
 gwk %>%
   mutate(type = varname2type(varname)) %>%
   ggplot() +
@@ -144,7 +181,6 @@ gwk %>%
   theme(strip.text.x.top = element_text(angle = 90)) +
   ggtitle("QQ Plots of Geweke Statistics for Each Parameter")
 ```
-
 
 ```{r swstatistics, rows.print = 14}
 gwk %>%
@@ -161,26 +197,18 @@ gwk %>%
           subtitle = "0.01 threshold shown")
 ```
 
-*Comment on convergence using visual assessment and the Shapiro-Wilk test of normalisty*
-
-### Multi Chain Gelman-Rubin Statistic (aka "Rhat" or psrf)
-Values less than 1.1 are desired.
-
-```{r gelmanrubin}
-psrfs <- lapply(fittedmods, function(x) as_tibble(x$summaries[, "psrf"], rownames = "varname"))
-psrfs_df <- bind_rows(psrfs, .id = "Model")
-
-psrfs_df %>%
-  mutate(type = varname2type(varname)) %>%
+### Autocorrelation 
+```{r autocorr_fromsummary}
+cleanersummaries %>%
   ggplot() +
-  facet_grid(rows = vars(type), cols = vars(Model), scales = "free") +
-  geom_point(aes(y = varname, x = value) ) +
-  geom_vline(xintercept = 1.1, col = "blue", lty = "dashed") +
-  scale_y_discrete(name = "Variable Name") +
-  scale_x_continuous(name = "Gelman-Rubin Statistic")
+  facet_grid(rows = vars(type), cols = vars(Model), scales = "free_y") +
+  geom_histogram(aes(x = AC_10), bins = 30) +
+  geom_vline(aes(xintercept = 0.1), col = "red") +
+  theme(strip.text.x.top = element_text(angle = 90)) +
+  scale_y_continuous(name = "Number of Parameters")
 ```
 
-*Comment on convergence using the Gelman-Rubin statistic*
+*Comment on autocorrelation of model parameters. A threshold of 0.1 has been arbitrarily chosen.*
 
 ### Conclusions
 *Summarise behaviour of the MCMC chains*
