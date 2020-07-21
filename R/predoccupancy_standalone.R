@@ -36,6 +36,7 @@ poccupancy_standalone_nolv <- function(Xocc, XoccProcess, u.b){
 #' @describeIn predict_standalone The probability of occupancy in any of the ModelSites, where ModelSites are treated as independent.
 #' @param poccupancy is an output of poccupancy_standalone_nolv. Each row is a ModelSite, each column is a species.
 #' Values are the probability of a species occupying a ModelSite
+#' @export
 panyoccupancy_indsites_nolv <- function(poccupancy){
   anyoccupancy <- 1 - Rfast::colprods(1 - poccupancy)
   names(anyoccupancy) <- colnames(poccupancy)
@@ -43,6 +44,7 @@ panyoccupancy_indsites_nolv <- function(poccupancy){
 }
 
 #' @describeIn predict_standalone For species richness across multiple independent ModelSites 
+#' @export
 multisiterichness_nolv <- function(Xocc, XoccProcess, u.b){
   poccupancy <- poccupancy_standalone_nolv(Xocc, XoccProcess, u.b)
   pocc_any <- panyoccupancy_indsites_nolv(poccupancy)
