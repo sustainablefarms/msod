@@ -29,16 +29,25 @@ fit_runjags <- run.detectionoccupancy(originalXocc, cbind(originalXobs, artmodel
                        MCMCparams = list(n.chains = 2, adapt = 1000, burnin = 10000, sample = 500, thin = 40),
                        nlv = 0)
 
-save(fit_runjags, artmodel, originalXocc, originalXobs, file = "./tests/testthat/benchmark_identicalsitesmodel.Rdata")
+cl <- parallel::makeCluster(10)
+lkl_runjags <- likelihoods.fit(fit_runjags, cl = cl)
+lkl_artmodel <- likelihoods.fit(artmodel, cl = cl)
+Enumspec <- predsumspecies(fit_runjags, UseFittedLV = FALSE, cl = cl)
+parallel::stopCluster(cl)
 
-# test_that("Posterior credible distribution overlaps true parameters", {
+save(fit_runjags, artmodel, originalXocc, originalXobs,
+     lkl_runjags, lkl_artmodel,  Enumspec, file = "./tests/testthat/benchmark_identicalsitesmodel.Rdata")
+
+test_that("Posterior credible distribution overlaps true parameters", {
   var2compare <- colnames(artmodel$mcmc[[1]])
   inCI <- (fit_runjags$summaries[var2compare, "Lower95"] <= artmodel$mcmc[[1]][1, var2compare]) &
     (fit_runjags$summaries[var2compare, "Upper95"] >= artmodel$mcmc[[1]][1, var2compare])
   expect_equal(mean(inCI), 0.95, tol = 0.051)
-# })
+})
 
-# test_that("Predicted likelihoods match observations", {
+
+
+test_that("Predicted likelihoods match observations", {
   my <- cbind(ModelSite = fit_runjags$data$ModelSite, fit_runjags$data$y)
   obs_per_site <- lapply(1:nrow(fit_runjags$data$Xocc), function(x) my[my[, "ModelSite"] == x, -1])
   jointoutcomes <- vapply(obs_per_site, paste0, collapse = ",", FUN.VALUE = "achar")
@@ -53,7 +62,7 @@ save(fit_runjags, artmodel, originalXocc, originalXobs, file = "./tests/testthat
   cl <- parallel::makeCluster(10)
   parallel::clusterExport(cl, c("makemoreobs", "fit_runjags", "artmodel"))
   parallel::clusterEvalQ(cl, library(sustfarmld))
-  jointoutcomes_more <- pbapply::pbreplicate(1000, makemoreobs(), simplify = FALSE, cl = cl)
+  jointoutcomes_more <- pbapply::pbreplicate(10000, makemoreobs(), simplify = FALSE, cl = cl)
   
   # likelihood by simulation
   jointoutcomes_all <- c(jointoutcomes, unlist(jointoutcomes_more))
@@ -61,26 +70,25 @@ save(fit_runjags, artmodel, originalXocc, originalXobs, file = "./tests/testthat
   sim_distr_v <- as.vector(sim_distr)
   names(sim_distr_v) <- names(sim_distr)
   lkl_sim <- sim_distr_v[jointoutcomes]
-  
-  # from this package
-  lkl_runjags <- likelihoods.fit(fit_runjags, cl = cl)
-  lkl_artmodel <- likelihoods.fit(artmodel, cl = cl)
   parallel::stopCluster(cl)
   
-  # doublecheck likelihoods from artmodel
+  # sim vs artmodel
   expect_equivalent(Rfast::colmeans(lkl_artmodel), lkl_sim, tolerance = 0.01)
-  expect_true(all(abs(Rfast::colmeans(lkl_artmodel) - lkl_sim) / lkl_sim < 0.05))
+  reldiff_art_sim <- abs(Rfast::colmeans(lkl_artmodel) - lkl_sim) / lkl_sim
+  expect_lt(quantile(reldiff_art_sim, probs = 0.9), 0.1)
   
-  # check likelihoods from runjags fit
+  # sim vs runjags
   expect_equivalent(Rfast::colmeans(lkl_runjags), lkl_sim, tolerance = 0.01)
-  expect_true(all(abs(Rfast::colmeans(lkl_runjags) - lkl_sim) / lkl_sim < 0.05))
+  reldiff_jags_sim <- abs(Rfast::colmeans(lkl_runjags) - lkl_sim) / lkl_sim
+  expect_lt(quantile(reldiff_art_sim, probs = 0.9), 0.1)
   
-   # check likelihoods from runjags fit vs artmodel
+   # runjags vs artmodel
   expect_equivalent(Rfast::colmeans(lkl_runjags), Rfast::colmeans(lkl_artmodel), tolerance = 0.01)
-  expect_true(all(abs(Rfast::colmeans(lkl_runjags) - Rfast::colmeans(lkl_artmodel)) / Rfast::colmeans(lkl_artmodel) < 0.05)) 
+  reldiff_jags_art <- abs(Rfast::colmeans(lkl_runjags) - Rfast::colmeans(lkl_artmodel)) / Rfast::colmeans(lkl_artmodel)
+  expect_lt(quantile(reldiff_jags_art, probs = 0.9), 0.1)
   
-  hist(abs(Rfast::colmeans(lkl_runjags) - lkl_sim) / lkl_sim)
-  hist(abs(Rfast::colmeans(lkl_artmodel) - lkl_sim) / lkl_sim)
+  hist(reldiff_jags_sim)
+  hist(reldiff_art_sim)
   plt <- cbind(simlkl = lkl_sim,
                lklrunjags = Rfast::colmeans(lkl_runjags),
                lklartmodel = Rfast::colmeans(lkl_artmodel)) %>%
@@ -93,12 +101,9 @@ save(fit_runjags, artmodel, originalXocc, originalXobs, file = "./tests/testthat
     # ggplot2::geom_point(ggplot2::aes(x = ModelSiteID, y = (lkl - simlkl) / simlkl), col = "blue", shape = "+") +
     ggplot2::scale_y_continuous(trans = "log10")
   print(plt)
-# })
+})
 
-# test_that("Expected Number of Detected Species", {
-  cl <- parallel::makeCluster(10)
-  Enumspec <- predsumspecies(fit_runjags, UseFittedLV = FALSE, cl = cl)
-  parallel::stopCluster(cl)
+test_that("Expected Number of Detected Species", {
   NumSpecies <- detectednumspec(y = fit_runjags$data$y, ModelSite = fit_runjags$data$ModelSite)
   
   meandiff <- dplyr::cummean(NumSpecies - Enumspec["Esum_det", ])
@@ -122,5 +127,5 @@ save(fit_runjags, artmodel, originalXocc, originalXobs, file = "./tests/testthat
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
   expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
-  # })
+})
 
