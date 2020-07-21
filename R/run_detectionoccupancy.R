@@ -157,6 +157,21 @@ apply.designmatprocess <- function(designmatprocess, indata){
   return(designmat)
 }
 
+#' @describeIn apply.designmatprocess Builds a centred and scaled design matrix from input data.
+#' @param designmatprocess Are instructions for preprocessing input data, created by [prep.designmatprocess()] 
+#' @param data Dataframe to be processed.
+#' @return The columns of indata before centering and scaling 
+#' @export
+uncentre.designmatprocess <- function(designmatprocess, indata){
+  stopifnot(ncol(indata) == length(designmatprocess$scale))
+  stopifnot(all(colnames(indata) == names(designmatprocess$center)))
+  uncentered <- Rfast::eachrow(Rfast::eachrow(indata, designmatprocess$scale, oper = "*"),
+                                 designmatprocess$center, oper = "+")
+  colnames(uncentered) <- names(designmatprocess$center)
+  return(uncentered)
+}
+
+
 
 #' @describeIn run.detectionoccupancy Given the input data parameters of run.detectionoccupancy prepare the data list for JAGS
 #' @param XoccProcess An object create by prep.designmatprocess for the occupancy covariates
