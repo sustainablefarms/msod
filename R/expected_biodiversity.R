@@ -144,7 +144,7 @@ predsumspecies <- function(fit, chains = NULL, UseFittedLV = TRUE, nLVsim = 1000
   
   if (UseFittedLV){nLVsim <- NULL} #don't pass number of simulations if not going to use them
   
-  out <- predsumspecies_raw(
+  numspec_drawsitesumm <- predsumspecies_raw(
     Xocc = fit$data$Xocc,
     Xobs = fit$data$Xobs,
     ModelSite = fit$data$ModelSite,
@@ -155,6 +155,8 @@ predsumspecies <- function(fit, chains = NULL, UseFittedLV = TRUE, nLVsim = 1000
     nLVsim = nLVsim,
     cl = cl
   )
+  # convert predictions for each site and theta into predictions for each site, marginal across theta distribution
+  out <- EVnumspec_marginalposterior_drawssitessummaries(numspec_drawsitesumm)
   return(out)
 }
 
@@ -168,8 +170,8 @@ predsumspecies <- function(fit, chains = NULL, UseFittedLV = TRUE, nLVsim = 1000
 #' If FALSE nLVsim simulated LV values will be used for each draw.
 #' @param nLVsim The number of simulated LV values if not using fitted LV values (only applies if  useLVindraws = FALSE).
 #' @details No scaling or centering of Xocc or Xobs is performed by predsumspecies_raw
-#' @return A matrix. Each column is a model site, each row is a different summary of the number of species.
-#' There will be four rows: the expection and variance of the number of species occupied or detected.
+#' @return A 3-dimensional array. Dimensions are draws, sites and statistical summaries of the number of species random variables.
+#' There will be four summaries: the expection and variance of the number of species occupied or detected.
 #' @export
 predsumspecies_raw <- function(Xocc, Xobs, ModelSite, numspecies, nlv, draws, useLVindraws = TRUE, nLVsim = NULL, cl = NULL){
   # prepare parameters
@@ -239,22 +241,26 @@ predsumspecies_raw <- function(Xocc, Xobs, ModelSite, numspecies, nlv, draws, us
                                             nrow = dim(Enumspec_drawsitesumm)[[1]], ncol = dim(Enumspec_drawsitesumm)[[2]]),
                                y = as.numeric(1:ndraws), oper = "-")) == 0)
   
+  return(Enumspec_drawsitesumm)
+}
 
-  # convert predictions for each site and theta into predictions for each site, marginal across theta distribution
+# convert predictions for each site and theta into predictions for each site, marginal across theta distribution
+# @param draws_sites_summaries is 3-dimensional array. First dimension is draws, second dimension is sites, third dimension is summarieis
+EVnumspec_marginalposterior_drawssitessummaries <- function(draws_sites_summaries){
   out_det <- EVtheta2EVmarg(
-    Vsum = matrix(Enumspec_drawsitesumm[, ,"Vsum_det", drop = FALSE],  nrow = ndraws, ncol = nsites),
-    Esum = matrix(Enumspec_drawsitesumm[, , "Esum_det", drop = FALSE], nrow = ndraws, ncol = nsites)
+    Vsum = matrix(draws_sites_summaries[, ,"Vsum_det", drop = FALSE],  nrow = dim(draws_sites_summaries)[[1]], ncol = dim(draws_sites_summaries)[[2]]),
+    Esum = matrix(draws_sites_summaries[, , "Esum_det", drop = FALSE], nrow = dim(draws_sites_summaries)[[1]], ncol = dim(draws_sites_summaries)[[2]])
   )
   rownames(out_det) <- paste0(rownames(out_det), "_det")
   out_occ <- EVtheta2EVmarg(
-    Vsum = matrix(Enumspec_drawsitesumm[, ,"Vsum_occ", drop = FALSE],  nrow = ndraws, ncol = nsites),
-    Esum = matrix(Enumspec_drawsitesumm[, , "Esum_occ", drop = FALSE], nrow = ndraws, ncol = nsites)
+    Vsum = matrix(draws_sites_summaries[, ,"Vsum_occ", drop = FALSE],  nrow = dim(draws_sites_summaries)[[1]], ncol = dim(draws_sites_summaries)[[2]]),
+    Esum = matrix(draws_sites_summaries[, , "Esum_occ", drop = FALSE], nrow = dim(draws_sites_summaries)[[1]], ncol = dim(draws_sites_summaries)[[2]])
   )
   rownames(out_occ) <- paste0(rownames(out_occ), "_occ")
   
   out <- rbind(
-   occ = out_occ,
-   det = out_det)
+    occ = out_occ,
+    det = out_det)
   return(out)
 }
 
@@ -295,7 +301,7 @@ predsumspecies_newdata <- function(fit, Xocc, Xobs, ModelSiteVars, chains = NULL
     nLVsim = 2 #calculations faster when not simulating 1000s of LV values, especially since they are all ignored here.
   }
   
-  out <- predsumspecies_raw(
+  numspec_drawsitesumm <- predsumspecies_raw(
     Xocc = datalist$Xocc,
     Xobs = datalist$Xobs,
     ModelSite = datalist$ModelSite,
@@ -306,6 +312,8 @@ predsumspecies_newdata <- function(fit, Xocc, Xobs, ModelSiteVars, chains = NULL
     nLVsim = nLVsim,
     cl = cl
   )
+  # convert predictions for each site and theta into predictions for each site, marginal across theta distribution
+  out <- EVnumspec_marginalposterior_drawssitessummaries(numspec_drawsitesumm)
   return(out)
 }
 
