@@ -11,12 +11,22 @@
 #' lv.coef.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$n, ncol = 2), "lv.coef")
 #' theta <- c(theta, lv.coef.bugs)
 #' 
-#' expectedspeciesnum.ModelSiteIdx(fit, 2, chains = NULL, LVvals = NULL)
 #' Enumspec <- predsumspecies(fit, UseFittedLV = TRUE)
 #' 
 #' 
 #' indata <- readRDS("./private/data/clean/7_2_10_input_data.rds")
-#' predsumspecies_newdata(fit, Xocc <- indata$holdoutdata$Xocc, Xobs = indata$holdoutdata$yXobs, ModelSiteVars = "ModelSiteID", draws, cl = NULL)
+#' predsumspecies_newdata(fit, Xocc = indata$holdoutdata$Xocc, Xobs = indata$holdoutdata$yXobs, ModelSiteVars = "ModelSiteID", cl = NULL)
+#' draws_sites_summaries <- predsumspecies_newdata(fit, 
+#'                                                 Xocc = indata$holdoutdata$Xocc,
+#'                                                 Xobs = indata$holdoutdata$yXobs,
+#'                                                 ModelSiteVars = "ModelSiteID",
+#'                                                 bydraw = TRUE,
+#'                                                 cl = NULL)
+#' # Median expected biodiversity with 95% credible intervals for expected biodiversity
+#' Enumspec_quantiles_drawssitessummaries(draws_sites_summaries, probs  = c(0.025, 0.5, 0.0975))
+#' 
+#' # approximate 95% posterior density interval for sum of species detected using Gaussian approximation and variance.
+#' numspec_interval <- numspec_posteriorinterval_Gaussian_approx(draws_sites_summaries)
 #' 
 #' @describeIn predsumspecies Computes expected numbers of species for a single parameter set and single ModelSite
 #' @param Xocc A matrix of occupancy covariates. Must have a single row. Columns correspond to covariates.
@@ -121,11 +131,13 @@ Erowsum_margrow <- function(pmat){
 #' @param UseFittedLV If TRUE the fitted LV variables are used, if false then 1000 LV values are simulated.
 #' @param chains The chains of MCMC to use. Default is all chains.
 #' @param cl A cluster object created by parallel::makeCluster. If NULL no cluster is used.
-#' @return A matrix with each column a ModelSite.
-#' Each row is labelled and corresponds to the predicted expection and variance of the number of species occupied or detected.
+#' @param bydraw If TRUE then predictions are given *per draw* and a 3-array is returned with dimensions of draws, sites and statistical summaries.
+#' If FALSE thenthe statistical summaries *marginalise* the posterior distribution and a matrix is returned with rows of statistical summaries and columns of sites.
+#' There will be four summaries: the expection and variance of the number of species occupied or detected. 
+#' @return A matrix or 3 array with each column a ModelSite. Dimensions are labelled. The statistical summaries returned are the predicted expection and variance of the number of species occupied or detected.
 #' These expectations are with respect to the full posterior distribution of the model parameters, with the exception of the LV values which depends on UseFittedLV.
 #' @export
-predsumspecies <- function(fit, chains = NULL, UseFittedLV = TRUE, nLVsim = 1000, cl = NULL){
+predsumspecies <- function(fit, chains = NULL, UseFittedLV = TRUE, nLVsim = 1000, bydraw = FALSE, cl = NULL){
   fit$data <- as_list_format(fit$data)
   if (is.null(chains)){chains <- 1:length(fit$mcmc)}
   draws <- do.call(rbind, fit$mcmc[chains])
@@ -156,7 +168,8 @@ predsumspecies <- function(fit, chains = NULL, UseFittedLV = TRUE, nLVsim = 1000
     cl = cl
   )
   # convert predictions for each site and theta into predictions for each site, marginal across theta distribution
-  out <- EVnumspec_marginalposterior_drawssitessummaries(numspec_drawsitesumm)
+  if (!bydraw) {out <- EVnumspec_marginalposterior_drawssitessummaries(numspec_drawsitesumm)}
+  else {out <- numspec_drawsitesumm}
   return(out)
 }
 
@@ -264,6 +277,48 @@ EVnumspec_marginalposterior_drawssitessummaries <- function(draws_sites_summarie
   return(out)
 }
 
+# convert predictions for each site and theta into median prediction of expected Enumspec for each site and a confidence interval for Enumspec
+# @param probs are the quantile probabilities to return 
+Enumspec_quantiles_drawssitessummaries <- function(draws_sites_summaries, probs = seq(0, 1, 0.25)){
+  Esum_occ = matrix(draws_sites_summaries[, , "Esum_occ", drop = FALSE], nrow = dim(draws_sites_summaries)[[1]], ncol = dim(draws_sites_summaries)[[2]])
+  Esum_occ_quants <- apply(Esum_occ, MARGIN = 1, function(x) quantile(x, probs = probs))
+  rownames(Esum_occ_quants) <- paste0("Esum_occ_", rownames(Esum_occ_quants))
+  
+  Esum_det = matrix(draws_sites_summaries[, , "Esum_det", drop = FALSE], nrow = dim(draws_sites_summaries)[[1]], ncol = dim(draws_sites_summaries)[[2]])
+  Esum_det_quants <- apply(Esum_det, MARGIN = 1, function(x) quantile(x, probs = probs))
+  rownames(Esum_det_quants) <- paste0("Esum_det_", rownames(Esum_det_quants))
+  return(rbind(Esum_occ_quants, Esum_det_quants))
+}
+
+Vnumspec_quantiles_drawssitessummaries <- function(draws_sites_summaries, probs = seq(0, 1, 0.25)){
+  Vsum_occ = matrix(draws_sites_summaries[, , "Vsum_occ", drop = FALSE], nrow = dim(draws_sites_summaries)[[1]], ncol = dim(draws_sites_summaries)[[2]])
+  Vsum_occ_quants <- apply(Vsum_occ, MARGIN = 1, function(x) quantile(x, probs = probs))
+  rownames(Vsum_occ_quants) <- paste0("Vsum_occ_", rownames(Vsum_occ_quants))
+  
+  Vsum_det = matrix(draws_sites_summaries[, , "Vsum_det", drop = FALSE], nrow = dim(draws_sites_summaries)[[1]], ncol = dim(draws_sites_summaries)[[2]])
+  Vsum_det_quants <- apply(Vsum_det, MARGIN = 1, function(x) quantile(x, probs = probs))
+  rownames(Vsum_det_quants) <- paste0("Vsum_det_", rownames(Vsum_det_quants))
+  return(rbind(Vsum_occ_quants, Vsum_det_quants))
+}
+
+# approximate 95% posterior density interval for sum of species detected using Gaussian approximation and variance.
+numspec_posteriorinterval_Gaussian_approx <- function(draws_sites_summaries){
+  moments <- EVnumspec_marginalposterior_drawssitessummaries(draws_sites_summaries)
+  sum_occ_low <- moments["Esum_occ", ] - 2 * sqrt(moments["Vsum_occ", ])
+  sum_occ_high <- moments["Esum_occ", ] + 2 * sqrt(moments["Vsum_occ", ])
+  sum_det_low <- moments["Esum_det", ] - 2 * sqrt(moments["Vsum_det", ])
+  sum_det_high <- moments["Esum_det", ] + 2 * sqrt(moments["Vsum_det", ])
+  out <- rbind(
+    sum_occ_low = sum_occ_low,
+    sum_occ_pred = moments["Esum_occ", ],
+    sum_occ_high = sum_occ_high,
+    sum_det_low = sum_det_low,
+    sum_det_pred = moments["Esum_det", ],
+    sum_det_high = sum_det_high
+  )
+  return(out)
+}
+
 # @param Vsum A matrix of variance of sum of species. Each row corresponds to a different theta. Each column a ModelSite.
 # @param Esum A matrix of expected sum of species. Each row corresponds to a different theta. Each column a ModelSite.
 # @return The expectation and variance of the sum of species marginal across theta (across the supplied rows)
@@ -284,7 +339,7 @@ EVtheta2EVmarg <- function(Vsum, Esum){
 
 #' @describeIn predsumspecies For new ModelSite occupancy covariates and detection covariates, predicted number of expected species
 #' @export
-predsumspecies_newdata <- function(fit, Xocc, Xobs, ModelSiteVars, chains = NULL, nLVsim = 1000, cl = NULL){
+predsumspecies_newdata <- function(fit, Xocc, Xobs, ModelSiteVars, chains = NULL, nLVsim = 1000, bydraw = FALSE, cl = NULL){
   datalist <- prep_new_data(fit, Xocc, Xobs, ModelSite = ModelSiteVars)
   UseFittedLV <- FALSE # no LV available for new model sites
   
@@ -313,7 +368,8 @@ predsumspecies_newdata <- function(fit, Xocc, Xobs, ModelSiteVars, chains = NULL
     cl = cl
   )
   # convert predictions for each site and theta into predictions for each site, marginal across theta distribution
-  out <- EVnumspec_marginalposterior_drawssitessummaries(numspec_drawsitesumm)
+  if (!bydraw) {out <- EVnumspec_marginalposterior_drawssitessummaries(numspec_drawsitesumm)}
+  else {out <- numspec_drawsitesumm}
   return(out)
 }
 

@@ -94,6 +94,12 @@ test_that("In sample data; fitted LV values; different draws", {
   
   sd_final <- sqrt(meanvar[ncol(Enumspec)])
   expect_lt(abs(meandiff[ncol(Enumspec)]), 3 * sd_final)
+  
+  # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
+  draws_sites_summaries <- predsumspecies(artfit, bydraw = TRUE, UseFittedLV = FALSE)
+  numspec_interval <- numspec_posteriorinterval_Gaussian_approx(draws_sites_summaries)
+  ininterval <- (NumSpecies_interleaved > numspec_interval["sum_det_low", ]) & (NumSpecies_interleaved < numspec_interval["sum_det_high", ])
+  expect_equal(mean(ininterval), 0.95, tol = 0.05)
 })
 
 test_that("In sample data; fitted LV values", {
@@ -130,6 +136,12 @@ test_that("In sample data; fitted LV values", {
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
   expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
+  
+  # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
+  draws_sites_summaries <- predsumspecies(artfit, bydraw = TRUE, UseFittedLV = TRUE)
+  numspec_interval <- numspec_posteriorinterval_Gaussian_approx(draws_sites_summaries)
+  ininterval <- (NumSpecies > numspec_interval["sum_det_low", ]) & (NumSpecies < numspec_interval["sum_det_high", ])
+  expect_equal(mean(ininterval), 0.95, tol = 0.05)
 })
 
 test_that("In sample data; marginal on LV values", {
@@ -182,6 +194,12 @@ test_that("In sample data; marginal on LV values", {
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
   expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:50 ])))
+  
+  # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
+  draws_sites_summaries <- predsumspecies(artfit, bydraw = TRUE, UseFittedLV = FALSE)
+  numspec_interval <- numspec_posteriorinterval_Gaussian_approx(draws_sites_summaries)
+  ininterval <- (NumSpecies > numspec_interval["sum_det_low", ]) & (NumSpecies < numspec_interval["sum_det_high", ])
+  expect_equal(mean(ininterval), 0.95, tol = 0.05)
 })
 
 test_that("In sample data; no LV", {
@@ -210,6 +228,12 @@ test_that("In sample data; no LV", {
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
   expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:50 ])))
+  
+  # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
+  draws_sites_summaries <- predsumspecies(artfit, bydraw = TRUE, UseFittedLV = FALSE)
+  numspec_interval <- numspec_posteriorinterval_Gaussian_approx(draws_sites_summaries)
+  ininterval <- (NumSpecies > numspec_interval["sum_det_low", ]) & (NumSpecies < numspec_interval["sum_det_high", ])
+  expect_equal(mean(ininterval), 0.95, tol = 0.05)
 })
 
 
@@ -258,6 +282,12 @@ test_that("Holdout data; has LVs", {
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
   expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
+  
+  # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
+  draws_sites_summaries <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite", chains = NULL, nLVsim = 1000, bydraw = TRUE)
+  numspec_interval <- numspec_posteriorinterval_Gaussian_approx(draws_sites_summaries)
+  ininterval <- (NumSpecies > numspec_interval["sum_det_low", ]) & (NumSpecies < numspec_interval["sum_det_high", ])
+  expect_equal(mean(ininterval), 0.95, tol = 0.05)
 })
 
 
@@ -307,6 +337,12 @@ test_that("Holdout data; no LVs", {
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
   expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
+  
+  # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
+  draws_sites_summaries <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite", chains = NULL, nLVsim = 1000, bydraw = TRUE)
+  numspec_interval <- numspec_posteriorinterval_Gaussian_approx(draws_sites_summaries)
+  ininterval <- (NumSpecies > numspec_interval["sum_det_low", ]) & (NumSpecies < numspec_interval["sum_det_high", ])
+  expect_equal(mean(ininterval), 0.95, tol = 0.05)
 })
 
 #########################################################################################
@@ -342,6 +378,12 @@ test_that("No LV and identical sites", {
 
   # Expect sd to be close to theoretical sd. Hopefully within 10%
   expect_equivalent(sd(NumSpecies), sqrt(EVsum["Vsum_det", 1]), tol = 0.1 * sqrt(EVsum["Vsum_det", 1]))
+  
+  # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
+  draws_sites_summaries <- predsumspecies(artfit, bydraw = TRUE, UseFittedLV = FALSE)
+  numspec_interval <- numspec_posteriorinterval_Gaussian_approx(draws_sites_summaries)
+  ininterval <- (NumSpecies > numspec_interval["sum_det_low", ]) & (NumSpecies < numspec_interval["sum_det_high", ])
+  expect_equal(mean(ininterval), 0.95, tol = 0.05)
 })
 
 test_that("Expected occupied number for in sample data; fitted LV values", {
