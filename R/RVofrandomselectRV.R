@@ -21,7 +21,56 @@
 #' sumRV_fitLV <- speciesnum.ModelSite.theta(Xocc = fit$data$Xocc[1, , drop = FALSE], u.b = u.b, lv.coef = lv.coef, LVvals = LVvals[1, , drop = FALSE])
 #' quantile(sumRV_fitLV, probs = c(0.025, 0.5, 0.975))
 
+
+
 #' Uncertainty of biodiversity *incorporating* parameter uncertainty is below
+predsumspeciesRV <- function(fit, chains = NULL, UseFittedLV = TRUE, nLVsim = 1000, type = "marginal", cl = NULL){
+  stopifnot(type %in% c("draws", "marginal"))
+  
+  fit$data <- as_list_format(fit$data)
+  if (is.null(chains)){chains <- 1:length(fit$mcmc)}
+  draws <- do.call(rbind, fit$mcmc[chains])
+  if ( (is.null(fit$data$nlv)) || (fit$data$nlv == 0)){ #LVs not in model, add dummy variables
+    LVbugs <- matrix2bugsvar(matrix(0, nrow = nrow(fit$data$Xocc), ncol = 2), "LV")
+    LVbugs.draws <- Rfast::rep_row(LVbugs, nrow(draws))
+    colnames(LVbugs.draws) <- names(LVbugs)
+    
+    lv.coef.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$n, ncol = 2), "lv.coef")
+    lv.coef.draws <- Rfast::rep_row(lv.coef.bugs, nrow(draws))
+    colnames(lv.coef.draws) <- names(lv.coef.bugs)
+    draws <- cbind(draws, lv.coef.draws, LVbugs.draws)
+    fit$data$nlv <- 2
+    UseFittedLV <- TRUE #calculations faster when not simulating 1000s of LV values, especially since they are all ignored here.
+  } 
+  
+  if (UseFittedLV){nLVsim <- NULL} #don't pass number of simulations if not going to use them
+  
+  numspecRV_drawsites <- sumspeciesRV_raw(
+    Xocc = fit$data$Xocc,
+    Xobs = fit$data$Xobs,
+    ModelSite = fit$data$ModelSite,
+    numspecies = fit$data$n,
+    nlv = fit$data$nlv,
+    draws = draws,
+    useLVindraws = UseFittedLV,
+    nLVsim = nLVsim,
+    cl = cl
+  )
+  # convert predictions for each site and theta into predictions for each site, marginal across theta distribution
+  if (type == "draws") {out <- numspecRV_drawsites}
+  if (type == "marginal") {
+    numspecRVs <- numspecRV_drawsites[["numspecRVs"]]
+    sitedrawidxs <- numspecRV_drawsites[["sitedrawidxs"]]
+    sumRVs_margpost <- pbapply::pblapply(unique(sitedrawidxs[["siteidx"]]),
+                             function(siteidx){
+                               sumRV_margpost <- randselRV(numspecRVs[sitedrawidxs[["siteidx"]] == siteidx])
+                               return(sumRV_margpost)
+                             },
+                             cl = cl)
+    return(sumRVs_margpost)
+  }
+}
+
 
 sumspeciesRV_raw <- function(Xocc, Xobs, ModelSite, numspecies, nlv, draws, useLVindraws = TRUE, nLVsim = NULL, cl = NULL){
   # prepare parameters
@@ -52,8 +101,10 @@ sumspeciesRV_raw <- function(Xocc, Xobs, ModelSite, numspecies, nlv, draws, useL
   
   
   # for each modelsite and each draw apply the following function:
-  numspecRVs <- pbapply::pbapply(sitedrawidxs, MARGIN = 1,
-                               function(sitedrawidx){
+  # note that I've had to use pblapply because pbapply was doing some weird simplifications
+  numspecRVs <- pbapply::pblapply(1:nrow(sitedrawidxs), 
+                               function(sitedrawidx_row){
+                                 sitedrawidx <- sitedrawidxs[sitedrawidx_row, , drop = FALSE]
                                  Xocc <- Xocc[sitedrawidx[["siteidx"]], , drop = FALSE]
                                  Xobs <- Xobs[ModelSiteIdxs == sitedrawidx[["siteidx"]], , drop = FALSE]
                                  u.b_theta <- matrix(u.b[,, sitedrawidx[["drawidx"]] ], nrow = nspecall, ncol = noccvar)
@@ -69,6 +120,7 @@ sumspeciesRV_raw <- function(Xocc, Xobs, ModelSite, numspecies, nlv, draws, useL
                                                                                           v.b = v.b_theta,
                                                                                           lv.coef = lv.coef_theta,
                                                                                           LVvals = LVvals_thetasite)
+                                 return(sumRV)
                                },
                                cl = cl)
   
