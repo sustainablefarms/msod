@@ -420,7 +420,7 @@ test_that("No LV and identical sites", {
 test_that("Expected occupied number for in sample data; fitted LV values", {
   nsites <- 1000
   artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, nlv = 4,
-                               v.b.min = 20, v.b.max = 20.1) #makes detection almost certain)
+                               v.b.min = 20, v.b.max = 20.1) #detection is still not certain
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
   Enumspecdet <- predsumspecies(artfit, UseFittedLV = TRUE)
