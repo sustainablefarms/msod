@@ -1,21 +1,13 @@
 #' @title Compute predicted distributions of number species detected
 #' @description Uses [discreteRV] to compute distribution of number of species 
 #' @examples
-#' fit <- readRDS("./tmpdata/7_2_9_addyear_msnm_year_time_2lv.rds")
-#' theta <- get_theta(fit, type = "median")
-#' u.b <- bugsvar2matrix(theta, "u.b", 1:fit$data$n, 1:ncol(fit$data$Xocc))
-#' v.b <- bugsvar2matrix(theta, "v.b", 1:fit$data$n, 1:ncol(fit$data$Xobs))
-#' lv.coef <- bugsvar2matrix(theta, "lv.coef", 1:fit$data$n, 1:fit$data$nlv)
-#' nLVsim <- 1000
-#' lvsim <- matrix(rnorm(fit$data$nlv * nLVsim), ncol = fit$data$nlv, nrow = nLVsim)
-#' LVvals <- bugsvar2matrix(theta, "LV", 1:fit$data$n, 1:fit$data$nlv)
-#' sumRV_margLV <- speciesnum.ModelSite.theta(Xocc = fit$data$Xocc[1, , drop = FALSE], u.b = u.b, lv.coef = lv.coef, LVvals = lvsim)
-#' quantile(sumRV_margLV, probs = c(0.025, 0.5, 0.975))
-#' sumRV_fitLV <- speciesnum.ModelSite.theta(Xocc = fit$data$Xocc[1, , drop = FALSE], u.b = u.b, lv.coef = lv.coef, LVvals = LVvals[1, , drop = FALSE])
-#' quantile(sumRV_fitLV, probs = c(0.025, 0.5, 0.975))
+# fit <- readRDS("./tmpdata/7_3_02_clim_someclimate_year_woody500m_msnm_det1stO.rds")
+# indata <- readRDS("./private/data/clean/7_2_10_input_data.rds")
+# det_dist_2060 <- predsumspeciesRV_newdata(fit,
+#                          Xocc = indata$holdoutdata$Xocc[indata$holdoutdata$Xocc$ModelSiteID == 2060, , drop = FALSE],
+#                          Xobs = indata$holdoutdata$yXobs[indata$holdoutdata$yXobs$ModelSiteID == 2060, , drop = FALSE],
+#                          ModelSiteVars = "ModelSiteID")
 
-#' full distribution of species number given fixed theta and unknown LV value (i.e. many simulated LV values). This is *within* model uncertainy to biodiversity
-#' 
 #' @param fit A runjags fitted object
 #' @param UseFittedLV If TRUE the fitted LV variables are used, if false then 100 LV values are simulated.
 #' @param chains The chains of MCMC to use. Default is all chains.
@@ -70,6 +62,57 @@ predsumspeciesRV <- function(fit, chains = NULL, UseFittedLV = TRUE, nLVsim = 10
   }
 }
 
+#' @describeIn predsumspeciesRV Distribution of species numbers for new ModelSite
+predsumspeciesRV_newdata <- function(fit, Xocc, Xobs = NULL, ModelSiteVars = NULL, chains = NULL, nLVsim = 100, type = "marginal", cl = NULL){
+  stopifnot(type %in% c("draws", "marginal"))
+  
+  if (!is.null(Xobs)) {datalist <- prep_new_data(fit, Xocc, Xobs, ModelSite = ModelSiteVars)}
+  else{datalist <- list(
+    Xocc = apply.designmatprocess(fit$XoccProcess, Xocc),
+    Xobs = NULL,
+    ModelSite = NULL
+  )}
+  UseFittedLV <- FALSE # no LV available for new model sites
+  
+  fit$data <- as_list_format(fit$data)
+  if (is.null(chains)){chains <- 1:length(fit$mcmc)}
+  draws <- do.call(rbind, fit$mcmc[chains])
+  
+  if ( (is.null(fit$data$nlv)) || (fit$data$nlv == 0)){ #LVs not in model, add dummy variables
+    lv.coef.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$n, ncol = 2), "lv.coef")
+    lv.coef.draws <- Rfast::rep_row(lv.coef.bugs, nrow(draws))
+    colnames(lv.coef.draws) <- names(lv.coef.bugs)
+    draws <- cbind(draws, lv.coef.draws)
+    fit$data$nlv <- 2
+    nLVsim = 2 #calculations faster when not simulating 1000s of LV values, especially since they are all ignored here.
+  }
+  
+  numspecRV_drawsites <- sumspeciesRV_raw(
+    Xocc = datalist$Xocc,
+    Xobs = datalist$Xobs,
+    ModelSite = datalist$ModelSite,
+    numspecies = fit$data$n,
+    nlv = fit$data$nlv,
+    draws = draws,
+    useLVindraws = FALSE,
+    nLVsim = nLVsim,
+    cl = cl
+  )
+  if (type == "draws") {out <- numspecRV_drawsites}
+  if (type == "marginal") {
+    numspecRVs <- numspecRV_drawsites[["numspecRVs"]]
+    sitedrawidxs <- numspecRV_drawsites[["sitedrawidxs"]]
+    sumRVs_margpost <- pbapply::pblapply(unique(sitedrawidxs[["siteidx"]]),
+                                         function(siteidx){
+                                           sumRV_margpost <- randselRV(numspecRVs[sitedrawidxs[["siteidx"]] == siteidx])
+                                           return(sumRV_margpost)
+                                         },
+                                         cl = cl)
+    return(sumRVs_margpost)
+  }
+  return(out)
+}
+
 
 #' @param Xocc A matrix of occupancy covariates. Must have a single row. Columns correspond to covariates.
 #' @param Xobs A matrix of detection covariates, each row is a visit. If NULL then expected number of species in occupation is returned
@@ -77,19 +120,21 @@ predsumspeciesRV <- function(fit, chains = NULL, UseFittedLV = TRUE, nLVsim = 10
 #' @param LVvals A matrix of LV values. Each column corresponds to a LV. To condition on specific LV values, provide a matrix of row 1.
 #' @describeIn predsumspeciesRV For raw model information. Returns distributions per draw.
 #' @export
-sumspeciesRV_raw <- function(Xocc, Xobs, ModelSite, numspecies, nlv, draws, useLVindraws = TRUE, nLVsim = NULL, cl = NULL){
+sumspeciesRV_raw <- function(Xocc, Xobs = NULL, ModelSite = NULL, numspecies, nlv, draws, useLVindraws = TRUE, nLVsim = NULL, cl = NULL){
   # prepare parameters
   nspecall <- numspecies
   ndraws <- nrow(draws)
   nsites <- nrow(Xocc)
   noccvar <- ncol(Xocc)
-  nobsvar <- ncol(Xobs)
-  ModelSiteIdxs <- ModelSite
-  stopifnot(length(ModelSiteIdxs) == nrow(Xobs))
-  stopifnot(all(ModelSiteIdxs %in% 1:nsites))
-  if (!all(1:nsites %in% ModelSiteIdxs)){warning("Some ModelSite do not have observation covariate information.")}
+  if (!is.null(Xobs)) {
+    nobsvar <- ncol(Xobs)
+    ModelSiteIdxs <- ModelSite
+    stopifnot(length(ModelSiteIdxs) == nrow(Xobs))
+    stopifnot(all(ModelSiteIdxs %in% 1:nsites))
+    if (!all(1:nsites %in% ModelSiteIdxs)){warning("Some ModelSite do not have observation covariate information.")}
+  }
   u.b <- bugsvar2array(draws, "u.b", 1:nspecall, 1:noccvar)
-  v.b <- bugsvar2array(draws, "v.b", 1:nspecall, 1:nobsvar)
+  if (!is.null(Xobs)) {v.b <- bugsvar2array(draws, "v.b", 1:nspecall, 1:nobsvar)}
   lv.coef <- bugsvar2array(draws, "lv.coef", 1:nspecall, 1:nlv)
   
   if (useLVindraws){stopifnot(is.null(nLVsim))}
@@ -111,9 +156,10 @@ sumspeciesRV_raw <- function(Xocc, Xobs, ModelSite, numspecies, nlv, draws, useL
                                function(sitedrawidx_row){
                                  sitedrawidx <- sitedrawidxs[sitedrawidx_row, , drop = FALSE]
                                  Xocc <- Xocc[sitedrawidx[["siteidx"]], , drop = FALSE]
-                                 Xobs <- Xobs[ModelSiteIdxs == sitedrawidx[["siteidx"]], , drop = FALSE]
+                                 if (!is.null(Xobs)) {Xobs <- Xobs[ModelSiteIdxs == sitedrawidx[["siteidx"]], , drop = FALSE]}
                                  u.b_theta <- matrix(u.b[,, sitedrawidx[["drawidx"]] ], nrow = nspecall, ncol = noccvar)
-                                 v.b_theta <- matrix(v.b[,, sitedrawidx[["drawidx"]] ], nrow = nspecall, ncol = nobsvar)
+                                 if (!is.null(Xobs)) {v.b_theta <- matrix(v.b[,, sitedrawidx[["drawidx"]] ], nrow = nspecall, ncol = nobsvar)}
+                                 else {v.b_theta = NULL}
                                  lv.coef_theta <- matrix(lv.coef[,, sitedrawidx[["drawidx"]] ], nrow = nspecall, ncol = nlv)
                                  if (useLVindraws){
                                    LVvals_thetasite <- matrix(LVvals[sitedrawidx[["siteidx"]], , sitedrawidx[["drawidx"]], drop = FALSE], nrow = 1, ncol = nlv)
