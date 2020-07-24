@@ -4,7 +4,7 @@ context("Full distributions of species numbers")
 
 test_that("Full artificial model same summaries as expected_biodiversity", {
   artfit <- artificial_runjags(nspecies = 60, nsites = 20, nvisitspersite = 3, nlv = 4)
-  numspec_summ <- predsumspecies(artfit, UseFittedLV = TRUE, nLVsim = 1000, type = "marginal")
+  numspec_summ <- predsumspecies(artfit, UseFittedLV = TRUE, type = "marginal")
   numspec_distr <- predsumspeciesRV(artfit, UseFittedLV = TRUE, type = "marginal")
   
   expect_equivalent(numspec_summ["Esum_det", ], vapply(numspec_distr, E, FUN.VALUE = 0.23))
@@ -15,7 +15,7 @@ test_that("Full artificial model with excellent detection, same summaries as exp
   artfit <- artificial_runjags(nspecies = 60, nsites = 20, nvisitspersite = 3, nlv = 4,
                                ObsFmla = "~ 1",
                                v.b.min = 20, v.b.max = 20.1) #makes detection almost certain
-  numspec_summ <- predsumspecies(artfit, UseFittedLV = TRUE, nLVsim = 1000, type = "marginal")
+  numspec_summ <- predsumspecies(artfit, UseFittedLV = TRUE, type = "marginal")
   numspec_distr <- predsumspeciesRV(artfit, UseFittedLV = TRUE, type = "marginal")
   
   expect_equivalent(numspec_summ["Esum_occ", ], numspec_summ["Esum_det", ])
@@ -24,7 +24,7 @@ test_that("Full artificial model with excellent detection, same summaries as exp
 })
 
 test_that("Uncertainty dominated by latent variables.", {
-  artfit <- artificial_runjags(nspecies = 60, nsites = 20, nvisitspersite = 3, nlv = 4,
+  artfit <- artificial_runjags(nspecies = 60, nsites = 100, nvisitspersite = 3, nlv = 4,
                                u.b.min = -0.01,
                                u.b.max = 0.01,
                                v.b.min = -0.01,
@@ -51,7 +51,7 @@ test_that("Uncertainty dominated by latent variables.", {
   expect_equal(mean(inci_fittedLV), 0.95, tol = 0.05)
 
 
-  sumRVs_margpost_margLV <- predsumspeciesRV(artfit, UseFittedLV = FALSE, nLVsim = 100, type = "marginal")
+  sumRVs_margpost_margLV <- predsumspeciesRV(artfit, UseFittedLV = FALSE, nLVsim = 1000, type = "marginal")
   # par(mfrow = c(4, 5))
   # lapply(sumRVs_margpost_margLV, plot)
   ci_margLV <- lapply(sumRVs_margpost_margLV, quantile, probs = c(0.025, 0.975))
@@ -71,7 +71,7 @@ test_that("Uncertainty dominated by latent variables.", {
 })
 
 test_that("Credible intervals accurate for model without restrictions.", {
-  artfit <- artificial_runjags(nspecies = 60, nsites = 20, nvisitspersite = 3, nlv = 4)
+  artfit <- artificial_runjags(nspecies = 60, nsites = 200, nvisitspersite = 3, nlv = 4)
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
   
