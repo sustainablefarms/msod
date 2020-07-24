@@ -219,19 +219,21 @@ predsumspecies <- function(fit, chains = NULL, UseFittedLV = TRUE, nLVsim = 1000
 #' @return A 3-dimensional array. Dimensions are draws, sites and statistical summaries of the number of species random variables.
 #' There will be four summaries: the expection and variance of the number of species occupied or detected.
 #' @export
-predsumspecies_raw <- function(Xocc, Xobs, ModelSite, numspecies, nlv, draws, useLVindraws = TRUE, nLVsim = NULL, cl = NULL){
+predsumspecies_raw <- function(Xocc, Xobs = NULL, ModelSite = NULL, numspecies, nlv, draws, useLVindraws = TRUE, nLVsim = NULL, cl = NULL){
   # prepare parameters
   nspecall <- numspecies
   ndraws <- nrow(draws)
   nsites <- nrow(Xocc)
   noccvar <- ncol(Xocc)
-  nobsvar <- ncol(Xobs)
-  ModelSiteIdxs <- ModelSite
-  stopifnot(length(ModelSiteIdxs) == nrow(Xobs))
-  stopifnot(all(ModelSiteIdxs %in% 1:nsites))
-  if (!all(1:nsites %in% ModelSiteIdxs)){warning("Some ModelSite do not have observation covariate information.")}
+  if (!is.null(Xobs)) {
+    nobsvar <- ncol(Xobs)
+    ModelSiteIdxs <- ModelSite
+    stopifnot(length(ModelSiteIdxs) == nrow(Xobs))
+    stopifnot(all(ModelSiteIdxs %in% 1:nsites))
+    if (!all(1:nsites %in% ModelSiteIdxs)){warning("Some ModelSite do not have observation covariate information.")}
+  }
   u.b <- bugsvar2array(draws, "u.b", 1:nspecall, 1:noccvar)
-  v.b <- bugsvar2array(draws, "v.b", 1:nspecall, 1:nobsvar)
+  if (!is.null(Xobs)) {v.b <- bugsvar2array(draws, "v.b", 1:nspecall, 1:nobsvar)}
   lv.coef <- bugsvar2array(draws, "lv.coef", 1:nspecall, 1:nlv)
   
   if (useLVindraws){stopifnot(is.null(nLVsim))}
@@ -248,12 +250,14 @@ predsumspecies_raw <- function(Xocc, Xobs, ModelSite, numspecies, nlv, draws, us
   
 
   # for each modelsite and each draw apply the following function:
-  Enumspec <- pbapply::pbapply(sitedrawidxs, MARGIN = 1,
-        function(sitedrawidx){
+  Enumspec <- pbapply::pblapply(1:nrow(sitedrawidxs),
+        function(rowidx){
+          sitedrawidx <- sitedrawidxs[rowidx, , drop = FALSE]
           Xocc <- Xocc[sitedrawidx[["siteidx"]], , drop = FALSE]
-          Xobs <- Xobs[ModelSiteIdxs == sitedrawidx[["siteidx"]], , drop = FALSE]
+          if (!is.null(Xobs)) {Xobs <- Xobs[ModelSiteIdxs == sitedrawidx[["siteidx"]], , drop = FALSE]}
           u.b_theta <- matrix(u.b[,, sitedrawidx[["drawidx"]] ], nrow = nspecall, ncol = noccvar)
-          v.b_theta <- matrix(v.b[,, sitedrawidx[["drawidx"]] ], nrow = nspecall, ncol = nobsvar)
+          if (!is.null(Xobs)) {v.b_theta <- matrix(v.b[,, sitedrawidx[["drawidx"]] ], nrow = nspecall, ncol = nobsvar)}
+          else {v.b_theta <- NULL}
           lv.coef_theta <- matrix(lv.coef[,, sitedrawidx[["drawidx"]] ], nrow = nspecall, ncol = nlv)
           if (useLVindraws){
             LVvals_thetasite <- matrix(LVvals[sitedrawidx[["siteidx"]], , sitedrawidx[["drawidx"]], drop = FALSE], nrow = 1, ncol = nlv)
@@ -268,6 +272,7 @@ predsumspecies_raw <- function(Xocc, Xobs, ModelSite, numspecies, nlv, draws, us
           return(Enumspec_sitetheta)
         },
         cl = cl)
+  Enumspec <- simplify2array(Enumspec)
   # each column of Enumspec is row of sitedrawidxs
   Enumspec <- rbind(Enumspec, t(sitedrawidxs))
   
@@ -294,20 +299,26 @@ predsumspecies_raw <- function(Xocc, Xobs, ModelSite, numspecies, nlv, draws, us
 # convert predictions for each site and theta into predictions for each site, marginal across theta distribution
 # @param draws_sites_summaries is 3-dimensional array. First dimension is draws, second dimension is sites, third dimension is summarieis
 EVnumspec_marginalposterior_drawssitessummaries <- function(draws_sites_summaries){
-  out_det <- EVtheta2EVmarg(
-    Vsum = matrix(draws_sites_summaries[, ,"Vsum_det", drop = FALSE],  nrow = dim(draws_sites_summaries)[[1]], ncol = dim(draws_sites_summaries)[[2]]),
-    Esum = matrix(draws_sites_summaries[, , "Esum_det", drop = FALSE], nrow = dim(draws_sites_summaries)[[1]], ncol = dim(draws_sites_summaries)[[2]])
-  )
-  rownames(out_det) <- paste0(rownames(out_det), "_det")
+  if ("Esum_det" %in% unlist(dimnames(draws_sites_summaries))) {detavailable <- TRUE}
+  else {detavailable <- FALSE}
   out_occ <- EVtheta2EVmarg(
     Vsum = matrix(draws_sites_summaries[, ,"Vsum_occ", drop = FALSE],  nrow = dim(draws_sites_summaries)[[1]], ncol = dim(draws_sites_summaries)[[2]]),
     Esum = matrix(draws_sites_summaries[, , "Esum_occ", drop = FALSE], nrow = dim(draws_sites_summaries)[[1]], ncol = dim(draws_sites_summaries)[[2]])
   )
   rownames(out_occ) <- paste0(rownames(out_occ), "_occ")
   
-  out <- rbind(
-    occ = out_occ,
-    det = out_det)
+  if (detavailable){
+    out_det <- EVtheta2EVmarg(
+      Vsum = matrix(draws_sites_summaries[, ,"Vsum_det", drop = FALSE],  nrow = dim(draws_sites_summaries)[[1]], ncol = dim(draws_sites_summaries)[[2]]),
+      Esum = matrix(draws_sites_summaries[, , "Esum_det", drop = FALSE], nrow = dim(draws_sites_summaries)[[1]], ncol = dim(draws_sites_summaries)[[2]])
+    )
+    rownames(out_det) <- paste0(rownames(out_det), "_det")
+    out <- rbind(
+      occ = out_occ,
+      det = out_det)
+  } else {
+    out <- out_occ
+  }
   return(out)
 }
 
@@ -373,8 +384,15 @@ EVtheta2EVmarg <- function(Vsum, Esum){
 
 #' @describeIn predsumspecies For new ModelSite occupancy covariates and detection covariates, predicted number of expected species
 #' @export
-predsumspecies_newdata <- function(fit, Xocc, Xobs, ModelSiteVars, chains = NULL, nLVsim = 1000, bydraw = FALSE, cl = NULL){
-  datalist <- prep_new_data(fit, Xocc, Xobs, ModelSite = ModelSiteVars)
+predsumspecies_newdata <- function(fit, Xocc, Xobs = NULL, ModelSiteVars = NULL, chains = NULL, nLVsim = 1000, type = "marginal", cl = NULL){
+  stopifnot(type %in% c("draws", "marginal", "median"))
+  
+  if (!is.null(Xobs)) {datalist <- prep_new_data(fit, Xocc, Xobs, ModelSite = ModelSiteVars)}
+  else{datalist <- list(
+    Xocc = apply.designmatprocess(fit$XoccProcess, Xocc),
+    Xobs = NULL,
+    ModelSite = NULL
+  )}
   UseFittedLV <- FALSE # no LV available for new model sites
   
   fit$data <- as_list_format(fit$data)
