@@ -62,3 +62,15 @@ Enum_compare <- function(observed, predicted, predictedV){
              )
   return(out)
 }
+
+#' @describeIn Enum_compare The coverage of approximate 95% credence interval of each model.
+#' @export
+Enum_coverage <- function(observed, predicted, predictedV){
+  resids <- drop(observed) - predicted
+  in95ci <- abs(resids) < 2 * sqrt(predictedV)
+  out <- list(
+    mean = colMeans(in95ci),
+    in_ci = in95ci
+  )
+  return(out)
+}

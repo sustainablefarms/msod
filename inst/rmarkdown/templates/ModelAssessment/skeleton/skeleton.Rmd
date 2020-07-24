@@ -461,6 +461,46 @@ loo::loo_compare(lapply(waics_l, function(x) x$loo)) %>%
   ggtitle("LOO-PSIS Differences")
 ```
 
+## Biodiversity Accuracy
+```{r EnumspeciesHoldout, fig.height = 9}
+obsnumbers <- detectednumspec(inputdata$holdoutdata$yXobs[, inputdata$species], 
+                              inputdata$holdoutdata$yXobs[, "ModelSiteID", drop = TRUE])
+Enum_det <- do.call(cbind, lapply(Enums_holdout, function(x) x["Esum_det", , drop = TRUE]))
+Vnum_det <- do.call(cbind, lapply(Enums_holdout, function(x) x["Vsum_det", , drop = TRUE]))
+
+Enum_compare(obsnumbers, Enum_det, Vnum_det)
+meanplt <- Enum_compare(obsnumbers, Enum_det, Vnum_det) %>%
+  as_tibble(rownames = "Model") %>%
+  tidyr::pivot_longer(starts_with("SE"), names_to = "SEtype", values_to = "SE") %>%
+  ggplot() +
+  geom_vline(xintercept = 0, col = "blue") +
+  geom_errorbarh(aes(xmin = `E[D]_obs` - 2 * SE, xmax = `E[D]_obs` + 2 * SE,
+                   y = Model,
+                   col = SEtype, lty = SEtype)) +
+  geom_point(aes(x = `E[D]_obs`, y = Model)) +
+  scale_x_continuous("Mean Residual") +
+  ggtitle("Holdout Data: Mean Residual of Number of Detected Spccies")
+
+varplt <- Enum_compare(obsnumbers, Enum_det, Vnum_det) %>%
+  as_tibble(rownames = "Model") %>%
+  tidyr::pivot_longer(starts_with("V"), names_to = "Vtype", values_to = "Variance") %>%
+  ggplot() +
+  geom_point(aes(x = sqrt(Variance), y = Model, col = Vtype)) +
+  scale_x_continuous("Standard Deviation of Residual") +
+  ggtitle("Holdout Data: Standard Deviation of Number of Detected Species")
+
+print(meanplt / varplt)
+```
+
+```{r biodiversity_ci_coverage}
+Enum_coverage(obsnumbers, Enum_det, Vnum_det)[["mean"]] %>%
+  tibble::enframe(name = "Model", value = "Pcnt. Coverage") %>%
+  ggplot() +
+  geom_point(aes(x = `Pcnt. Coverage`, y = Model)) +
+  geom_vline(xintercept = 0.95, col = "blue") +
+  ggtitle("Coverage of approx. 95% credence intervals for biodiversity")
+```
+
 ## Expected Number of Detections for Each Species
 ```{r numdetections}
 obsdetections <- colSums(fittedmods[[1]]$data$y)
