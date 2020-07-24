@@ -233,8 +233,8 @@ get_theta <- function(fit, type){
     theta <- fit$mcmc[[chainidx]][sampleinchain, ]
     return(theta)
   }
-  if (type == "median"){return(fit$summary$quantiles[, "50%"])}
-  if (type == "mean"){return(fit$summary$statistics[, "Mean"])}
+  if (type == "median"){theta <- apply(do.call(rbind, fit$mcmc), MARGIN = 2, median)}
+  if (type == "mean"){theta <- apply(do.call(rbind, fit$mcmc), MARGIN = 2, mean)}
   return(theta)
 }
 
