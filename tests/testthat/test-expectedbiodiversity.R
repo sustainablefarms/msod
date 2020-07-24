@@ -25,15 +25,15 @@ test_that("In sample data; fitted LV values; different draws", {
   artfit$mcmc[[2]][1, grepl("^LV\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^LV\\[.*", bugvarnames)] * runif(4, min = 0.5, max = 1)
   
   # Predicted number of species detected and in occupation
-  Enumspec <- predsumspecies(artfit, UseFittedLV = TRUE)
-  meanvar <- cumsum(Enumspec["Vsum_det", ])/((1:ncol(Enumspec))^2)
-  sd_final <- sqrt(meanvar[ncol(Enumspec)])
-  expect_equal(ncol(Enumspec), nsites)
+  numspec <- predsumspecies(artfit, UseFittedLV = TRUE)
+  meanvar <- cumsum(numspec["Vsum_det_median", ])/((1:ncol(numspec))^2)
+  sd_final <- sqrt(meanvar[ncol(numspec)])
+  expect_equal(ncol(numspec), nsites)
   
   # Anticipate the Enumspec is wrong when using both draws, as simulated data in artfit is from the first draw
   NumSpecies_1st <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
   
-  meandiff_1st <- dplyr::cummean(NumSpecies_1st - Enumspec["Esum_det", ])
+  meandiff_1st <- dplyr::cummean(NumSpecies_1st - numspec["Esum_det_median", ])
   plt <- cbind(diff = meandiff_1st, var  = meanvar) %>% 
     dplyr::as_tibble(rownames = "CumSites") %>% 
     dplyr::mutate(CumSites = as.double(CumSites)) %>%
@@ -41,14 +41,14 @@ test_that("In sample data; fitted LV values; different draws", {
     ggplot2::geom_ribbon(ggplot2::aes(x= CumSites, ymin = -2 * sqrt(var), ymax = 2 * sqrt(var)), fill = "grey") +
     ggplot2::geom_line(ggplot2::aes(x = CumSites, y = diff), col = "blue", lwd = 2)
   # print(plt)
-  expect_gt(abs(meandiff_1st[ncol(Enumspec)]), 3 * sd_final)
+  expect_gt(abs(meandiff_1st[ncol(numspec)]), 3 * sd_final)
   
   # Anticipate the Enumspec is correct when using only first draw (chain), as simulated data in artfit is from the first draw
   Enumspec_1stonly <- predsumspecies(artfit, chain = 1, UseFittedLV = TRUE)
-  meanvar_1stonly <- cumsum(Enumspec_1stonly["Vsum_det", ])/((1:ncol(Enumspec_1stonly))^2)
+  meanvar_1stonly <- cumsum(Enumspec_1stonly["Vsum_det_median", ])/((1:ncol(Enumspec_1stonly))^2)
   sd_final_1st <- sqrt(meanvar[ncol(Enumspec_1stonly)])
   
-  meandiff_1st <- dplyr::cummean(NumSpecies_1st - Enumspec_1stonly["Esum_det", ])
+  meandiff_1st <- dplyr::cummean(NumSpecies_1st - Enumspec_1stonly["Esum_det_median", ])
   plt <- cbind(diff = meandiff_1st, var  = meanvar) %>% 
     dplyr::as_tibble(rownames = "CumSites") %>% 
     dplyr::mutate(CumSites = as.double(CumSites)) %>%
@@ -57,15 +57,15 @@ test_that("In sample data; fitted LV values; different draws", {
     ggplot2::geom_line(ggplot2::aes(x = CumSites, y = diff), col = "blue", lwd = 2)
   # print(plt)
   
-  expect_lt(abs(meandiff_1st[ncol(Enumspec)]), 3 * sd_final_1st)
+  expect_lt(abs(meandiff_1st[ncol(Enumspec_1stonly)]), 3 * sd_final_1st)
   
   # Anticipate that it is correct for 2nd draw separated from the 1st draw
   y_2nd <- simulate_fit(artfit, esttype = 2, UseFittedLV = TRUE)
   NumSpecies_2nd <- detectednumspec(y = y_2nd, ModelSite = artfit$data$ModelSite)
   Enumspec_2ndonly <- predsumspecies(artfit, chain = 2, UseFittedLV = TRUE)
-  meanvar_2ndonly <- cumsum(Enumspec_2ndonly["Vsum_det", ])/((1:ncol(Enumspec_2ndonly))^2)
+  meanvar_2ndonly <- cumsum(Enumspec_2ndonly["Vsum_det_median", ])/((1:ncol(Enumspec_2ndonly))^2)
   sd_final_2nd <- sqrt(meanvar[ncol(Enumspec_2ndonly)])
-  meandiff_2nd <- dplyr::cummean(NumSpecies_2nd - Enumspec_2ndonly["Esum_det", ])
+  meandiff_2nd <- dplyr::cummean(NumSpecies_2nd - Enumspec_2ndonly["Esum_det_median", ])
   plt <- cbind(diff = meandiff_2nd, var  = meanvar) %>% 
     dplyr::as_tibble(rownames = "CumSites") %>% 
     dplyr::mutate(CumSites = as.double(CumSites)) %>%
@@ -77,13 +77,14 @@ test_that("In sample data; fitted LV values; different draws", {
   
   
   # Anticipate prediction from combined draw is similar when occupancy + detection simulated with parameters chosen with equal chance from artfit$mcmc[[1]]
+  # But anticipate within-model uncertainty of median parameter values does not cover observed values.
   ## combine observations for model sites to simulate the equal credence on each parameter set
   NumSpecies_interleaved <- NumSpecies_1st
   drawselect <- as.logical(rbinom(1000, size = 1, prob = 0.5))
   NumSpecies_interleaved[drawselect] <- NumSpecies_2nd[drawselect]
   
-  meandiff <- dplyr::cummean(NumSpecies_interleaved - Enumspec["Esum_det", ])
-  meanvar <- cumsum(Enumspec["Vsum_det", ])/((1:ncol(Enumspec))^2)
+  meandiff <- dplyr::cummean(NumSpecies_interleaved - numspec["Esum_det_margpost", ])
+  meanvar <- cumsum(numspec["Vsum_det_margpost", ])/((1:ncol(numspec))^2)
   plt <- cbind(diff = meandiff, var = meanvar) %>% 
     dplyr::as_tibble(rownames = "CumSites") %>% 
     dplyr::mutate(CumSites = as.double(CumSites)) %>%
@@ -96,10 +97,14 @@ test_that("In sample data; fitted LV values; different draws", {
   expect_lt(abs(meandiff[ncol(Enumspec)]), 3 * sd_final)
   
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
-  draws_sites_summaries <- predsumspecies(artfit, bydraw = TRUE, UseFittedLV = FALSE)
-  numspec_interval <- numspec_posteriorinterval_Gaussian_approx(draws_sites_summaries)
-  ininterval <- (NumSpecies_interleaved > numspec_interval["sum_det_low", ]) & (NumSpecies_interleaved < numspec_interval["sum_det_high", ])
-  expect_equal(mean(ininterval), 0.95, tol = 0.05)
+  ininterval_marg <- (NumSpecies_interleaved > numspec["Esum_det_margpost", ] - 2 * sqrt(numspec["Vsum_det_margpost", ])) & 
+    (NumSpecies_interleaved < numspec["Esum_det_margpost", ] + 2 * sqrt(numspec["Vsum_det_margpost", ]))
+  expect_equal(mean(ininterval_marg), 0.95, tol = 0.05)
+  
+  # and that within-model median parameters *do not*
+  ininterval_median <- (NumSpecies_interleaved > numspec["Esum_det_median", ] - 2 * sqrt(numspec["Vsum_det_median", ])) & 
+    (NumSpecies_interleaved < numspec["Esum_det_median", ] + 2 * sqrt(numspec["Vsum_det_median", ]))
+  expect_equal(mean(ininterval_median), 0.95, tol = 0.05)
 })
 
 test_that("In sample data; fitted LV values", {
@@ -107,13 +112,14 @@ test_that("In sample data; fitted LV values", {
   artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, nlv = 4)
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
-  Enumspec <- predsumspecies(artfit, UseFittedLV = TRUE)
-  expect_equal(ncol(Enumspec), nsites)
+  numspec <- predsumspecies(artfit, UseFittedLV = TRUE, type = "median")
+  expect_equal(ncol(numspec), nsites)
   
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
   
-  meandiff <- dplyr::cummean(NumSpecies - Enumspec["Esum_det", ])
-  meanvar <- cumsum(Enumspec["Vsum_det", ])/((1:ncol(Enumspec))^2)
+  # median of theta should be correct
+  meandiff <- dplyr::cummean(NumSpecies - numspec["Esum_det_median", ])
+  meanvar <- cumsum(numspec["Vsum_det_median", ])/((1:ncol(numspec))^2)
   plt <- cbind(diff = meandiff, var  = meanvar) %>% 
     dplyr::as_tibble(rownames = "CumSites") %>% 
     dplyr::mutate(CumSites = as.double(CumSites)) %>%
@@ -123,25 +129,34 @@ test_that("In sample data; fitted LV values", {
   # print(plt)
   
   # check with predicted standard error once the software is computed
-  sd_final <- sqrt(meanvar[ncol(Enumspec)])
-  expect_equal(meandiff[ncol(Enumspec)], 0, tol = 3 * sd_final)
+  sd_final <- sqrt(meanvar[ncol(numspec)])
+  expect_equal(meandiff[ncol(numspec)], 0, tol = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
   expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:50 ])))
   
   Enum_compare_sum <- Enum_compare(NumSpecies,
-               as.matrix(Enumspec["Esum_det", ], ncol = 1),
-               as.matrix(Enumspec["Vsum_det", ], ncol = 1)
+               as.matrix(numspec["Esum_det_median", ], ncol = 1),
+               as.matrix(numspec["Vsum_det_median", ], ncol = 1)
                )
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
   expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
   
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
-  draws_sites_summaries <- predsumspecies(artfit, bydraw = TRUE, UseFittedLV = TRUE)
-  numspec_interval <- numspec_posteriorinterval_Gaussian_approx(draws_sites_summaries)
-  ininterval <- (NumSpecies > numspec_interval["sum_det_low", ]) & (NumSpecies < numspec_interval["sum_det_high", ])
+  ininterval <- (NumSpecies > numspec["Esum_det_margpost", ] - 2 * sqrt(numspec["Vsum_det_margpost", ])) & 
+    (NumSpecies < numspec["Esum_det_margpost", ] + 2 * sqrt(numspec["Vsum_det_margpost", ]))
   expect_equal(mean(ininterval), 0.95, tol = 0.05)
+  
+  plt <- cbind(NumSpecies = NumSpecies, pred = numspec["Esum_det_margpost", ], se = sqrt(numspec["Vsum_det_margpost", ])) %>% 
+    dplyr::as_tibble() %>% 
+    dplyr::mutate(resid = NumSpecies - pred) %>%
+    dplyr::arrange(resid) %>%
+    tibble::rowid_to_column(var = "rowid") %>%
+    ggplot2::ggplot() +
+    ggplot2::geom_ribbon(ggplot2::aes(x= rowid, ymin = -2 * se, ymax = + 2 * se), fill = "grey") +
+    ggplot2::geom_point(ggplot2::aes(x = rowid, y = NumSpecies - pred), col = "blue", lwd = 2)
+  # print(plt)
 })
 
 test_that("In sample data; marginal on LV values", {
@@ -156,13 +171,14 @@ test_that("In sample data; marginal on LV values", {
                                )
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
-  Enumspecdet <- predsumspecies(artfit, UseFittedLV = FALSE, nLVsim = 1000)
-  expect_equal(ncol(Enumspecdet), nsites)
+  numspec <- predsumspecies(artfit, UseFittedLV = FALSE, nLVsim = 1000, type = "median")
+  expect_equal(ncol(numspec), nsites)
   
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
   
-  meandiff <- dplyr::cummean(NumSpecies - Enumspecdet["Esum_det", ])
-  meanvar <- cumsum(Enumspecdet["Vsum_det", ])/((1:ncol(Enumspecdet))^2)
+  # the median should be perfectly correct except that it ignores the fitted LV values aren't used
+  meandiff <- dplyr::cummean(NumSpecies - numspec["Esum_det_median", ])
+  meanvar <- cumsum(numspec["Vsum_det_median", ])/((1:ncol(numspec))^2)
   plt <- cbind(diff = meandiff, var  = meanvar) %>% 
     dplyr::as_tibble(rownames = "CumSites") %>% 
     dplyr::mutate(CumSites = as.double(CumSites)) %>%
@@ -172,14 +188,21 @@ test_that("In sample data; marginal on LV values", {
   # print(plt)
   
   # check with predicted standard error: should be larger than bound due to misuse of LV
-  sd_half <- sqrt(meanvar[floor(ncol(Enumspecdet)/2)])
-  expect_gt(abs(meandiff[floor(ncol(Enumspecdet)/2)]), 3 * sd_half)
+  sd_half <- sqrt(meanvar[floor(ncol(numspec)/2)])
+  expect_gt(abs(meandiff[floor(ncol(numspec)/2)]), 3 * sd_half)
+  
+  # expect that cover by posterior approximate interval is about 
+  # right as LV values simulate from are not extreme for a Gaussian
+  # and the calculations marginalise of the LV value distribution
+  ininterval <- (NumSpecies > numspec["Esum_det_margpost", ] - 2 * sqrt(numspec["Vsum_det_margpost", ])) & 
+    (NumSpecies < numspec["Esum_det_margpost", ] + 2 * sqrt(numspec["Vsum_det_margpost", ]))
+  expect_gt(mean(ininterval), 0.95)
   
   ######################################### Now try using marginalised LV simulations #####################################
   NumSpecies <- detectednumspec(y = simulate_fit(artfit, esttype = 1, UseFittedLV = FALSE), ModelSite = artfit$data$ModelSite)
   
-  meandiff <- dplyr::cummean(NumSpecies - Enumspecdet["Esum_det", ])
-  meanvar <- cumsum(Enumspecdet["Vsum_det", ])/((1:ncol(Enumspecdet))^2)
+  meandiff <- dplyr::cummean(NumSpecies - numspec["Esum_det_median", ])
+  meanvar <- cumsum(numspec["Vsum_det_median", ])/((1:ncol(numspec))^2)
   plt <- cbind(diff = meandiff, var  = meanvar) %>% 
     dplyr::as_tibble(rownames = "CumSites") %>% 
     dplyr::mutate(CumSites = as.double(CumSites)) %>%
@@ -188,18 +211,28 @@ test_that("In sample data; marginal on LV values", {
     ggplot2::geom_line(ggplot2::aes(x = CumSites, y = diff), col = "blue", lwd = 2)
   # print(plt)
   
-  # check with predicted standard error once the software is computed
-  sd_final <- sqrt(meanvar[ncol(Enumspecdet)])
-  expect_equal(meandiff[ncol(Enumspecdet)], 0, tol = 3 * sd_final)
+  # check with predicted standard error 
+  sd_final <- sqrt(meanvar[ncol(numspec)])
+  expect_equal(meandiff[ncol(numspec)], 0, tol = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
   expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:50 ])))
   
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
-  draws_sites_summaries <- predsumspecies(artfit, bydraw = TRUE, UseFittedLV = FALSE)
-  numspec_interval <- numspec_posteriorinterval_Gaussian_approx(draws_sites_summaries)
-  ininterval <- (NumSpecies > numspec_interval["sum_det_low", ]) & (NumSpecies < numspec_interval["sum_det_high", ])
+  ininterval <- (NumSpecies > numspec["Esum_det_margpost", ] - 2 * sqrt(numspec["Vsum_det_margpost", ])) & 
+    (NumSpecies < numspec["Esum_det_margpost", ] + 2 * sqrt(numspec["Vsum_det_margpost", ]))
   expect_equal(mean(ininterval), 0.95, tol = 0.05)
+  # I suspect this fails because the Gaussian approximation may not work: the variance is enormous compared to the allowed range of number of species
+  
+  plt <- cbind(NumSpecies = NumSpecies, pred = numspec["Esum_det_margpost", ], se = sqrt(numspec["Vsum_det_margpost", ])) %>% 
+    dplyr::as_tibble() %>% 
+    dplyr::mutate(resid = NumSpecies - pred) %>%
+    dplyr::arrange(resid) %>%
+    tibble::rowid_to_column(var = "rowid") %>%
+    ggplot2::ggplot() +
+    ggplot2::geom_ribbon(ggplot2::aes(x= rowid, ymin = -2 * se, ymax = + 2 * se), fill = "grey") +
+    ggplot2::geom_line(ggplot2::aes(x = rowid, y = NumSpecies - pred), col = "blue", lwd = 2)
+  # print(plt)
 })
 
 test_that("In sample data; no LV", {
@@ -207,7 +240,7 @@ test_that("In sample data; no LV", {
   artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, nlv = 0)
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
-  Enumspecdet <- predsumspecies(artfit, UseFittedLV = FALSE)
+  Enumspecdet <- predsumspecies(artfit, UseFittedLV = FALSE, type = "marginal")
   expect_equal(ncol(Enumspecdet), nsites)
   
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
@@ -230,9 +263,8 @@ test_that("In sample data; no LV", {
   expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:50 ])))
   
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
-  draws_sites_summaries <- predsumspecies(artfit, bydraw = TRUE, UseFittedLV = FALSE)
-  numspec_interval <- numspec_posteriorinterval_Gaussian_approx(draws_sites_summaries)
-  ininterval <- (NumSpecies > numspec_interval["sum_det_low", ]) & (NumSpecies < numspec_interval["sum_det_high", ])
+  ininterval <- (NumSpecies > Enumspecdet["Esum_det", ] - 2 * sqrt(Enumspecdet["Vsum_det", ])) & 
+    (NumSpecies < Enumspecdet["Esum_det", ] + 2 * sqrt(Enumspecdet["Vsum_det", ]))
   expect_equal(mean(ininterval), 0.95, tol = 0.05)
 })
 
@@ -252,14 +284,14 @@ test_that("Holdout data; has LVs", {
   originalXobs <- cbind(ModelSite = artfit$data$ModelSite, originalXobs)
   outofsample_y <- simulate_fit(artfit, esttype = 1, UseFittedLV = FALSE)
   
-  Enumspec <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite", chains = NULL, nLVsim = 1000, cl = NULL)
+  Enumspec <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite", chains = NULL, nLVsim = 1000, type = "median", cl = NULL)
   
   expect_equal(ncol(Enumspec), nsites)
   
   NumSpecies <- detectednumspec(y = outofsample_y, ModelSite = originalXobs[, "ModelSite"])
   
-  meandiff <- dplyr::cummean(NumSpecies - Enumspec["Esum_det", ])
-  meanvar <- cumsum(Enumspec["Vsum_det", ])/((1:ncol(Enumspec))^2)
+  meandiff <- dplyr::cummean(NumSpecies - Enumspec["Esum_det_median", ])
+  meanvar <- cumsum(Enumspec["Vsum_det_median", ])/((1:ncol(Enumspec))^2)
   plt <- cbind(diff = meandiff, var  = meanvar) %>% 
     dplyr::as_tibble(rownames = "CumSites") %>% 
     dplyr::mutate(CumSites = as.double(CumSites)) %>%
@@ -276,17 +308,16 @@ test_that("Holdout data; has LVs", {
   expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:50 ])))
   
   Enum_compare_sum <- Enum_compare(NumSpecies,
-                                   as.matrix(Enumspec["Esum_det", ], ncol = 1),
-                                   as.matrix(Enumspec["Vsum_det", ], ncol = 1)
+                                   as.matrix(Enumspec["Esum_det_median", ], ncol = 1),
+                                   as.matrix(Enumspec["Vsum_det_median", ], ncol = 1)
   )
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
   expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
   
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
-  draws_sites_summaries <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite", chains = NULL, nLVsim = 1000, bydraw = TRUE)
-  numspec_interval <- numspec_posteriorinterval_Gaussian_approx(draws_sites_summaries)
-  ininterval <- (NumSpecies > numspec_interval["sum_det_low", ]) & (NumSpecies < numspec_interval["sum_det_high", ])
+  ininterval <- (NumSpecies > Enumspec["Esum_det_margpost", ] - 2 * sqrt(Enumspec["Vsum_det_margpost", ])) & 
+    (NumSpecies < Enumspec["Esum_det_margpost", ] + 2 * sqrt(Enumspec["Vsum_det_margpost", ]))
   expect_equal(mean(ininterval), 0.95, tol = 0.05)
 })
 
@@ -307,7 +338,7 @@ test_that("Holdout data; no LVs", {
   originalXobs <- cbind(ModelSite = artfit$data$ModelSite, originalXobs)
   outofsample_y <- simulate_fit(artfit, esttype = 1, UseFittedLV = FALSE)
   
-  Enumspec <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite", chains = NULL, nLVsim = 1000, cl = NULL)
+  Enumspec <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite", chains = NULL, nLVsim = 1000, type = "marginal", cl = NULL)
   
   expect_equal(ncol(Enumspec), nsites)
   

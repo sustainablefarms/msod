@@ -11,11 +11,11 @@
 #' lv.coef.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$n, ncol = 2), "lv.coef")
 #' theta <- c(theta, lv.coef.bugs)
 #' 
-#' Enumspec <- predsumspecies(fit, UseFittedLV = TRUE)
+#' Enumspec <- predsumspecies(fit, UseFittedLV = TRUE, return = "median")
 #' 
 #' 
 #' indata <- readRDS("./private/data/clean/7_2_10_input_data.rds")
-#' predsumspecies_newdata(fit, Xocc = indata$holdoutdata$Xocc, Xobs = indata$holdoutdata$yXobs, ModelSiteVars = "ModelSiteID", cl = NULL)
+#' predsumspecies_newdata(fit, Xocc = indata$holdoutdata$Xocc, Xobs = indata$holdoutdata$yXobs, ModelSiteVars = "ModelSiteID", return = "median", cl = NULL)
 #' draws_sites_summaries <- predsumspecies_newdata(fit, 
 #'                                                 Xocc = indata$holdoutdata$Xocc,
 #'                                                 Xobs = indata$holdoutdata$yXobs,
@@ -131,13 +131,17 @@ Erowsum_margrow <- function(pmat){
 #' @param UseFittedLV If TRUE the fitted LV variables are used, if false then 1000 LV values are simulated.
 #' @param chains The chains of MCMC to use. Default is all chains.
 #' @param cl A cluster object created by parallel::makeCluster. If NULL no cluster is used.
-#' @param bydraw If TRUE then predictions are given *per draw* and a 3-array is returned with dimensions of draws, sites and statistical summaries.
-#' If FALSE thenthe statistical summaries *marginalise* the posterior distribution and a matrix is returned with rows of statistical summaries and columns of sites.
+#' @param type If "draws" then predictions are given *per draw* and a 3-array is returned with dimensions of draws, sites and statistical summaries.
+#' If "marginal" then the statistical summaries *marginalise* the posterior distribution and a matrix is returned with rows of statistical summaries and columns of sites.
 #' There will be four summaries: the expection and variance of the number of species occupied or detected. 
+#' If "median" then the expected number of species occupying and observed is returned for the median of the posterior distribution,
+#' the variance and expected number of species, marginal over the posterior is also returned as they is useful for showing variation due to model parameter uncertainty.
 #' @return A matrix or 3 array with each column a ModelSite. Dimensions are labelled. The statistical summaries returned are the predicted expection and variance of the number of species occupied or detected.
 #' These expectations are with respect to the full posterior distribution of the model parameters, with the exception of the LV values which depends on UseFittedLV.
 #' @export
-predsumspecies <- function(fit, chains = NULL, UseFittedLV = TRUE, nLVsim = 1000, bydraw = FALSE, cl = NULL){
+predsumspecies <- function(fit, chains = NULL, UseFittedLV = TRUE, nLVsim = 1000, type = "median", cl = NULL){
+  stopifnot(type %in% c("draws", "median", "marginal"))
+  
   fit$data <- as_list_format(fit$data)
   if (is.null(chains)){chains <- 1:length(fit$mcmc)}
   draws <- do.call(rbind, fit$mcmc[chains])
@@ -168,8 +172,37 @@ predsumspecies <- function(fit, chains = NULL, UseFittedLV = TRUE, nLVsim = 1000
     cl = cl
   )
   # convert predictions for each site and theta into predictions for each site, marginal across theta distribution
-  if (!bydraw) {out <- EVnumspec_marginalposterior_drawssitessummaries(numspec_drawsitesumm)}
-  else {out <- numspec_drawsitesumm}
+  if (type == "draws") {out <- numspec_drawsitesumm}
+  if (type == "marginal") {out <- EVnumspec_marginalposterior_drawssitessummaries(numspec_drawsitesumm)}
+  if (type == "median"){
+    posterior_numspec <- EVnumspec_marginalposterior_drawssitessummaries(numspec_drawsitesumm)
+    
+    thetamedian <- apply(draws, MARGIN = 2, median)
+    thetamedian <- matrix(thetamedian, nrow = 1, ncol = length(thetamedian),
+                          dimnames = list(row = "median", cols = names(thetamedian)))
+    numspec_site_median <- predsumspecies_raw(
+      Xocc = fit$data$Xocc,
+      Xobs = fit$data$Xobs,
+      ModelSite = fit$data$ModelSite,
+      numspecies = fit$data$n,
+      nlv = fit$data$nlv,
+      draws = thetamedian,
+      useLVindraws = UseFittedLV,
+      nLVsim = nLVsim,
+      cl = cl
+    )
+    out <- rbind(
+      Esum_occ_median = numspec_site_median[1, , "Esum_occ"],
+      Vsum_occ_median = numspec_site_median[1, , "Vsum_occ"],
+      Esum_occ_margpost = posterior_numspec["Esum_occ", ],
+      Vsum_occ_margpost = posterior_numspec["Vsum_occ", ],
+      
+      Esum_det_median = numspec_site_median[1, , "Esum_det"],
+      Vsum_det_median = numspec_site_median[1, , "Vsum_det"],
+      Esum_det_margpost = posterior_numspec["Esum_det", ],
+      Vsum_det_margpost = posterior_numspec["Vsum_det", ]
+    )
+  }
   return(out)
 }
 
@@ -232,6 +265,7 @@ predsumspecies_raw <- function(Xocc, Xobs, ModelSite, numspecies, nlv, draws, us
                                                                    v.b = v.b_theta,
                                                                    lv.coef = lv.coef_theta,
                                                                    LVvals = LVvals_thetasite)
+          return(Enumspec_sitetheta)
         },
         cl = cl)
   # each column of Enumspec is row of sitedrawidxs
@@ -368,8 +402,37 @@ predsumspecies_newdata <- function(fit, Xocc, Xobs, ModelSiteVars, chains = NULL
     cl = cl
   )
   # convert predictions for each site and theta into predictions for each site, marginal across theta distribution
-  if (!bydraw) {out <- EVnumspec_marginalposterior_drawssitessummaries(numspec_drawsitesumm)}
-  else {out <- numspec_drawsitesumm}
+  if (type == "draws") {out <- numspec_drawsitesumm}
+  if (type == "marginal") {out <- EVnumspec_marginalposterior_drawssitessummaries(numspec_drawsitesumm)}
+  if (type == "median"){
+    posterior_numspec <- EVnumspec_marginalposterior_drawssitessummaries(numspec_drawsitesumm)
+    
+    thetamedian <- apply(draws, MARGIN = 2, median)
+    thetamedian <- matrix(thetamedian, nrow = 1, ncol = length(thetamedian),
+                          dimnames = list(row = "median", cols = names(thetamedian)))
+    numspec_site_median <- predsumspecies_raw(
+      Xocc = datalist$Xocc,
+      Xobs = datalist$Xobs,
+      ModelSite = datalist$ModelSite,
+      numspecies = fit$data$n,
+      nlv = fit$data$nlv,
+      draws = thetamedian,
+      useLVindraws = FALSE,
+      nLVsim = nLVsim,
+      cl = cl
+    )
+    out <- rbind(
+      Esum_occ_median = numspec_site_median[1, , "Esum_occ"],
+      Vsum_occ_median = numspec_site_median[1, , "Vsum_occ"],
+      Esum_occ_margpost = posterior_numspec["Esum_occ", ],
+      Vsum_occ_margpost = posterior_numspec["Vsum_occ", ],
+      
+      Esum_det_median = numspec_site_median[1, , "Esum_det"],
+      Vsum_det_median = numspec_site_median[1, , "Vsum_det"],
+      Esum_det_margpost = posterior_numspec["Esum_det", ],
+      Vsum_det_margpost = posterior_numspec["Vsum_det", ]
+    )
+  }
   return(out)
 }
 
