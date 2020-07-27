@@ -11,8 +11,6 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_knit$set(root.dir = rprojroot::find_root(rprojroot::has_file("DESCRIPTION")))
-devtools::load_all(rprojroot::find_root(rprojroot::has_file("DESCRIPTION")))
 knitr::opts_chunk$set(echo = FALSE)
 library(tibble)
 library(dplyr)
@@ -23,6 +21,7 @@ library(coda)
 library(runjags)
 library(ggplot2)
 library(patchwork)
+library(sustfarmld)
 ```
 
 ```{r varname2type}
@@ -41,7 +40,8 @@ varname2type <- function(varnames){
 
 ## Data Import
 ```{r importmodelfits}
-modelspecs <- readRDS("./tmpdata/7_2_10_modelspecs.rds")
+modelspecs <- readRDS("./7_3_03_modelspecs.rds")
+
 filenames <- lapply(modelspecs, function(x) x$filename)
 
 # test loading models
@@ -64,13 +64,36 @@ occcovar <- model.matrix(as.formula(modelspecs[[3]]$OccFmla),
              data = inputdata$insampledata$Xocc) %>%
   as_tibble() %>%
   mutate(ModelSite = inputdata$insampledata$Xocc$ModelSiteID,
-         StudyId = inputdata$insampledata$Xocc$StudyId) %>%
+         StudyId = inputdata$insampledata$Xocc$StudyId,
+         Latitude = inputdata$insampledata$Xocc$latitude) %>%
   dplyr::select(-`(Intercept)`)
+treatfactor_occ <- occcovar %>%
+  summarise_all(~ n_distinct(.)) %>%
+  tidyr::pivot_longer(everything(), names_to = "CovarName") %>%
+  dplyr::filter(value <= 10) %>%
+  dplyr::select(CovarName) %>%
+  unlist()
+treatfactor_det <- detcovar %>%
+  summarise_all(~ n_distinct(.)) %>%
+  tidyr::pivot_longer(everything(), names_to = "CovarName") %>%
+  dplyr::filter(value <= 10) %>%
+  dplyr::select(CovarName) %>%
+  unlist()
+treatfactor = c(treatfactor_occ, treatfactor_det)
 ```
 
 ```{r import_lpd}
-lpds_l <- readRDS("./tmpdata/7_2_10_lpds.rds")
-waics_l <- readRDS("./tmpdata/7_2_10_waics.rds")
+lpds_l <- readRDS("./fittedmodels/7_3_03_lpds.rds")
+waics_l <- readRDS("./fittedmodels/7_3_03_waics.rds")
+Enums_holdout <- readRDS("./fittedmodels/7_3_03_many_Enum_holdout.rds")
+Enums_insample <- readRDS("./fittedmodels/7_3_03_many_Enum_insample_margLV.rds")
+Enums_insample_condLV <- readRDS("./fittedmodels/7_3_03_many_Enum_insample_condLV.rds")
+
+names(lpds_l) <- gsub("someclimate_year_woody500m_msnm_det1stO", "model", names(lpds_l))
+names(waics_l) <- gsub("someclimate_year_woody500m_msnm_det1stO", "model", names(waics_l))
+names(Enums_holdout) <- gsub("someclimate_year_woody500m_msnm_det1stO", "model", names(Enums_holdout))
+names(Enums_insample) <- gsub("someclimate_year_woody500m_msnm_det1stO", "model", names(Enums_insample))
+names(Enums_insample_condLV) <- gsub("someclimate_year_woody500m_msnm_det1stO", "model", names(Enums_insample_condLV))
 ```
 
 ```{r cleanersummaries}
@@ -86,11 +109,17 @@ cleanersummary <- function(fit) {
     mutate(SpeciesIdx = as.integer(gsub("(.*\\[|,.*\\])", "", bugsvarname))) %>%
     mutate(CovarIdx = as.integer(gsub("(.*\\[.*,|\\])", "", bugsvarname))) )
   vals <- vals %>%
-    mutate(Species = fit$species[SpeciesIdx]) %>%
+    mutate(Species = case_when(
+      varname == "LV" ~ as.character(NA),
+      TRUE ~ fit$species[SpeciesIdx])) %>%
+    mutate(ModelSite = case_when(
+      varname == "LV" ~ SpeciesIdx,
+      TRUE ~ NA_integer_)) %>%
     mutate(Covariate = case_when(
       varname == "u.b" ~ colnames(fit$data$Xocc)[CovarIdx],
       varname == "v.b" ~ colnames(fit$data$Xobs)[CovarIdx],
-      varname == "LV" ~ as.character(CovarIdx),
+      varname == "LV" ~ paste0("LV", as.character(CovarIdx)),
+      varname == "lv.coef" ~ paste0("LV", as.character(CovarIdx)),
       TRUE ~ as.character(NA)
     )) %>% 
     dplyr::select(-SpeciesIdx, -CovarIdx)
@@ -130,12 +159,23 @@ cleanersummaries %>%
 *Comment on convergence using the Gelman-Rubin statistic*
 ### Effective Sample Size
 ```{r SSeff_fromsummary, fig.height = 10}
+goodthresh <- fittedmods[[1]]$sample * length(fittedmods[[1]]$mcmc) / 4
 cleanersummaries %>%
   mutate(type = varname2type(varname)) %>%
   ggplot() +
   facet_grid(rows = vars(type), cols = vars(Model), scales = "free") +
-  geom_point(aes(y = bugsvarname, x = SSeff) ) +
-  geom_vline(xintercept = fittedmods[[1]]$sample * length(fittedmods[[1]]$mcmc) / 4, col = "blue", lty = "dashed") +
+  geom_point(aes(y = bugsvarname, x = SSeff, col = SSeff < goodthresh) ) +
+  geom_vline(xintercept = goodthresh, col = "red", lty = "dashed") +
+  scale_y_discrete(name = "Variable Name") +
+  theme(strip.text.x.top = element_text(angle = 90)) +
+  scale_x_continuous(name = "Effective Sample Size", trans = "log10")
+
+cleanersummaries %>%
+  mutate(type = varname2type(varname)) %>%
+  ggplot() +
+  facet_grid(rows = vars(type), cols = vars(Model), scales = "free") +
+  geom_histogram(aes(x = SSeff), bins = 50 ) +
+  geom_vline(xintercept = goodthresh, col = "red", lty = "dashed") +
   scale_y_discrete(name = "Variable Name") +
   theme(strip.text.x.top = element_text(angle = 90)) +
   scale_x_continuous(name = "Effective Sample Size", trans = "log10")
@@ -256,6 +296,28 @@ cleanersummaries %>%
   theme(strip.text.x.top = element_text(angle = 90)) +
   ggtitle("Detection Covariate Loadings per Species and Model")
 ```
+## LV Loadings
+```{r LVloadings}
+cleanersummaries %>%
+  dplyr::filter(varname == "lv.coef") %>%
+  ggplot() +
+  facet_wrap(vars(Covariate), nrow = 1) +
+  geom_hline(yintercept = 0) +
+  geom_pointrange(aes(x = Species,
+                 ymin = Lower95,
+                 ymax = Upper95,
+                 y = Median,
+                 col = Model,
+                 group = Model),
+             shape = "|",
+             size = 1,
+             position = position_dodge(width = 1)) +
+  coord_flip() +
+  scale_color_viridis_d() +
+  theme(strip.text.x.top = element_text(angle = 90)) +
+  ggtitle("LV Loadings per Species and Model")
+```
+
 
 ## Log Posterior Density
 
@@ -350,6 +412,17 @@ lpds_df_diagnose <- bind_rows(lapply(waics_l,
                                       }),
                              .id = "model") 
 
+lpds_df_diagnose %>%
+  mutate(is_ok = case_when(
+    pareto_k < 0.5 ~ "good",
+    pareto_k < 0.7 ~ "ok",
+    pareto_k >= 0.7 ~ "bad"
+  )) %>% 
+  mutate(is_ok = factor(is_ok)) %>%
+  group_by(model) %>%
+  count(is_ok) %>%
+  tidyr::pivot_wider(names_from = is_ok,
+              values_from = n)
 
 lpds_df_diagnose %>%
   ggplot() +
@@ -397,7 +470,7 @@ lpds_df_diagnose %>%
     pareto_k >= 0.7 ~ "bad"
   )) %>% 
   dplyr::filter(is_ok == "bad") %>%
-  inner_join(detcovar, by = "ModelSite") %>%
+  # inner_join(detcovar, by = "ModelSite") %>%
   inner_join(occcovar, by = "ModelSite") %>%
   dplyr::select(-elpd_waic, -p_waic, -elpd_loo, -n_eff) %>%
   tidyr::pivot_longer(c(-model, -ModelSite, -p_loo, -pareto_k, -is_ok), names_to = "Covariate", values_to = "CovariateValue") %>%
@@ -407,32 +480,71 @@ lpds_df_diagnose %>%
   geom_point(aes(x = CovariateValue, y = factor(ModelSite), col = model),
              shape = "+", position = "jitter") +
   scale_x_continuous(trans = scales::modulus_trans(0))
+
+lpds_df_diagnose %>%
+  mutate(is_ok = case_when(
+    pareto_k < 0.5 ~ "good",
+    pareto_k < 0.7 ~ "ok",
+    pareto_k >= 0.7 ~ "bad"
+  )) %>% 
+  dplyr::filter(is_ok == "bad") %>%
+  inner_join(detcovar, by = "ModelSite") %>%
+  # inner_join(occcovar, by = "ModelSite") %>%
+  dplyr::select(-elpd_waic, -p_waic, -elpd_loo, -n_eff) %>%
+  tidyr::pivot_longer(c(-model, -ModelSite, -p_loo, -pareto_k, -is_ok), names_to = "Covariate", values_to = "CovariateValue") %>%
+  ggplot() +
+  facet_wrap(vars(Covariate), scales = "free") +
+  theme(strip.text.y.right = element_text(angle = 0)) +
+  geom_point(aes(x = CovariateValue, y = factor(ModelSite), col = model),
+             shape = "+", position = "jitter") +
+  scale_x_continuous(trans = scales::modulus_trans(0))
+
+lpds_df_diagnose %>%
+  mutate(is_ok = case_when(
+    pareto_k < 0.5 ~ "good",
+    pareto_k < 0.7 ~ "ok",
+    pareto_k >= 0.7 ~ "bad"
+  )) %>% 
+  dplyr::filter(is_ok == "bad") %>%
+  # inner_join(detcovar, by = "ModelSite") %>%
+  inner_join(occcovar, by = "ModelSite") %>%
+  dplyr::select(-elpd_waic, -p_waic, -elpd_loo, -n_eff) %>%
+  tidyr::pivot_longer(c(-model, -ModelSite, -p_loo, -pareto_k, -is_ok), names_to = "Covariate", values_to = "CovariateValue") %>%
+  ggplot() +
+  facet_wrap(vars(Covariate), scales = "free") +
+  theme(strip.text.y.right = element_text(angle = 0)) +
+  geom_freqpoly(aes(x = CovariateValue, y = ..density.., lty = model, col = model), position = "stack") +
+  geom_freqpoly(aes(x = CovariateValue, y = ..density..),
+                data = tidyr::pivot_longer(occcovar, c(-ModelSite), names_to = "Covariate", values_to = "CovariateValue"),
+                col = "black") +
+  scale_x_continuous(trans = scales::modulus_trans(0))
+
+lpds_df_diagnose %>%
+  mutate(is_ok = case_when(
+    pareto_k < 0.5 ~ "good",
+    pareto_k < 0.7 ~ "ok",
+    pareto_k >= 0.7 ~ "bad"
+  )) %>% 
+  dplyr::filter(is_ok == "bad") %>%
+  inner_join(detcovar, by = "ModelSite") %>%
+  dplyr::select(-elpd_waic, -p_waic, -elpd_loo, -n_eff) %>%
+  tidyr::pivot_longer(c(-model, -ModelSite, -p_loo, -pareto_k, -is_ok), names_to = "Covariate", values_to = "CovariateValue") %>%
+  ggplot() +
+  facet_wrap(vars(Covariate), scales = "free") +
+  theme(strip.text.y.right = element_text(angle = 0)) +
+  geom_freqpoly(aes(x = CovariateValue, y = ..density.., lty = model, col = model), position = "stack") +
+  geom_freqpoly(aes(x = CovariateValue, y = ..density..),
+                data = tidyr::pivot_longer(detcovar, c(-ModelSite), names_to = "Covariate", values_to = "CovariateValue"),
+                col = "black") +
+  scale_x_continuous(trans = scales::modulus_trans(0))
 ```
 
 According to help page 'loo-glossary', if p_loo << [total parameters in the model], then the model is likely misspecified.
 
 
 ### Model Difference, lpd per site
-```{r holdoutdiffs}
-lpdholdout_compare <- function(lpds_modsbycolumn){
-  refidx <- which.max(colMeans(lpds_modsbycolumn))
-  lpds_diff_df <- lpds_modsbycolumn %>%
-    mutate_all(~ . - lpds_modsbycolumn[, refidx, drop = TRUE])
-  diff <- lpds_diff_df %>%
-    summarise_all(sum)
-  sediff <- lpds_diff_df %>%
-    summarise_all(~sd(.) * sqrt(nrow(lpds_diff_df)))
-  holdoutcompare_summary <- bind_cols(elpd_diff = t(diff), se_diff = t(sediff)) %>%
-    mutate(model =  names(sediff)) %>%
-    arrange(-elpd_diff)
-  mat <- as.matrix(holdoutcompare_summary[, 1:2])
-  rownames(mat) <- holdoutcompare_summary$model
-  return(mat)
-}
-```
-
 ```{r difflpd}
-lpdholdout_compare(lpds_df)
+elpd_compare(lpds_df)
 loo::loo_compare(lapply(waics_l, function(x) x$waic))
 loo::loo_compare(lapply(waics_l, function(x) x$loo))
 
@@ -448,7 +560,7 @@ plot_compare_loo <- function(compare.loo.obj){
   return(plt)
 }
 
-lpdholdout_compare(lpds_df) %>%
+elpd_compare(lpds_df) %>%
   plot_compare_loo() +
   ggtitle("Holdout elpd Differences")
 
@@ -462,6 +574,7 @@ loo::loo_compare(lapply(waics_l, function(x) x$loo)) %>%
 ```
 
 ## Biodiversity Accuracy
+### Holdout
 ```{r EnumspeciesHoldout, fig.height = 9}
 obsnumbers <- detectednumspec(inputdata$holdoutdata$yXobs[, inputdata$species], 
                               inputdata$holdoutdata$yXobs[, "ModelSiteID", drop = TRUE])
@@ -479,26 +592,62 @@ meanplt <- Enum_compare(obsnumbers, Enum_det, Vnum_det) %>%
                    col = SEtype, lty = SEtype)) +
   geom_point(aes(x = `E[D]_obs`, y = Model)) +
   scale_x_continuous("Mean Residual") +
-  ggtitle("Holdout Data: Mean Residual of Number of Detected Spccies")
+  ggtitle("Mean Residual of Number of Detected Spccies")
 
 varplt <- Enum_compare(obsnumbers, Enum_det, Vnum_det) %>%
   as_tibble(rownames = "Model") %>%
   tidyr::pivot_longer(starts_with("V"), names_to = "Vtype", values_to = "Variance") %>%
   ggplot() +
-  geom_point(aes(x = sqrt(Variance), y = Model, col = Vtype)) +
+  geom_point(aes(x = sqrt(Variance), y = Model, col = Vtype, shape = Vtype)) +
   scale_x_continuous("Standard Deviation of Residual") +
-  ggtitle("Holdout Data: Standard Deviation of Number of Detected Species")
+  ggtitle("Standard Deviation of Number of Detected Species")
 
-print(meanplt / varplt)
-```
-
-```{r biodiversity_ci_coverage}
-Enum_coverage(obsnumbers, Enum_det, Vnum_det)[["mean"]] %>%
+coverageplt <- Enum_coverage(obsnumbers, Enum_det, Vnum_det)[["mean"]] %>%
   tibble::enframe(name = "Model", value = "Pcnt. Coverage") %>%
   ggplot() +
   geom_point(aes(x = `Pcnt. Coverage`, y = Model)) +
   geom_vline(xintercept = 0.95, col = "blue") +
-  ggtitle("Coverage of approx. 95% credence intervals for biodiversity")
+  ggtitle("Coverage of approx. 95% credible intervals for biodiversity")
+
+print(meanplt / (varplt + coverageplt) + plot_annotation('Holdout Biodiversity'))
+```
+
+### In-Sample, marginal LV
+```{r EnumspeciesInsample, fig.height = 9}
+obsnumbers <- detectednumspec(inputdata$insample$yXobs[, inputdata$species], 
+                              inputdata$insample$yXobs[, "ModelSiteID", drop = TRUE])
+Enum_det <- do.call(cbind, lapply(Enums_insample, function(x) x["Esum_det", , drop = TRUE]))
+Vnum_det <- do.call(cbind, lapply(Enums_insample, function(x) x["Vsum_det", , drop = TRUE]))
+
+Enum_compare(obsnumbers, Enum_det, Vnum_det)
+meanplt <- Enum_compare(obsnumbers, Enum_det, Vnum_det) %>%
+  as_tibble(rownames = "Model") %>%
+  tidyr::pivot_longer(starts_with("SE"), names_to = "SEtype", values_to = "SE") %>%
+  ggplot() +
+  geom_vline(xintercept = 0, col = "blue") +
+  geom_errorbarh(aes(xmin = `E[D]_obs` - 2 * SE, xmax = `E[D]_obs` + 2 * SE,
+                   y = Model,
+                   col = SEtype, lty = SEtype)) +
+  geom_point(aes(x = `E[D]_obs`, y = Model)) +
+  scale_x_continuous("Mean Residual") +
+  ggtitle("Mean Residual of Number of Detected Spccies")
+
+varplt <- Enum_compare(obsnumbers, Enum_det, Vnum_det) %>%
+  as_tibble(rownames = "Model") %>%
+  tidyr::pivot_longer(starts_with("V"), names_to = "Vtype", values_to = "Variance") %>%
+  ggplot() +
+  geom_point(aes(x = sqrt(Variance), y = Model, col = Vtype, shape = Vtype)) +
+  scale_x_continuous("Standard Deviation of Residual") +
+  ggtitle("Standard Deviation of Number of Detected Species")
+
+coverageplt <- Enum_coverage(obsnumbers, Enum_det, Vnum_det)[["mean"]] %>%
+  tibble::enframe(name = "Model", value = "Pcnt. Coverage") %>%
+  ggplot() +
+  geom_point(aes(x = `Pcnt. Coverage`, y = Model)) +
+  geom_vline(xintercept = 0.95, col = "blue") +
+  ggtitle("Coverage of approx. 95% credible intervals for biodiversity")
+
+print(meanplt / (varplt + coverageplt) + plot_annotation('In Sample Biodiversity, marginal over LV distribution'))
 ```
 
 ## Expected Number of Detections for Each Species
@@ -526,6 +675,78 @@ Edetections %>%
   theme(legend.position="bottom") +
   scale_x_continuous(name = "Expected Detections") +
   ggtitle("Expected Number of Detections vs Observed")
+```
+
+## LV Values vs Covariates
+```{r medianLVvalues, fig.width = 14}
+pltbase <- cleanersummaries %>%
+  filter(varname == "LV") %>%
+  filter(varname == "LV", (Lower95 > 0) | (Upper95 < 0)) %>%
+  inner_join(occcovar, by = "ModelSite") %>%
+  tidyr::pivot_longer(c(names(occcovar), -ModelSite),
+                      names_to = "OccCovariate",
+                      values_to = "OccCovariateValue") %>%
+  ggplot()
+
+pltpoints <- geom_point(aes(x = OccCovariateValue, y = Median, shape = Covariate),
+                        alpha = 0.2)
+
+pltsmooth <- geom_smooth(aes(x = OccCovariateValue, y = Median, col = Covariate),
+                                  data = function(x) x %>% dplyr::filter(!(OccCovariate %in% treatfactor)),
+                                  method = "gam", level = 0.95, formula = y ~ s(x, bs = "cs"))
+pltsmooth_low95 <- geom_smooth(aes(x = OccCovariateValue, y = Lower95, col = Covariate),
+                                  data = function(x) x %>% dplyr::filter(!(OccCovariate %in% treatfactor)),
+                                  method = "gam", level = 0.95, formula = y ~ s(x, bs = "cs"),
+                                  lty = "dashed", lwd = 0.5)
+pltsmooth_high95 <- geom_smooth(aes(x = OccCovariateValue, y = Upper95, col = Covariate),
+                                  data = function(x) x %>% dplyr::filter(!(OccCovariate %in% treatfactor)),
+                                  method = "gam", level = 0.95, formula = y ~ s(x, bs = "cs"),
+                                  lty = "dashed", lwd = 0.5)
+pltfactor <- ggplot2::stat_summary(aes(x = OccCovariateValue, y = Median, col = Covariate),
+                                  data = function(x) x %>% dplyr::filter(OccCovariate %in% treatfactor),
+                                  geom = "pointrange",
+                                  fun.data = mean_se,
+                                  fun.args = list(mult = 2),
+                                  position = position_dodge(width = 0.1, preserve = "total"),
+                                  alpha = 0.8,
+                                  lwd = 1.2,
+                                  fatten = 1,
+                                  show.legend = FALSE)
+pltfactor_low95 <- ggplot2::stat_summary(aes(x = OccCovariateValue, y = Lower95, col = Covariate),
+                                  data = function(x) x %>% dplyr::filter(OccCovariate %in% treatfactor),
+                                  geom = "pointrange",
+                                  fun.data = mean_se,
+                                  fun.args = list(mult = 2),
+                                  position = position_dodge(width = 0.1, preserve = "total"),
+                                  alpha = 0.8,
+                                  lwd = 0.2,
+                                  fatten = 1,
+                                  show.legend = FALSE)
+pltfactor_high95 <- ggplot2::stat_summary(aes(x = OccCovariateValue, y = Upper95, col = Covariate),
+                                  data = function(x) x %>% dplyr::filter(OccCovariate %in% treatfactor),
+                                  geom = "pointrange",
+                                  fun.data = mean_se,
+                                  fun.args = list(mult = 2),
+                                  position = position_dodge(width = 0.1, preserve = "total"),
+                                  alpha = 0.8,
+                                  lwd = 0.2,
+                                  fatten = 1,
+                                  show.legend = FALSE)
+
+
+pltbase + 
+  pltpoints +
+  pltsmooth + pltfactor +
+  pltsmooth_low95 + pltsmooth_high95 +
+  pltfactor_low95 + pltfactor_high95 +
+  facet_grid(rows = vars(Model),
+             cols = vars(OccCovariate),
+             scale = "free_x") +
+  geom_hline(yintercept = 0, col = "blue", lty = "dashed") +
+  theme(strip.text.x.top = element_text(angle = 90)) +
+  scale_color_viridis_d(name = "Latent Variable") +
+  scale_x_continuous(name = "Covariate Value") +
+  ggtitle("Fitted Statistically Non-Zero LV Values")
 ```
 
 ## Quick check of residual distribution for all models
@@ -572,7 +793,7 @@ rm(resid_occ_l)
 ```
 
 ```{r residocc_plots_manymodels, fig.width = 14}
-seeds = c(321, 120, 333)
+seeds = c(321, 120)
 df_l <- lapply(seeds, function(x) {
   resid_occ_l <- lapply(fittedmods, function(fit) {
     resids <- ds_occupancy_residuals.fit(fit, type = "median", seed = x, conditionalLV = (!is.null(fit$nlv) && fit$nlv > 0))
@@ -594,24 +815,18 @@ names(df_l) <- seeds
 df <- bind_rows(df_l, .id = "seed")
 rm(df_l)
 
-treatfactor <- df %>%
-  group_by(Covariate) %>%
-  summarise(nvals = n_distinct(CovariateValue), .groups = "drop_last") %>%
-  filter(nvals <= 10) %>%
-  dplyr::select(Covariate) %>%
-  unlist()
+pltbase <- df %>%
+  ggplot()
 
-plt <- df %>%
-  ggplot() +
-  ggplot2::geom_point(aes(x = CovariateValue, y = Residual), data = function(x) x[x$seed == seeds[[1]], ])
+pltpoints <- ggplot2::geom_point(aes(x = CovariateValue, y = Residual), data = function(x) x[x$seed == seeds[[1]], ])
 
 # gam smooths for continuous variables
-plt <- plt + ggplot2::geom_smooth(aes(x = CovariateValue, y = Residual, col = seed),
+pltsmooth <- ggplot2::geom_smooth(aes(x = CovariateValue, y = Residual, col = seed),
                                   data = function(x) x %>% dplyr::filter(!(Covariate %in% treatfactor)),
                                   method = "gam", level = 0.95, formula = y ~ s(x, bs = "cs"))
 
 # mean + 2SE summaries for discrete variables
-plt <- plt + ggplot2::stat_summary(aes(x = CovariateValue, y = Residual, col = seed),
+pltfactor <- ggplot2::stat_summary(aes(x = CovariateValue, y = Residual, col = seed),
                                   data = function(x) x %>% dplyr::filter(Covariate %in% treatfactor),
                                   geom = "pointrange",
                                   fun.data = mean_se,
@@ -622,7 +837,7 @@ plt <- plt + ggplot2::stat_summary(aes(x = CovariateValue, y = Residual, col = s
                                   fatten = 1,
                                   show.legend = FALSE)
 
-plt <- plt +
+plt <- pltbase + pltsmooth + pltfactor + 
   ggplot2::facet_grid(rows = vars(Model), cols = vars(Covariate), as.table = TRUE, scales = "free_x") +
   ggplot2::geom_hline(yintercept = 0, col = "blue", lty = "dashed") +
   ggplot2::scale_x_continuous(name = "Covariate Value") +
@@ -638,7 +853,7 @@ rm(df)
 
 ## Detection Residuals
 ```{r residdet_plots_manymodels}
-seeds = c(321, 120, 333)
+seeds = c(321, 120)
 df_l <- lapply(seeds, function(x) {
   resid_det_l <- lapply(fittedmods, function(fit) {
     resids <- ds_detection_residuals.fit(fit, type = "median", seed = x)
@@ -660,36 +875,10 @@ names(df_l) <- seeds
 df_det <- bind_rows(df_l, .id = "seed")
 rm(df_l)
 
-treatfactor <- df_det %>%
-  group_by(Covariate) %>%
-  summarise(nvals = n_distinct(CovariateValue), .groups = "drop_last") %>%
-  filter(nvals <= 10) %>%
-  dplyr::select(Covariate) %>%
-  unlist()
-
-plt <- df_det %>%
-  ggplot() +
-  ggplot2::geom_point(aes(x = CovariateValue, y = Residual), data = function(x) x[x$seed == seeds[[1]], ])
-
-# gam smooths for continuous variables
-plt <- plt + ggplot2::geom_smooth(aes(x = CovariateValue, y = Residual, col = seed),
-                                  data = function(x) x %>% dplyr::filter(!(Covariate %in% treatfactor)),
-                                  method = "gam", level = 0.95, formula = y ~ s(x, bs = "cs"))
-
-# mean + 2SE summaries for discrete variables
-plt <- plt + ggplot2::stat_summary(aes(x = CovariateValue, y = Residual, col = seed),
-                                  data = function(x) x %>% dplyr::filter(Covariate %in% treatfactor),
-                                  geom = "pointrange",
-                                  fun.data = mean_se,
-                                  fun.args = list(mult = 2),
-                                  position = position_dodge(width = 0.1, preserve = "total"),
-                                  alpha = 0.8,
-                                  lwd = 2,
-                                  fatten = 1,
-                                  show.legend = FALSE)
-
+pltbase <- df_det %>%
+  ggplot() 
   
-plt <- plt +
+plt <- pltbase + pltsmooth + pltfactor + 
   ggplot2::facet_grid(rows = vars(Model), cols = vars(Covariate), as.table = TRUE, scales = "free_x") +
   ggplot2::geom_hline(yintercept = 0, col = "blue", lty = "dashed") +
   ggplot2::scale_x_continuous(name = "Covariate Value") +
