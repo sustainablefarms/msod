@@ -41,8 +41,7 @@ varname2type <- function(varnames){
 ## Data Import
 ```{r importmodelfits}
 modelspecs <- readRDS("./7_3_03_modelspecs.rds")
-
-filenames <- lapply(modelspecs, function(x) x$filename)
+filenames <- lapply(modelspecs, function(x) gsub("./tmpdata/", "./fittedmodels/", x$filename))
 
 # test loading models
 a <- vapply(filenames, file.exists, FUN.VALUE = FALSE)
@@ -55,7 +54,7 @@ fittedmods <- lapply(filenames, function(x) {
 ```
 
 ```{r importdata, echo = FALSE, include = FALSE}
-inputdata <- readRDS("./private/data/clean/7_2_10_input_data.rds")
+inputdata <- readRDS("~/dlinkingdatacode/private/data/clean/7_2_10_input_data.rds")
 # the following whittle out the covariates that we are interested in the residual diagnostics
 detcovar <- model.matrix(~ ModelSiteID + MeanWind +  MeanTime + MeanClouds + MeanTemp + ObserverId - 1,
              data = inputdata$insampledata$yXobs) %>%
@@ -157,10 +156,11 @@ cleanersummaries %>%
 ```
 
 *Comment on convergence using the Gelman-Rubin statistic*
+
 ### Effective Sample Size
 ```{r SSeff_fromsummary, fig.height = 10}
 goodthresh <- fittedmods[[1]]$sample * length(fittedmods[[1]]$mcmc) / 4
-cleanersummaries %>%
+plt1 <- cleanersummaries %>%
   mutate(type = varname2type(varname)) %>%
   ggplot() +
   facet_grid(rows = vars(type), cols = vars(Model), scales = "free") +
@@ -170,15 +170,17 @@ cleanersummaries %>%
   theme(strip.text.x.top = element_text(angle = 90)) +
   scale_x_continuous(name = "Effective Sample Size", trans = "log10")
 
-cleanersummaries %>%
+plt2 <- cleanersummaries %>%
   mutate(type = varname2type(varname)) %>%
   ggplot() +
   facet_grid(rows = vars(type), cols = vars(Model), scales = "free") +
   geom_histogram(aes(x = SSeff), bins = 50 ) +
   geom_vline(xintercept = goodthresh, col = "red", lty = "dashed") +
   scale_y_discrete(name = "Variable Name") +
-  theme(strip.text.x.top = element_text(angle = 90)) +
+  theme(strip.text.x.top = element_blank()) +
   scale_x_continuous(name = "Effective Sample Size", trans = "log10")
+
+plt1 / plt2
 ```
 
 *Comment on effective sample size. Should be similar order of magnitude to the number of MCMC samples.*
@@ -257,18 +259,21 @@ cleanersummaries %>%
 ```{r occupancycovariateloadings, fig.width = 15, fig.height = 12}
 cleanersummaries %>%
   dplyr::filter(varname == "u.b") %>%
+  dplyr::mutate(ci95_misses_0 = !((Lower95 < 0) & (Upper95 > 0))) %>%
   ggplot() +
   facet_wrap(vars(Covariate), nrow = 1) +
-  geom_hline(yintercept = 0) +
+  geom_hline(yintercept = 0, col = "blue", lty = "dashed") +
   geom_pointrange(aes(x = Species,
                  ymin = Lower95,
                  ymax = Upper95,
                  y = Median,
                  col = Model,
+                 alpha = ci95_misses_0,
                  group = Model),
              shape = "|",
              size = 1,
              position = position_dodge(width = 1)) +
+  scale_y_continuous(name = "Posterior Estimate") +
   coord_flip() +
   scale_color_viridis_d() +
   theme(strip.text.x.top = element_text(angle = 90)) +
@@ -279,18 +284,21 @@ cleanersummaries %>%
 ```{r detectioncovariateloadings}
 cleanersummaries %>%
   dplyr::filter(varname == "v.b") %>%
+  dplyr::mutate(ci95_misses_0 = !((Lower95 < 0) & (Upper95 > 0))) %>%
   ggplot() +
   facet_wrap(vars(Covariate), nrow = 1) +
-  geom_hline(yintercept = 0) +
+  geom_hline(yintercept = 0, col = "blue", lty = "dashed") +
   geom_pointrange(aes(x = Species,
                  ymin = Lower95,
                  ymax = Upper95,
                  y = Median,
                  col = Model,
+                 alpha = ci95_misses_0,
                  group = Model),
              shape = "|",
              size = 1,
              position = position_dodge(width = 1)) +
+  scale_y_continuous(name = "Posterior Estimate") +
   coord_flip() +
   scale_color_viridis_d() +
   theme(strip.text.x.top = element_text(angle = 90)) +
@@ -545,8 +553,8 @@ According to help page 'loo-glossary', if p_loo << [total parameters in the mode
 ### Model Difference, lpd per site
 ```{r difflpd}
 elpd_compare(lpds_df)
-loo::loo_compare(lapply(waics_l, function(x) x$waic))
-loo::loo_compare(lapply(waics_l, function(x) x$loo))
+elpd_compare(elpds = do.call(cbind, lapply(waics_l, function(x) x$waic$pointwise[, 1])))
+elpd_compare(elpds = do.call(cbind, lapply(waics_l, function(x) x$loo$pointwise[, 1])))
 
 plot_compare_loo <- function(compare.loo.obj){
   plt <- compare.loo.obj %>%
@@ -564,11 +572,11 @@ elpd_compare(lpds_df) %>%
   plot_compare_loo() +
   ggtitle("Holdout elpd Differences")
 
-loo::loo_compare(lapply(waics_l, function(x) x$waic)) %>%
+elpd_compare(elpds = do.call(cbind, lapply(waics_l, function(x) x$waic$pointwise[, 1]))) %>%
   plot_compare_loo() +
   ggtitle("WAICS Differences")
 
-loo::loo_compare(lapply(waics_l, function(x) x$loo)) %>%
+elpd_compare(elpds = do.call(cbind, lapply(waics_l, function(x) x$loo$pointwise[, 1]))) %>%
   plot_compare_loo() +
   ggtitle("LOO-PSIS Differences")
 ```
