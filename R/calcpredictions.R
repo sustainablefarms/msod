@@ -45,11 +45,25 @@ Endetect_modelsite <- function(fit, type = "median", Xocc = NULL, Xobs = NULL, M
   E_ndetect_condocc <- cbind(ModelSite = ModelSite, Visits.DetCond.Pred) %>%
     as_tibble() %>%
     group_by(ModelSite) %>%
-    summarise_all(sum)
+    summarise_all(sum) %>%
+    dplyr::select(-ModelSite)
+  V_ndetect_condocc <- cbind(ModelSite = ModelSite, Visits.DetCond.Pred * (1 - Visits.DetCond.Pred)) %>%
+    as_tibble() %>%
+    group_by(ModelSite) %>%
+    summarise_all(sum) %>%
+    dplyr::select(-ModelSite)
+  E_ndetect2_condocc <- V_ndetect_condocc + E_ndetect_condocc^2
   # Convert to marginal expected num detection, considering that no occupancy --> no detections
-  E_ndetect <- as.matrix(E_ndetect_condocc %>% dplyr::select(-ModelSite)) * ModelSite.Occ.Pred
-  if (!is.null(fit$species)){colnames(E_ndetect) <- fit$species} # a special modification of runjags with occupation detection meta info
-  return(E_ndetect)
+  E_ndetect <- as.matrix(E_ndetect_condocc) * ModelSite.Occ.Pred
+  E_ndetect2 <- as.matrix(E_ndetect2_condocc) * ModelSite.Occ.Pred
+  V_ndetect <- E_ndetect2 - E_ndetect^2
+  if (!is.null(fit$species)){  # a special modification of runjags with occupation detection meta info
+    colnames(E_ndetect) <- fit$species
+    colnames(V_ndetect) <- fit$species}
+  return(list(
+    E_ndetect = E_ndetect,
+    V_ndetect = V_ndetect
+  ))
 }
 
 
