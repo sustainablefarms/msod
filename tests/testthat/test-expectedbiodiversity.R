@@ -503,6 +503,38 @@ test_that("Subset biodiversity to single species matches simulations", {
   # expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
 })
 
+test_that("Endetect_modelsite matches predsumspecies", {
+  # make it full test by having: different draws and latent variables, and testing both marginal and fitted latent variables
+  nsites <- 1000
+  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 1, nlv = 4)
+  
+  # using fitted LV
+  Edet1 <- Endetect_modelsite(artfit, type = "median", conditionalLV = TRUE)
+  Edet2 <- lapply(artfit$species, function(sp) {
+                  Edet <- predsumspecies(artfit, desiredspecies = sp, UseFittedLV = TRUE, type = "marginal")
+                  #marginal works here because artfit has only one draw
+                  return(Edet)}
+                  )
+  Edet2_t <- t(do.call(rbind, lapply(Edet2, function(x) x["Esum_det", , drop = FALSE])))
+  expect_equivalent(Edet1[[1]], Edet2_t)
+  
+  Edet2_V_t <- t(do.call(rbind, lapply(Edet2, function(x) x["Vsum_det", , drop = FALSE])))
+  expect_equivalent(Edet1[[2]], Edet2_V_t)
+  
+  # marginal to LV
+  Edet1 <- Endetect_modelsite(artfit, type = "median", conditionalLV = FALSE)
+  Edet2 <- lapply(artfit$species, function(sp) {
+    Edet <- predsumspecies(artfit, desiredspecies = sp, UseFittedLV = FALSE, nLVsim = 5000, type = "marginal")
+    #marginal works here because artfit has only one draw
+    return(Edet)}
+  )
+  Edet2_t <- t(do.call(rbind, lapply(Edet2, function(x) x["Esum_det", , drop = FALSE])))
+  expect_equivalent(Edet1[[1]], Edet2_t, tol = 1E-2)
+  
+  Edet2_V_t <- t(do.call(rbind, lapply(Edet2, function(x) x["Vsum_det", , drop = FALSE])))
+  expect_equivalent(Edet1[[2]], Edet2_V_t, tol = 1E-2)
+})
+
 #########################################################################################
 
 test_that("No LV and identical sites", {
