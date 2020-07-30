@@ -433,6 +433,76 @@ test_that("Subset biodiversity matches simulations", {
   expect_equal(mean(inci_holdout_margLV), 0.95, tol = 0.05)
 })
 
+test_that("Subset biodiversity to single species matches simulations", {
+  # make it full test by having: different draws and latent variables, and testing both marginal and fitted latent variables
+  nsites <- 1000
+  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 1, nlv = 4)
+  
+  # make a new, different, second parameter set
+  artfit$mcmc[[2]] <- artfit$mcmc[[1]]
+  artfit$sample <- 1
+  bugvarnames <- names(artfit$mcmc[[1]][1, ])
+  artfit$mcmc[[2]][1, grepl("^u.b\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^u.b\\[.*", bugvarnames)] * runif(3, min = 5, max = 10)
+  artfit$mcmc[[2]][1, grepl("^v.b\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^v.b\\[.*", bugvarnames)] * runif(3, min = 5, max = 10)
+  artfit$mcmc[[2]][1, grepl("^lv.coef\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^lv.coef\\[.*", bugvarnames)] * runif(3, min = 0.1, max = 0.2)
+  artfit$mcmc[[2]][1, grepl("^LV\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^LV\\[.*", bugvarnames)] * runif(4, min = 0.5, max = 1)
+  
+  # Simulate equally from each draw
+  y_1st <- simulate_fit(artfit, esttype = 1, UseFittedLV = TRUE)
+  y_2nd <- simulate_fit(artfit, esttype = 2, UseFittedLV = TRUE)
+  y_interleaved <- y_1st
+  drawselect <- as.logical(rbinom(1000, size = 1, prob = 0.5))
+  y_interleaved[drawselect, ] <- y_2nd[drawselect, ]
+  
+  # Choose a subset of species
+  speciessubset <- sample(artfit$species, size = 1)
+  NumSpeciesObs <- detectednumspec(y_interleaved[, speciessubset, drop = FALSE], ModelSite = artfit$data$ModelSite)
+  
+  # Predict number within subset, in sample, using LV
+  numspec_insample_fitLV <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedLV = TRUE, type = "marginal")
+  Enum_compare_sum <- Enum_compare(NumSpeciesObs,
+                                   as.matrix(numspec_insample_fitLV["Esum_det", ], ncol = 1),
+                                   as.matrix(numspec_insample_fitLV["Vsum_det", ], ncol = 1)
+  )
+  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
+  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
+  expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
+
+  # Predict number within subset, in sample, marginal LV
+  numspec_insample_margLV <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedLV = FALSE, type = "marginal")
+  Enum_compare_sum <- Enum_compare(NumSpeciesObs,
+                                   as.matrix(numspec_insample_margLV["Esum_det", ], ncol = 1),
+                                   as.matrix(numspec_insample_margLV["Vsum_det", ], ncol = 1)
+  )
+  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
+  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
+  # the follow test doesn't pass, which is consistent with the fitted LV values not being distributed according to a Gaussian distribution
+  # expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
+  
+  # Predict number within subset, outside sample, marginal LV
+  originalXocc <- Rfast::eachrow(Rfast::eachrow(artfit$data$Xocc, artfit$XoccProcess$scale, oper = "*"),
+                                 artfit$XoccProcess$center, oper = "+")
+  colnames(originalXocc) <- colnames(artfit$data$Xocc)
+  originalXocc <- cbind(ModelSite = 1:nrow(originalXocc), originalXocc)
+  originalXobs <- Rfast::eachrow(Rfast::eachrow(artfit$data$Xobs, artfit$XobsProcess$scale, oper = "*"),
+                                 artfit$XobsProcess$center, oper = "+")
+  colnames(originalXobs) <- colnames(artfit$data$Xobs)
+  originalXobs <- cbind(ModelSite = artfit$data$ModelSite, originalXobs)
+  outofsample_y <- simulate_fit(artfit, esttype = 1, UseFittedLV = FALSE)
+  
+  numspec_holdout_margLV <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite",
+                                                   desiredspecies = speciessubset,
+                                                   chains = NULL, nLVsim = 1000, type = "marginal", cl = NULL)
+  Enum_compare_sum <- Enum_compare(NumSpeciesObs,
+                                   as.matrix(numspec_holdout_margLV["Esum_det", ], ncol = 1),
+                                   as.matrix(numspec_holdout_margLV["Vsum_det", ], ncol = 1)
+  )
+  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
+  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
+  # the follow test doesn't pass, which is consistent with the fitted LV values not being distributed according to a Gaussian distribution
+  expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
+})
+
 #########################################################################################
 
 test_that("No LV and identical sites", {
