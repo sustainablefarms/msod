@@ -139,8 +139,9 @@ Erowsum_margrow <- function(pmat){
 #' @return A matrix or 3 array with each column a ModelSite. Dimensions are labelled. The statistical summaries returned are the predicted expection and variance of the number of species occupied or detected.
 #' These expectations are with respect to the full posterior distribution of the model parameters, with the exception of the LV values which depends on UseFittedLV.
 #' @export
-predsumspecies <- function(fit, chains = NULL, UseFittedLV = TRUE, nLVsim = 1000, type = "median", cl = NULL){
+predsumspecies <- function(fit, desiredspecies = fit$species, chains = NULL, UseFittedLV = TRUE, nLVsim = 1000, type = "median", cl = NULL){
   stopifnot(type %in% c("draws", "median", "marginal"))
+  stopifnot(all(desiredspecies %in% fit$species))
   
   fit$data <- as_list_format(fit$data)
   if (is.null(chains)){chains <- 1:length(fit$mcmc)}
@@ -164,7 +165,8 @@ predsumspecies <- function(fit, chains = NULL, UseFittedLV = TRUE, nLVsim = 1000
     Xocc = fit$data$Xocc,
     Xobs = fit$data$Xobs,
     ModelSite = fit$data$ModelSite,
-    numspecies = fit$data$n,
+    numspeciesinmodel = fit$data$n,
+    desiredspecies = (1:fit$data$n)[fit$species %in% desiredspecies],
     nlv = fit$data$nlv,
     draws = draws,
     useLVindraws = UseFittedLV,
@@ -211,6 +213,9 @@ predsumspecies <- function(fit, chains = NULL, UseFittedLV = TRUE, nLVsim = 1000
 #' @param ModelSite is a list of integers giving the row in Xocc corresponding to a row in Xobs
 #' @param Xocc A matrix of occupancy covariates, each row is a ModelSite
 #' @param Xobs A matrix of detection covariates. Each row is a visit. The visited ModelSite (row of Xocc) is given by ModelSite
+#' @param numspeciesinmodel Integer. The number of species in the model, which is needed to match up with the BUGS names in [draws]
+#' @param desiredspecies Integer vector. The indexes for species to include in the species sum.
+#' Useful if interested in only 1 species, or a certain class of species.
 #' @param draws A matrix of posterior parameter draws. Each row is a draw. Column names follow the BUGS naming convention
 #' @param useLVindraws Use the LV values corresponding to each draw from within the \code{draws} object.
 #' If FALSE nLVsim simulated LV values will be used for each draw.
@@ -219,9 +224,11 @@ predsumspecies <- function(fit, chains = NULL, UseFittedLV = TRUE, nLVsim = 1000
 #' @return A 3-dimensional array. Dimensions are draws, sites and statistical summaries of the number of species random variables.
 #' There will be four summaries: the expection and variance of the number of species occupied or detected.
 #' @export
-predsumspecies_raw <- function(Xocc, Xobs = NULL, ModelSite = NULL, numspecies, nlv, draws, useLVindraws = TRUE, nLVsim = NULL, cl = NULL){
+predsumspecies_raw <- function(Xocc, Xobs = NULL, ModelSite = NULL,
+                               numspeciesinmodel, desiredspecies = 1:numspeciesinmodel,
+                               nlv, draws, useLVindraws = TRUE, nLVsim = NULL, cl = NULL){
   # prepare parameters
-  nspecall <- numspecies
+  nspmodel <- numspeciesinmodel
   ndraws <- nrow(draws)
   nsites <- nrow(Xocc)
   noccvar <- ncol(Xocc)
@@ -232,9 +239,9 @@ predsumspecies_raw <- function(Xocc, Xobs = NULL, ModelSite = NULL, numspecies, 
     stopifnot(all(ModelSiteIdxs %in% 1:nsites))
     if (!all(1:nsites %in% ModelSiteIdxs)){warning("Some ModelSite do not have observation covariate information.")}
   }
-  u.b <- bugsvar2array(draws, "u.b", 1:nspecall, 1:noccvar)
-  if (!is.null(Xobs)) {v.b <- bugsvar2array(draws, "v.b", 1:nspecall, 1:nobsvar)}
-  lv.coef <- bugsvar2array(draws, "lv.coef", 1:nspecall, 1:nlv)
+  u.b <- bugsvar2array(draws, "u.b", 1:nspmodel, 1:noccvar)[desiredspecies, , drop = FALSE]
+  if (!is.null(Xobs)) {v.b <- bugsvar2array(draws, "v.b", 1:nspmodel, 1:nobsvar)[desiredspecies, , drop = FALSE]}
+  lv.coef <- bugsvar2array(draws, "lv.coef", 1:nspmodel, 1:nlv)[desiredspecies, , drop = FALSE]
   
   if (useLVindraws){stopifnot(is.null(nLVsim))}
   if (!useLVindraws){stopifnot(is.numeric(nLVsim))}
@@ -255,10 +262,10 @@ predsumspecies_raw <- function(Xocc, Xobs = NULL, ModelSite = NULL, numspecies, 
           sitedrawidx <- sitedrawidxs[rowidx, , drop = FALSE]
           Xocc <- Xocc[sitedrawidx[["siteidx"]], , drop = FALSE]
           if (!is.null(Xobs)) {Xobs <- Xobs[ModelSiteIdxs == sitedrawidx[["siteidx"]], , drop = FALSE]}
-          u.b_theta <- matrix(u.b[,, sitedrawidx[["drawidx"]] ], nrow = nspecall, ncol = noccvar)
-          if (!is.null(Xobs)) {v.b_theta <- matrix(v.b[,, sitedrawidx[["drawidx"]] ], nrow = nspecall, ncol = nobsvar)}
+          u.b_theta <- drop_to_matrix(u.b[,, sitedrawidx[["drawidx"]], drop = FALSE])
+          if (!is.null(Xobs)) {v.b_theta <- drop_to_matrix(v.b[,, sitedrawidx[["drawidx"]], drop = FALSE])}
           else {v.b_theta <- NULL}
-          lv.coef_theta <- matrix(lv.coef[,, sitedrawidx[["drawidx"]] ], nrow = nspecall, ncol = nlv)
+          lv.coef_theta <- drop_to_matrix(lv.coef[,, sitedrawidx[["drawidx"]] , drop = FALSE])
           if (useLVindraws){
             LVvals_thetasite <- matrix(LVvals[sitedrawidx[["siteidx"]], , sitedrawidx[["drawidx"]], drop = FALSE], nrow = 1, ncol = nlv)
           } else {
@@ -383,9 +390,13 @@ EVtheta2EVmarg <- function(Vsum, Esum){
 }
 
 #' @describeIn predsumspecies For new ModelSite occupancy covariates and detection covariates, predicted number of expected species
+#' @param desiredspecies List of species to sum over. Names must match names in fit$species. Default is to sum over all species.
 #' @export
-predsumspecies_newdata <- function(fit, Xocc, Xobs = NULL, ModelSiteVars = NULL, chains = NULL, nLVsim = 1000, type = "marginal", cl = NULL){
+predsumspecies_newdata <- function(fit, Xocc, Xobs = NULL, ModelSiteVars = NULL,
+                                   desiredspecies = fit$species,
+                                   chains = NULL, nLVsim = 1000, type = "marginal", cl = NULL){
   stopifnot(type %in% c("draws", "marginal", "median"))
+  stopifnot(all(desiredspecies %in% fit$species))
   
   if (!is.null(Xobs)) {datalist <- prep_new_data(fit, Xocc, Xobs, ModelSite = ModelSiteVars)}
   else{datalist <- list(
@@ -412,7 +423,8 @@ predsumspecies_newdata <- function(fit, Xocc, Xobs = NULL, ModelSiteVars = NULL,
     Xocc = datalist$Xocc,
     Xobs = datalist$Xobs,
     ModelSite = datalist$ModelSite,
-    numspecies = fit$data$n,
+    numspeciesinmodel = fit$data$n,
+    desiredspecies = (1:fit$data$n)[fit$species %in% desiredspecies],
     nlv = fit$data$nlv,
     draws = draws,
     useLVindraws = FALSE,
