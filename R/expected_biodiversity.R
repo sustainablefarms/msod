@@ -239,9 +239,9 @@ predsumspecies_raw <- function(Xocc, Xobs = NULL, ModelSite = NULL,
     stopifnot(all(ModelSiteIdxs %in% 1:nsites))
     if (!all(1:nsites %in% ModelSiteIdxs)){warning("Some ModelSite do not have observation covariate information.")}
   }
-  u.b <- bugsvar2array(draws, "u.b", 1:nspmodel, 1:noccvar)[desiredspecies, , drop = FALSE]
-  if (!is.null(Xobs)) {v.b <- bugsvar2array(draws, "v.b", 1:nspmodel, 1:nobsvar)[desiredspecies, , drop = FALSE]}
-  lv.coef <- bugsvar2array(draws, "lv.coef", 1:nspmodel, 1:nlv)[desiredspecies, , drop = FALSE]
+  u.b <- bugsvar2array(draws, "u.b", 1:nspmodel, 1:noccvar)[desiredspecies, , , drop = FALSE]
+  if (!is.null(Xobs)) {v.b <- bugsvar2array(draws, "v.b", 1:nspmodel, 1:nobsvar)[desiredspecies, , , drop = FALSE]}
+  lv.coef <- bugsvar2array(draws, "lv.coef", 1:nspmodel, 1:nlv)[desiredspecies, , , drop = FALSE]
   
   if (useLVindraws){stopifnot(is.null(nLVsim))}
   if (!useLVindraws){stopifnot(is.numeric(nLVsim))}
