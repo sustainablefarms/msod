@@ -46,13 +46,13 @@ run.detectionoccupancy <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~
                           "7_2_1_model_description.txt",
                           package = "sustfarmld")
     #Specify the parameters to be monitored
-    monitor.params = c('u.b','v.b','mu.u.b','tau.u.b','mu.v.b','tau.v.b','lv.coef', "LV")
+    monitor.params = c('u.b','v.b','mu.u.b','tau.u.b','sigma.u.b', 'mu.v.b','tau.v.b', 'sigma.v.b', 'lv.coef', "LV")
   } else {
     modelFile=system.file("modeldescriptions",
                           "7_2_3_model_description_nolv.txt",
                           package = "sustfarmld")
     #Specify the parameters to be monitored
-    monitor.params = c('u.b','v.b','mu.u.b','tau.u.b','mu.v.b','tau.v.b')
+    monitor.params = c('u.b','v.b','mu.u.b', 'tau.u.b','sigma.u.b', 'mu.v.b','tau.v.b', 'sigma.v.b')
     data.list[["nlv"]] <- NULL
   }
 

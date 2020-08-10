@@ -21,4 +21,5 @@ test_that("Prep works with complicated formula", {
                                         nlv = 4)
   expect_equal(fit_runjags$XoccProcess$version, 2)
   expect_equal(fit_runjags$XobsProcess$version, 2)
+  expect_gt(sum(grepl("sigma", colnames(fit_runjags$mcmc[[1]]))), 0)
 })
