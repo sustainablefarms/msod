@@ -23,18 +23,37 @@ apply.designmatprocess <- function(designmatprocess, indata){
 
 # keep variables to keep in the design matrix preparations
 # drop variables to forced to drop in the design matrix preparations
-# ignore = 
-prep.designmatprocess_v2 <- function(indata, fmla, keep = NULL, drop = NULL, ignore = NULL){
+prep.designmatprocess_v2 <- function(indata, fmla, keep = NULL, drop = NULL){
   indata <- as.data.frame(indata)
   fmla <- as.formula(fmla)
+  rhschar <- tail(as.character(fmla), 1)
   
-  ## Extract columns of indata that will be used in modelling (approximate)
+  ## Extract data to standardise (limited functionality)
   ts <- terms(fmla, data = indata)
   varnames <- rownames(attr(ts, "factor"))
+  
+  ### remove any variables that want standardised BEFORE computing
+  ### precompute some variables (like logged variables)
+  computenow <- grep("^log\\(", varnames, value = TRUE)
+  if (!is.null(computenow)){
+     vals <- lapply(computenow, function(x) with(indata, eval(parse(text = x))))
+     names(vals) <- computenow
+     vals <- do.call(data.frame, c(vals, check.names = TRUE))
+     for (i in 1:length(computenow)){
+       rhschar <- gsub(computenow[[i]], names(vals)[[i]], rhschar, fixed = TRUE)
+     }
+     fmla <- reformulate(termlabels = rhschar)
+     indata <- cbind(indata, vals)
+     ts <- terms(fmla, data = indata)
+     varnames <- rownames(attr(ts, "factor"))
+  }
+  
+  # get other columns (which be default aren't precomputed)
   tokens <- unlist(strsplit(varnames, "(I|\\(|\\)|,| )"))
-  keep <- c(intersect(tokens, names(indata)), keep)
+  keep <- union(intersect(tokens, names(indata)), keep)
   keep <- setdiff(keep, drop)
   
+  # extract wanted columns
   wanteddata <- indata[, keep, drop = FALSE]
   
   # check that above extraction got all required data
@@ -42,6 +61,7 @@ prep.designmatprocess_v2 <- function(indata, fmla, keep = NULL, drop = NULL, ign
            error = function(e) stop(paste("Didn't parse formula correctly and required columns have been removed.",
                                            "Use argument 'keep' to ensure column remains.", 
                                            e)))
+  rm(mf)
   
   # center and scale before computing interactions
   c_n_s <- get_center_n_scale(wanteddata)
