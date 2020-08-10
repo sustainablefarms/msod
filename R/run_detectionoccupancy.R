@@ -187,7 +187,7 @@ defaultinitsfunction <- function(chain, indata, ...) {
 
   ## this is calculated just to get initial values for occupancy covariates and occupancy estimates
   y.occ.mock <- cbind(ModelSiteID = indata$ModelSite, indata$y) %>%
-    as_tibble() %>%
+    tibble::as_tibble() %>%
     group_by(ModelSiteID) %>%
     summarise_all(max) %>%
     dplyr::select(-ModelSiteID)
