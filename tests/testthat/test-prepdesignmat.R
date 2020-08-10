@@ -58,12 +58,19 @@ test_that("Prep design matrix version 1 works", {
 
 test_that("Selection of correct design matrix processing", {
   indata <- simulate_covar_data(10, 3)[[1]]
-  fmla <- "~ 1 + UpSite + (Sine1 + Sine2)^3 + I(Sine1^2)"
+  fmla <- "~ 1 + UpSite + Sine1 + Sine2 + UpSite*Sine2 + I(Sine1^2) + log(UpSite)"
   
   desmatproc <- prep.designmatprocess(indata, fmla, version = 2)
   expect_equal(desmatproc$version, 2)
   desmat <- apply.designmatprocess_v2(desmatproc, indata)
   means <- colMeans(desmat)
-  expect_equivalent(means[c("(Intercept)", "UpSite", "Sine1", "Sine2")], c(1, 0, 0, 0))
+  expect_equivalent(means[c("(Intercept)", "UpSite", "Sine1", "Sine2", "log.UpSite.")], c(1, 0, 0, 0, 0))
   expect_gt(abs(means["I(Sine1^2)"]), 1E-6)
+  expect_gt(abs(means["UpSite:Sine2"]), 1E-6)
+  
+  desmatproc <- prep.designmatprocess(indata, fmla, version = 1)
+  expect_equal(desmatproc$version, 1)
+  desmat <- apply.designmatprocess_v1(desmatproc, indata)
+  means <- colMeans(desmat)
+  expect_equivalent(means, c(1, 0, 0, 0, 0, 0, 0))
 })
