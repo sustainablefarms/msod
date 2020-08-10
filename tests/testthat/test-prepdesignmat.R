@@ -62,7 +62,7 @@ test_that("Selection of correct design matrix processing", {
   
   desmatproc <- prep.designmatprocess(indata, fmla, version = 2)
   expect_equal(desmatproc$version, 2)
-  desmat <- apply.designmatprocess_v2(desmatproc, indata)
+  desmat <- apply.designmatprocess(desmatproc, indata)
   means <- colMeans(desmat)
   expect_equivalent(means[c("(Intercept)", "UpSite", "Sine1", "Sine2", "log.UpSite.")], c(1, 0, 0, 0, 0))
   expect_gt(abs(means["I(Sine1^2)"]), 1E-6)
@@ -70,7 +70,22 @@ test_that("Selection of correct design matrix processing", {
   
   desmatproc <- prep.designmatprocess(indata, fmla, version = 1)
   expect_equal(desmatproc$version, 1)
-  desmat <- apply.designmatprocess_v1(desmatproc, indata)
+  desmat <- apply.designmatprocess(desmatproc, indata)
   means <- colMeans(desmat)
   expect_equivalent(means, c(1, 0, 0, 0, 0, 0, 0))
+})
+
+test_that("Undoing scaling and centering works", {
+  indata <- simulate_covar_data(10, 3)[[1]]
+  fmla <- "~ 1 + UpSite + Sine1 + Sine2 + UpSite*Sine2 + I(Sine1^2) + log(UpSite)"
+  
+  desmatproc <- prep.designmatprocess(indata, fmla, version = 1)
+  desmat <- apply.designmatprocess(desmatproc, indata)
+  origmat <- unstandardise.designmatprocess(desmatproc, desmat)
+  expect_equivalent(origmat[, c("UpSite", "Sine1", "Sine2")], indata[, c("UpSite", "Sine1", "Sine2")])
+  
+  desmatproc <- prep.designmatprocess(indata, fmla, version = 2)
+  desmat <- apply.designmatprocess(desmatproc, indata)
+  origmat <- unstandardise.designmatprocess(desmatproc, desmat)
+  expect_equivalent(origmat[, c("UpSite", "Sine1", "Sine2")], indata[, c("UpSite", "Sine1", "Sine2")])
 })
