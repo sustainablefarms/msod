@@ -5,7 +5,89 @@
 #' @param stoponhighcorrelation If TRUE the preparations for a design matrix will fail if correlations between covariates are higher than 0.75
 #' @return A special list containing parameters for applying a preprocessing step to data.
 #' @export
-prep.designmatprocess <- function(indata, fmla, stoponhighcorrelation = FALSE){
+prep.designmatprocess <- function(indata, fmla, version = 2, ...){
+  out <- NULL
+  if (version == 2) {out <- prep.designmatprocess_v2(indata, fmla, ...)}
+  if (version == 1) {out <- prep.designmatprocess_v1(indata, fmla, ...)}
+  stopifnot(!is.null(out))
+  return(out)
+}
+
+apply.designmatprocess <- function(designmatprocess, indata){
+  if (!("designmatprocess" %in% class(designmatprocess))){designmatprocess$version = 1}
+  out <- switch(designmatprocess$version,
+                apply.designmatprocess_v1(designmatprocess, indata),
+                apply.designmatprocess_v2(designmatprocess, indata))
+  return(out)
+}
+
+# keep variables to keep in the design matrix preparations
+# drop variables to forced to drop in the design matrix preparations
+# ignore = 
+prep.designmatprocess_v2 <- function(indata, fmla, keep = NULL, drop = NULL, ignore = NULL){
+  indata <- as.data.frame(indata)
+  fmla <- as.formula(fmla)
+  
+  ## Extract columns of indata that will be used in modelling (approximate)
+  ts <- terms(fmla, data = indata)
+  varnames <- rownames(attr(ts, "factor"))
+  tokens <- unlist(strsplit(varnames, "(I|\\(|\\)|,| )"))
+  keep <- c(intersect(tokens, names(indata)), keep)
+  keep <- setdiff(keep, drop)
+  
+  wanteddata <- indata[, keep, drop = FALSE]
+  
+  # check that above extraction got all required data
+  tryCatch(mf <- model.frame(fmla, wanteddata),
+           error = function(e) stop(paste("Didn't parse formula correctly and required columns have been removed.",
+                                           "Use argument 'keep' to ensure column remains.", 
+                                           e)))
+  
+  # center and scale before computing interactions
+  c_n_s <- get_center_n_scale(wanteddata)
+  out <- c(
+    fmla = fmla,
+    c_n_s,
+    version = 2
+  )
+  class(out) <- c("designmatprocess", class(out))
+  return(out)
+}
+
+apply.designmatprocess_v2 <- function(designmatprocess, indata){
+  datastd <- apply_center_n_scale(indata, designmatprocess$center, designmatprocess$scale)
+  designmat <- model.matrix(as.formula(designmatprocess$fmla), as.data.frame(datastd))
+  return(designmat)
+}
+
+# Gets centres and scales for a matrix/data.frame. Columns that are constant are shifted to 1
+# const_tol is the tolerance on the (population) SD which determines whether a column is treated as constant.
+get_center_n_scale <- function(indata, const_tol = 1E-8){
+  means <- colMeans(indata)
+  sds <- ((nrow(indata) - 1) / nrow(indata)) * apply(indata, 2, sd)
+  center <- means
+  scale <- sds
+  isconstant <- (sds < const_tol)
+  center[isconstant] <- means[isconstant] - 1 #centering of constant columns to 1
+  scale[isconstant] <- 1 #no scaling of constant columns - they are already set to 1
+  return(list(
+    center = center,
+    scale = scale
+  ))
+}
+
+# centre and scale are named vectors
+apply_center_n_scale <- function(indata, center, scale){
+  stopifnot(names(center) == names(scale))
+  stopifnot("matrix" %in% class(indata) || 
+              "data.frame" %in% class(indata)
+              )
+  indata <- indata[, names(center), drop = FALSE]
+  out <- scale(indata, center = center, scale = scale)
+  return(out)
+}
+
+prep.designmatprocess_v1 <- function(indata, fmla, stoponhighcorrelation = FALSE, ...){
   designmat1 <- model.matrix(as.formula(fmla), as.data.frame(indata))
   
   ## Check correlation between covariates
@@ -20,15 +102,14 @@ prep.designmatprocess <- function(indata, fmla, stoponhighcorrelation = FALSE){
     }
   }
   
-  means <- colMeans(designmat1)
-  sds <- ((nrow(designmat1) - 1) / nrow(designmat1)) * apply(designmat1, 2, sd)
-  center <- means
-  scale <- sds
-  isconstant <- (sds < 1E-8)
-  center[isconstant] <- means[isconstant] - 1 #centering of constant columns to 1
-  scale[isconstant] <- 1 #no scaling of constant columns - they are already set to 1
-  preprocessobj <- list(fmla = fmla, center = center, scale = scale)
-  return(preprocessobj)
+  c_n_s <- get_center_n_scale(designmat1)
+  out <- c(
+    fmla = fmla,
+    c_n_s,
+    version = 1
+  )
+  class(out) <- c("designmatprocess", class(out))
+  return(out)
 }
 #' @describeIn apply.designmatprocess Builds a centred and scaled design matrix from input data.
 #' @param designmatprocess Are instructions for preprocessing input data, created by [prep.designmatprocess()] 
@@ -37,9 +118,9 @@ prep.designmatprocess <- function(indata, fmla, stoponhighcorrelation = FALSE){
 #' Each non-constant column is then centered and scaled.
 #' @return A design matrix.
 #' @export
-apply.designmatprocess <- function(designmatprocess, indata){
+apply.designmatprocess_v1 <- function(designmatprocess, indata){
   designmat1 <- model.matrix(as.formula(designmatprocess$fmla), as.data.frame(indata))
-  designmat <- scale(designmat1, center = designmatprocess$center, scale = designmatprocess$scale)
+  designmat <- apply_center_n_scale(designmat1, center = designmatprocess$center, scale = designmatprocess$scale)
   return(designmat)
 }
 
