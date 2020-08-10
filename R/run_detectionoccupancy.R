@@ -98,9 +98,9 @@ run.detectionoccupancy <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~
   # convert input data of model into nice format (saves a lot of computational to avoid the list.format operation in every argument) 
   fit.runjags$data <- list.format(fit.runjags$data)
   colnames(fit.runjags$data$y) <- species
-  colnames(fit.runjags$data$Xocc) <- names(XoccProcess$center)
+  colnames(fit.runjags$data$Xocc) <- colnames(data.list$Xocc)
   rownames(fit.runjags$data$Xocc) <- 1:nrow(fit.runjags$data$Xocc)
-  colnames(fit.runjags$data$Xobs) <- names(XobsProcess$center)
+  colnames(fit.runjags$data$Xobs) <- colnames(data.list$Xobs)
   rownames(fit.runjags$data$Xobs) <- data.list$ModelSite
   
   # attach data preparation methods
@@ -188,8 +188,8 @@ defaultinitsfunction <- function(chain, indata, ...) {
   ## this is calculated just to get initial values for occupancy covariates and occupancy estimates
   y.occ.mock <- cbind(ModelSiteID = indata$ModelSite, indata$y) %>%
     tibble::as_tibble() %>%
-    group_by(ModelSiteID) %>%
-    summarise_all(max) %>%
+    dplyr::group_by(ModelSiteID) %>%
+    dplyr::summarise_all(max) %>%
     dplyr::select(-ModelSiteID)
   u.b.proto <- lapply(colnames(y.occ.mock),
                       function(x) {unname(coef(glm( ((y.occ.mock>0)*1)[, x] ~ . - 1, #intercept is built in
