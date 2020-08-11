@@ -158,6 +158,8 @@ cleanersummaries %>%
 *Comment on convergence using the Gelman-Rubin statistic*
 
 ### Effective Sample Size
+Effective sample size should be similar order of magnitude to the number of MCMC samples.
+
 ```{r SSeff_fromsummary, fig.height = 10}
 goodthresh <- fittedmods[[1]]$sample * length(fittedmods[[1]]$mcmc) / 4
 plt1 <- cleanersummaries %>%
@@ -183,13 +185,11 @@ plt2 <- cleanersummaries %>%
 plt1 / plt2
 ```
 
-*Comment on effective sample size. Should be similar order of magnitude to the number of MCMC samples.*
 
 ### Convergence (Geweke)
 See http://www.ugrad.stat.ubc.ca/R/library/coda/html/geweke.diag.html for a very quick description of this.
 The Geweke values are Z-scores (technically t-distributed in this situation?).
 95% of (independent) Geweke values should be within 2 standard deviations (i.e. just 2 for Z-scores) of the mean.
-The below assumes the Geweke value for parameter is also *independent*, even in the situation of converged MCMC. 
 
 ```{r gewekesumm}
 gwk <- bind_rows(lapply(fittedmods, 
@@ -207,37 +207,6 @@ gwk %>%
   ggtitle("Geweke Diagnostic Statistics")
 ```
 
-Geweke statistic values between -2 and 2 are good.
-
-#### Less Standard Assessment
-Below visualisations of Geweke values is not standard. Relies of Geweke values being independen, which is not true in general.
-
-```{r gwkasnormvalues}
-gwk %>%
-  mutate(type = varname2type(varname)) %>%
-  ggplot() +
-  facet_grid(rows = vars(type), cols = vars(Model)) +
-  geom_abline(slope = 1, intercept = 0, lty = "dashed") +
-  geom_qq(aes(sample = value), shape = "+", size = 2) +
-  coord_cartesian(ylim = c(-5, 5)) +
-  theme(strip.text.x.top = element_text(angle = 90)) +
-  ggtitle("QQ Plots of Geweke Statistics for Each Parameter")
-```
-
-```{r swstatistics, rows.print = 14}
-gwk %>%
-  mutate(type = varname2type(varname)) %>%
-  group_by(Model, type) %>%
-  summarise(swp = shapiro.test(value)$p.value) %>%
-  ggplot() +
-  facet_wrap(~type) +
-  geom_vline(aes(xintercept = 0.01)) +
-  geom_point(aes(y = Model, x = swp, col = Model)) + 
-  scale_x_continuous(name = "Shapiro-Wilk p-value",
-                     trans = "identity") +
-  ggtitle("Geweke Convergence Statistics Normality Tests",
-          subtitle = "0.01 threshold shown")
-```
 
 ### Autocorrelation 
 ```{r autocorr_fromsummary}
@@ -659,29 +628,41 @@ print(meanplt / (varplt + coverageplt) + plot_annotation('In Sample Biodiversity
 ```
 
 ## Expected Number of Detections for Each Species
-```{r numdetections}
+```{r numdetections, fig.height= 10, fig.width=8}
 obsdetections <- colSums(fittedmods[[1]]$data$y)
 
-Edetections <- lapply(fittedmods,
-                      function(x) colSums(Endetect_modelsite(x,
+Edetections_l <- lapply(fittedmods,
+                      function(x){
+                        EnV <- Endetect_modelsite(x,
                                             conditionalLV = (!is.null(x$data$nlv) && (x$data$nlv > 0) ))
-                                          )
+                        Edet_sum <- colSums(EnV[["E_ndetect"]])
+                        Vdet_sum <- colSums(EnV[["V_ndetect"]])
+                        return(data.frame(Species = names(Edet_sum), Edet_sum = Edet_sum, Vdet_sum = Vdet_sum))
+                      }
                       )
-Edetections <- simplify2array(Edetections)
-# Edetections[names(obsdetections), "Observed"] <- obsdetections
+Edetections <- bind_rows(Edetections_l, .id = "Model")
 
 Edetections %>% 
-  as_tibble(Edetections, rownames = "Species") %>%
-  tidyr::pivot_longer(cols = -Species, names_to = "Model", values_to = "E_Ndetections") %>%
+  as_tibble(Edetections) %>%
   ggplot() +
-  geom_col(aes(x = Detections, y = Species), data = obsdetections %>% enframe(name = "Species", value = "Detections"),
+  geom_pointrange(aes(ymin = Edet_sum - 2 * sqrt(Vdet_sum),
+                      y = Edet_sum, 
+                      ymax = Edet_sum + 2 * sqrt(Vdet_sum),
+                      x = Species,
+                      col = Model),
+                  inherit.aes = FALSE,
+                  position = position_dodge(width = 1, preserve = "total"),
+                  fatten = 1) +
+  geom_col(aes(y = Detections, x = Species), data = obsdetections %>% enframe(name = "Species", value = "Detections"),
              alpha = 0.2,
+             col = "black",
+             fill = "black",
              inherit.aes = FALSE) +
-  geom_point(aes(x = E_Ndetections, y = Species, col = Model, shape = Model), inherit.aes = FALSE) +
+  coord_flip() +
+  # geom_point(aes(x = Edet_sum, y = Species, col = Model, shape = Model), inherit.aes = FALSE) +
   scale_color_viridis_d() +
-  scale_shape_manual(values = rep(0:5, 3)) +
-  theme(legend.position="bottom") +
-  scale_x_continuous(name = "Expected Detections") +
+  # scale_shape_manual(values = rep(0:5, 3)) +
+  scale_y_continuous(name = "Expected Detections") +
   ggtitle("Expected Number of Detections vs Observed")
 ```
 
