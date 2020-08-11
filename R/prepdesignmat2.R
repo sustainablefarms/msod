@@ -7,7 +7,7 @@ prep.designmatprocess_v2 <- function(indata, fmla, keep = NULL, drop = NULL){
   ts <- terms(fmlaNdata$fmla, data = fmlaNdata$indata)
   varnames <- rownames(attr(ts, "factor"))
   
-  tokens <- unlist(strsplit(varnames, "(^I\\(|\\(|\\)|,|`|\\^|\\+|-|/)"))
+  tokens <- unlist(strsplit(varnames, "(^I\\(|\\(|\\)|,|`|\\^|\\+)"))
   keep <- union(intersect(tokens, names(fmlaNdata$indata)), keep)
   keep <- setdiff(keep, drop)
   
