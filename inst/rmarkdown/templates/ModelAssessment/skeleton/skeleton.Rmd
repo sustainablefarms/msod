@@ -191,20 +191,33 @@ See http://www.ugrad.stat.ubc.ca/R/library/coda/html/geweke.diag.html for a very
 The Geweke values are Z-scores (technically t-distributed in this situation?).
 95% of (independent) Geweke values should be within 2 standard deviations (i.e. just 2 for Z-scores) of the mean.
 
-```{r gewekesumm}
+```{r gewekesumm, fig.height = 10}
 gwk <- bind_rows(lapply(fittedmods, 
        function(x) enframe(geweke.diag(x, frac1=0.1, frac2=0.5)$z, name = "varname")),
        .id = "Model")
 
 
-gwk %>%
+plt1 <- gwk %>%
   mutate(type = varname2type(varname)) %>%
   ggplot() +
   facet_grid(rows = vars(type), cols = vars(Model), scales = "free") +
-  geom_histogram(aes(x = value, y = ..density..), bins = 30) +
+  geom_point(aes(y = varname, x = value, col = abs(value) < 2) ) +
   geom_vline(xintercept = c(-2, 2), col = "blue", lty = "dashed") +
+  scale_y_discrete(name = "Variable Name") +
   theme(strip.text.x.top = element_text(angle = 90)) +
-  ggtitle("Geweke Diagnostic Statistics")
+  scale_x_continuous(name = NULL)
+
+plt2 <- gwk %>%
+  mutate(type = varname2type(varname)) %>%
+  ggplot() +
+  facet_grid(rows = vars(type), cols = vars(Model), scales = "free") +
+  geom_histogram(aes(x = value), bins = 30 ) +
+  geom_vline(xintercept = c(-2, 2), col = "blue", lty = "dashed") +
+  scale_y_continuous(name = "Variable Name") +
+  theme(strip.text.x.top = element_blank()) +
+  scale_x_continuous(name = "Geweke Diagnostic Statistics")
+
+plt1 / plt2
 ```
 
 
