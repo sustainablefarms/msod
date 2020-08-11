@@ -1,7 +1,7 @@
 #' @examples
 #' inputdata <- readRDS("./private/data/clean/7_2_10_input_data.rds")
 #' 
-#' OccFmla <- reformulate(paste0("\`",setdiff(names(inputdata$insample$Xocc), c("ModelSiteID", "SiteCode", "SurveySiteId", "StudyId", "holdout")), "\`"))
+#' OccFmla <- reformulate(paste0("\`",setdiff(names(inputdata$insample$Xocc), c("ModelSiteID", "SiteCode", "SurveySiteId", "StudyId", "holdout", "gc", "AnnTempRange")), "\`"))
 #' ObsFmla <- "~ 1 + MeanWind + MeanTime + MeanClouds + MeanTemp"
 #' vifs <- gvifs_lm(inputdata$insample$Xocc,
 #'          inputdata$insample$yXobs,
@@ -52,10 +52,10 @@ gvifs_lm <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~ 1", ObsFmla =
 
   # for each species fit a linear model
   # alldata <- data.frame(y.occ.mock_bysp, data.list$Xocc, check.names = FALSE)
-  # fmlas <- paste0("`", species, "`", " ~ . -`(Intercept)` - gc - AnnTempRange")
+  # fmlas <- paste0("`", species, "`", " ~ . -`(Intercept)`")
   # names(fmlas) <- species
   mods <- lapply(species, function(x){
-    fmla <- paste0("`", x, "`", " ~ . -`(Intercept)` - gc - AnnTempRange")
+    fmla <- paste0("`", x, "`", " ~ . -`(Intercept)`")
     alldata <- data.frame(y.occ.mock_bysp[, x, drop = FALSE], data.list$Xocc, check.names = FALSE)
     return(lm(fmla, alldata))
   })
