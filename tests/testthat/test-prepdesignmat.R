@@ -55,6 +55,18 @@ test_that("Prep design matrix version 2 works for spaces in quotes", {
   expect_equivalent(means[c("(Intercept)", "`Sine 1`")], c(1, 0))
 })
 
+test_that("Prep design matrix version 2 works for covariates with I in their name", {
+  indata <- simulate_covar_data(10, 3)[[1]]
+  names(indata)[3] <- "SIne1"
+  fmla <- "~ 1 + SIne1 + Sine2 + I(Sine2^2)"
+  
+  desmatproc <- prep.designmatprocess(indata, fmla, version = 2)
+  expect_equal(desmatproc$version, 2)
+  desmat <- apply.designmatprocess_v2(desmatproc, indata)
+  means <- colMeans(desmat)
+  expect_equivalent(means[c("(Intercept)", "`Sine 1`")], c(1, 0))
+})
+
 test_that("Prep design matrix version 1 works", {
   indata <- simulate_covar_data(10, 3)[[1]]
   fmla <- "~ 1 + UpSite + Sine1 + UpSite : Sine1 + I(Sine1^2) "
