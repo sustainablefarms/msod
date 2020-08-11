@@ -43,6 +43,19 @@ test_that("Prep design matrix version 2 works for squares", {
   expect_gt(abs(means["I(UpSite^2)"]), 1E-6)
 })
 
+test_that("Prep design matrix version 2 works for spaces in quotes", {
+  indata <- simulate_covar_data(10, 3)[[1]]
+  names(indata)[3] <- "Sine 1"
+  fmla <- "~ 1 + `Sine 1`"
+  
+  desmatproc <- prep.designmatprocess(indata, fmla, version = 2)
+  expect_equal(desmatproc$version, 2)
+  desmat <- apply.designmatprocess_v2(desmatproc, indata)
+  means <- colMeans(desmat)
+  expect_equivalent(means[c("(Intercept)", "UpSite")], c(1, 0))
+  expect_gt(abs(means["I(UpSite^2)"]), 1E-6)
+})
+
 test_that("Prep design matrix version 1 works", {
   indata <- simulate_covar_data(10, 3)[[1]]
   fmla <- "~ 1 + UpSite + Sine1 + UpSite : Sine1 + I(Sine1^2) "
