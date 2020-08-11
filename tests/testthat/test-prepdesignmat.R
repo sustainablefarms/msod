@@ -52,8 +52,7 @@ test_that("Prep design matrix version 2 works for spaces in quotes", {
   expect_equal(desmatproc$version, 2)
   desmat <- apply.designmatprocess_v2(desmatproc, indata)
   means <- colMeans(desmat)
-  expect_equivalent(means[c("(Intercept)", "UpSite")], c(1, 0))
-  expect_gt(abs(means["I(UpSite^2)"]), 1E-6)
+  expect_equivalent(means[c("(Intercept)", "`Sine 1`")], c(1, 0))
 })
 
 test_that("Prep design matrix version 1 works", {
@@ -111,8 +110,8 @@ test_that("Version 2 works inside artificial model building, with prepdata()", {
                                  ObsFmla = "~ 1 + UpVisit + log(UpVisit) + I(UpVisit^2)"
                                  )
   expect_equivalent(colMeans(artmodel$data$Xocc[, c("(Intercept)", "UpSite", "Sine1", "Sine2", "log.UpSite.")]), c(1, 0, 0, 0, 0))
-  expect_gt(mean(artmodel$data$Xocc[, "I(Sine1^2)"]), 1E-6)
-  expect_gt(mean(artmodel$data$Xocc[, "UpSite:Sine2"]), 1E-6)
+  expect_gt(abs(mean(artmodel$data$Xocc[, "I(Sine1^2)"])), 1E-6)
+  expect_gt(abs(mean(artmodel$data$Xocc[, "UpSite:Sine2"])), 1E-6)
   
   expect_equivalent(colMeans(artmodel$data$Xobs)[c("(Intercept)", "UpVisit", "log.UpVisit.")], c(1, 0, 0))
   expect_gt(abs(mean(artmodel$data$Xobs[, "I(UpVisit^2)"])), 1E-6)
