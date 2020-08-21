@@ -29,6 +29,7 @@ run.detectionoccupancy <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~
                                   initsfunction = defaultinitsfunction,
                                   MCMCparams = list(n.chains = 1, adapt = 2000, burnin = 25000, sample = 1000, thin = 30),
                                   filename = NULL){
+  if (!is.null(filename)){checkwritable(filename)} # check that file can be written before continuing
   XoccProcess <- prep.designmatprocess(Xocc, OccFmla)
   XobsProcess <- prep.designmatprocess(yXobs, ObsFmla)
   
@@ -108,7 +109,7 @@ run.detectionoccupancy <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~
   fit.runjags$XobsProcess <- XobsProcess
   fit.runjags$ModelSite <- data.list$ModelSite
   fit.runjags$species <- species
-  if (!is.null(filename)){saveRDS(fit.runjags, filename) }
+  if (!is.null(filename)){try(saveRDS(fit.runjags, filename)) }
   invisible(fit.runjags)
 }
 
@@ -223,6 +224,16 @@ defaultinitsfunction <- function(chain, indata, ...) {
   return(out)
 }
 
+# x is filename
+checkwritable <- function(x){
+  if (!file.exists(x)){
+    saveRDS(NA, x)
+    file.remove(x)
+  } else {
+    stopifnot(file.access(x, mode = 2) == 0)
+  }
+  return(invisible(x))
+}
 
 #### Examples #####
 #' 
