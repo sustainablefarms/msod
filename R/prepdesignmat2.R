@@ -1,5 +1,6 @@
 # keep variables to keep in the design matrix preparations
 # drop variables to forced to drop in the design matrix preparations
+# if model only has intercept then scale and center parameters have length 0
 prep.designmatprocess_v2 <- function(indata, fmla, keep = NULL, drop = NULL){
   fmlaNdata <- computelogsnow(fmla, indata)
   
@@ -7,7 +8,8 @@ prep.designmatprocess_v2 <- function(indata, fmla, keep = NULL, drop = NULL){
   ts <- terms(fmlaNdata$fmla, data = fmlaNdata$indata)
   varnames <- rownames(attr(ts, "factor"))
   
-  tokens <- unlist(strsplit(varnames, "(^I\\(|\\(|\\)|,|`|\\^|\\+)"))
+  tokens <- NULL
+  if (length(varnames) > 0){tokens <- unlist(strsplit(varnames, "(^I\\(|\\(|\\)|,|`|\\^|\\+)"))}
   keep <- union(intersect(tokens, names(fmlaNdata$indata)), keep)
   keep <- setdiff(keep, drop)
   
@@ -15,7 +17,7 @@ prep.designmatprocess_v2 <- function(indata, fmla, keep = NULL, drop = NULL){
   wanteddata <- fmlaNdata$indata[, keep, drop = FALSE]
   
   # check that above extraction got all required data
-  tryCatch(mf <- model.frame(fmlaNdata$fmla, wanteddata),
+  tryCatch(mf <- model.matrix(fmlaNdata$fmla, wanteddata),
            error = function(e) stop(paste("Didn't parse formula correctly and required columns have been removed.",
                                            "Use argument 'keep' to ensure column remains.", 
                                            e)))
