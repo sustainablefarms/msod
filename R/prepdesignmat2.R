@@ -1,6 +1,8 @@
 # keep variables to keep in the design matrix preparations
 # drop variables to forced to drop in the design matrix preparations
 # if model only has intercept then scale and center parameters have length 0
+# computes and stardises log(vars), but not anything else in I... (just standardises components if possible)
+# Squares in interactions (e.g. I(UpSite^2) : Sine1) are not standardised, but the components are
 prep.designmatprocess_v2 <- function(indata, fmla, keep = NULL, drop = NULL){
   fmlaNdata <- computelogsnow(fmla, indata)
   
