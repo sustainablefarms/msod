@@ -38,7 +38,7 @@ varname2type <- function(varnames){
 }
 ```
 
-## Data Import
+# Data Import
 ```{r importmodelfits}
 modelspecs <- readRDS("./7_3_03_modelspecs.rds")
 filenames <- lapply(modelspecs, function(x) gsub("./tmpdata/", "./fittedmodels/", x$filename))
@@ -138,9 +138,9 @@ lapply(fittedmods, function(x) {
 
 *Comment on time taken for the MCMC of each model:*
 
-## MCMC Assessment
+# MCMC Assessment
 
-### Multi Chain Gelman-Rubin Statistic (aka "Rhat" or psrf)
+## Multi Chain Gelman-Rubin Statistic (aka "Rhat" or psrf)
 Values less than 1.1 are desired.
 
 ```{r gelmanrubin, fig.height = 10}
@@ -157,7 +157,7 @@ cleanersummaries %>%
 
 *Comment on convergence using the Gelman-Rubin statistic*
 
-### Effective Sample Size
+## Effective Sample Size
 Effective sample size should be similar order of magnitude to the number of MCMC samples.
 
 ```{r SSeff_fromsummary, fig.height = 10}
@@ -186,7 +186,7 @@ plt1 / plt2
 ```
 
 
-### Convergence (Geweke)
+## Convergence (Geweke)
 See http://www.ugrad.stat.ubc.ca/R/library/coda/html/geweke.diag.html for a very quick description of this.
 The Geweke values are Z-scores (technically t-distributed in this situation?).
 95% of (independent) Geweke values should be within 2 standard deviations (i.e. just 2 for Z-scores) of the mean.
@@ -221,7 +221,7 @@ plt1 / plt2
 ```
 
 
-### Autocorrelation 
+## Autocorrelation 
 ```{r autocorr_fromsummary}
 cleanersummaries %>%
   ggplot() +
@@ -234,10 +234,10 @@ cleanersummaries %>%
 
 *Comment on autocorrelation of model parameters. A threshold of 0.1 has been arbitrarily chosen.*
 
-### Conclusions
+## Conclusions
 *Summarise behaviour of the MCMC chains*
 
-## Compare Covariate Loadings
+# Compare Covariate Loadings
 ```{r occupancycovariateloadings, fig.width = 15, fig.height = 12}
 cleanersummaries %>%
   dplyr::filter(varname == "u.b") %>%
@@ -286,7 +286,7 @@ cleanersummaries %>%
   theme(strip.text.x.top = element_text(angle = 90)) +
   ggtitle("Detection Covariate Loadings per Species and Model")
 ```
-## LV Loadings
+# LV Loadings
 ```{r LVloadings}
 cleanersummaries %>%
   dplyr::filter(varname == "lv.coef") %>%
@@ -309,9 +309,9 @@ cleanersummaries %>%
 ```
 
 
-## Log Posterior Density
+# Log Posterior Density
 
-### LPD of Holdout Data
+## LPD of Holdout Data
 ```{r holdoutlpd}
 lpds_df <- as_tibble(do.call(cbind, lapply(lpds_l, function(x) x$lpds)))
 melpd <- data.frame(Estimate = apply(lpds_df, 2, mean),
@@ -341,7 +341,7 @@ lpds_df %>%
 ```
 
 
-### LPD of In-Sample Data
+## LPD of In-Sample Data
 Below is the lpd computed for each ModelSite for both the InSample and out of sample data.
 
 ```{r distributioninsampleoutsamplelpd}
@@ -365,7 +365,7 @@ df %>%
   ggtitle("Log Posterior Density of ModelSites")
 ```
 
-### WAIC, LOO-PSIS and Holdout
+## WAIC, LOO-PSIS and Holdout
 ```{r waics}
 waics_average_elpd_per_point <- lapply(waics_l, function(x) x$waic$estimates["elpd_waic", ]/nrow(x$waic$pointwise))
 waics_average_elpd_per_point <- simplify2array(waics_average_elpd_per_point)
@@ -390,7 +390,7 @@ df %>%
   ggtitle("Estimates of Log Posterior Density for a new ModelSite")
 ```
 
-#### Diagnostics from LOO-PSIS
+### Diagnostics from LOO-PSIS
 ModelSites which diagnositics suggest have a bad WAIC estimate or loo-psis estimate are investigated below:
 ```{r loohard_modelsites}
 lpds_df_diagnose <- bind_rows(lapply(waics_l, 
@@ -532,7 +532,7 @@ lpds_df_diagnose %>%
 According to help page 'loo-glossary', if p_loo << [total parameters in the model], then the model is likely misspecified.
 
 
-### Model Difference, lpd per site
+## Model Difference, lpd per site
 ```{r difflpd}
 elpd_compare(lpds_df)
 elpd_compare(elpds = do.call(cbind, lapply(waics_l, function(x) x$waic$pointwise[, 1])))
@@ -563,8 +563,8 @@ elpd_compare(elpds = do.call(cbind, lapply(waics_l, function(x) x$loo$pointwise[
   ggtitle("LOO-PSIS Differences")
 ```
 
-## Biodiversity Accuracy
-### Holdout
+# Biodiversity Accuracy
+## Holdout
 ```{r EnumspeciesHoldout, fig.height = 9}
 obsnumbers <- detectednumspec(inputdata$holdoutdata$yXobs[, inputdata$species], 
                               inputdata$holdoutdata$yXobs[, "ModelSiteID", drop = TRUE])
@@ -590,6 +590,7 @@ varplt <- Enum_compare(obsnumbers, Enum_det, Vnum_det) %>%
   ggplot() +
   geom_point(aes(x = sqrt(Variance), y = Model, col = Vtype, shape = Vtype)) +
   scale_x_continuous("Standard Deviation of Residual") +
+  theme(legend.position = "bottom") +
   ggtitle("Standard Deviation of Number of Detected Species")
 
 coverageplt <- Enum_coverage(obsnumbers, Enum_det, Vnum_det)[["mean"]] %>%
@@ -597,12 +598,13 @@ coverageplt <- Enum_coverage(obsnumbers, Enum_det, Vnum_det)[["mean"]] %>%
   ggplot() +
   geom_point(aes(x = `Pcnt. Coverage`, y = Model)) +
   geom_vline(xintercept = 0.95, col = "blue") +
+  theme(legend.position = "bottom") +
   ggtitle("Coverage of approx. 95% credible intervals for biodiversity")
 
 print(meanplt / (varplt + coverageplt) + plot_annotation('Holdout Biodiversity'))
 ```
 
-### In-Sample, marginal LV
+## In-Sample, marginal LV
 ```{r EnumspeciesInsample, fig.height = 9}
 obsnumbers <- detectednumspec(inputdata$insample$yXobs[, inputdata$species], 
                               inputdata$insample$yXobs[, "ModelSiteID", drop = TRUE])
@@ -628,6 +630,7 @@ varplt <- Enum_compare(obsnumbers, Enum_det, Vnum_det) %>%
   ggplot() +
   geom_point(aes(x = sqrt(Variance), y = Model, col = Vtype, shape = Vtype)) +
   scale_x_continuous("Standard Deviation of Residual") +
+  theme(legend.position = "bottom") +
   ggtitle("Standard Deviation of Number of Detected Species")
 
 coverageplt <- Enum_coverage(obsnumbers, Enum_det, Vnum_det)[["mean"]] %>%
@@ -635,12 +638,13 @@ coverageplt <- Enum_coverage(obsnumbers, Enum_det, Vnum_det)[["mean"]] %>%
   ggplot() +
   geom_point(aes(x = `Pcnt. Coverage`, y = Model)) +
   geom_vline(xintercept = 0.95, col = "blue") +
+  theme(legend.position = "bottom") +
   ggtitle("Coverage of approx. 95% credible intervals for biodiversity")
 
 print(meanplt / (varplt + coverageplt) + plot_annotation('In Sample Biodiversity, marginal over LV distribution'))
 ```
 
-## Expected Number of Detections for Each Species
+# Expected Number of Detections for Each Species
 ```{r numdetections, fig.height= 10, fig.width=8}
 obsdetections <- colSums(fittedmods[[1]]$data$y)
 
@@ -679,7 +683,7 @@ Edetections %>%
   ggtitle("Expected Number of Detections vs Observed")
 ```
 
-## LV Values vs Covariates
+# LV Values vs Covariates
 ```{r medianLVvalues, fig.width = 14}
 pltbase <- cleanersummaries %>%
   filter(varname == "LV") %>%
@@ -751,7 +755,7 @@ pltbase +
   ggtitle("Fitted Statistically Non-Zero LV Values")
 ```
 
-## Quick check of residual distribution for all models
+# Quick check of residual distribution for all models
 Note that there are too many data points to apply the shapiro-Wilks normality test directly, however the Anderson-Darling test can be applied. I do not know enough about this test yet to know if it can be fully trusted.
 
 ```{r all_resid_occ_normality}
@@ -786,7 +790,7 @@ as_tibble(lapply(resid_det_l, function(x) unlist(x[, -1]))) %>%
 
 
 
-## Occupancy Residuals
+# Occupancy Residuals
 ```{r removelargeunneededobj}
 # bytes <- vapply(ls(), function(objname) object.size(get(objname)), FUN.VALUE = 213)
 # sort(bytes/1E9)
@@ -853,7 +857,7 @@ rm(df)
 ```
 
 
-## Detection Residuals
+# Detection Residuals
 ```{r residdet_plots_manymodels}
 seeds = c(321, 120)
 df_l <- lapply(seeds, function(x) {
@@ -892,6 +896,6 @@ rm(df_det)
 ```
 
 
-## Conclusions
+# Conclusions
 
-### Next Steps
+## Next Steps
