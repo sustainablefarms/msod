@@ -29,7 +29,7 @@ varname2type <- function(varnames){
   types <- case_when(
     grepl("lv.coef", varnames) ~ "LV Load",
     grepl("LV", varnames) ~ "LV",
-    grepl("^(mu|tau)", varnames) ~ "Comm Param", #parameters of community distributions
+    grepl("^(mu|tau|sigma)", varnames) ~ "Comm Param", #parameters of community distributions
     grepl("^u.b", varnames) ~ "Occu Coef",
     grepl("^v.b", varnames) ~ "Detn Coef",
     TRUE ~ "other"
