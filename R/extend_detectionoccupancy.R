@@ -11,14 +11,15 @@ extend.fit <- function(fit, ..., filename = NULL){
   
   fit$data <- dump.format(fit$data)
   fit2 <- extend.jags(fit, ...)
-  
+
   # add summary of parameter distributions
-  if (runjagsargs$sample >= 100) {
+  if (fit2$sample >= 100) {
     fit2 <- add.summary(fit2)
     fit2$crosscorr <- "Crosscorrelation removed to conserve disk size. See ?add.summary to compute it."
   }
   
   # pass meta information
+  fit2$data <- list.format(fit2$data)
   colnames(fit2$data$y) <- fit$species
   colnames(fit2$data$Xocc) <- colnames(data.list$Xocc)
   rownames(fit2$data$Xocc) <- 1:nrow(data.list$Xocc)
