@@ -28,7 +28,7 @@ remove_bycorrvif <- function(fmla, data, corrthresh, vifthresh){
   mat <- mat[, colnames(mat) != "(Intercept)"] #remove the intercept column
 
   # remove correlations above threshold, one at a time, largest correlation to smallest,
-  corr_removeinfo <- matrix(, nrow = 0, ncol = 3)
+  corr_removeinfo <- matrix(nrow = 0, ncol = 3)
   colnames(corr_removeinfo) <- c("Removed", "Correlation", "KeptPartner")
   corr_removeinfo <- as.data.frame(corr_removeinfo)
   repeat {
@@ -45,11 +45,11 @@ remove_bycorrvif <- function(fmla, data, corrthresh, vifthresh){
     mat <- mat[, -max(max_rowcol)] #remove the variable which is later in the mat matrix
   }
   correlationremained <- cor(mat)
-  print(correlationremained)
+  # print(correlationremained)
   
   # apply ViF to the remaining variables, remove one by one
   mat$yran <- rnorm(nrow(mat)) #simulate a y value, its value doesn't actually matter for ViF, just needed to create an lm
-  ViF_removeinfo <- matrix(, nrow = 0, ncol = 2) #create an empty data frame for logging
+  ViF_removeinfo <- matrix(nrow = 0, ncol = 2) #create an empty data frame for logging
   colnames(ViF_removeinfo) <- c("Removed", "ViF")
   ViF_removeinfo <- as.data.frame(ViF_removeinfo)
   repeat {
@@ -59,18 +59,22 @@ remove_bycorrvif <- function(fmla, data, corrthresh, vifthresh){
     coefs <- coefficients(mod) #rows are the coefficients, each model is a column
     isna <- is.na(coefs)
     if (sum(isna) > 0){
-      stop(paste("Loading for ", names(isna[isna]), " is fitted as NA. Please modify input matrix to compute VIFs."))
+      stop(paste("Fitted loading for", names(isna[isna]), "is NA. Please modify input matrix to compute VIFs."))
     }
     
     # for each of these models compute the generalised variance inflation factors
     gvifs <- car::vif(mod)
     if (max(gvifs) <= vifthresh){ break }
     maxind <- which.max(gvifs)
+    nametoremove <- names(gvifs)[[maxind]]
+    nametoremove <- gsub("`", "", nametoremove)
     ViF_removeinfo <- rbind(ViF_removeinfo,
-                            list(Removed = names(gvifs)[[maxind]],
+                            list(Removed = nametoremove,
                                  ViF = gvifs[[maxind]]))
-    mat <- mat[, colnames(mat) != names(gvifs)[[maxind]]]
+    stopifnot(!any(duplicated(ViF_removeinfo$Removed))) #error if hasn't been able to remove the relevant column
+    mat <- mat[, colnames(mat) != nametoremove]
   }
+  mat <- mat[, colnames(mat) != "yran"]
   
   return(list(
     Kept = colnames(mat),
