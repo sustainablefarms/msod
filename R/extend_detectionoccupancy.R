@@ -32,6 +32,6 @@ extend.fit <- function(fit, ..., filename = NULL){
   fit2$XobsProcess <- fit$XobsProcess
   fit2$ModelSite <- fit$ModelSite
   fit2$species <- fit$species
-  if (!is.null(filename)){try(saveRDS(fit, filename)) }
+  if (!is.null(filename)){try(saveRDS(fit2, filename)) }
   return(invisible(fit2))
 }
