@@ -1,15 +1,31 @@
 #' @title Removing variables using ViF and correlation
 #' @details The function first removes variables based on pairwise correlation, and then based on ViF.
+#' Variables are removed one at a time.
+#' First a variable is removed due to having high correlation, then pairwise correlation is recomputed.
+#' This is repeated until no pairwise correlations are above the threshold `corrthresh`.
+#' Then generalised Variance Inflation Factors (ViF) are computed using [car::vif()]. 
+#' The variable with the highest ViF is removed and ViFs are recomputed.
+#' This is repeated until there are no ViFs higher than `vifthresh`.
 #' 
 #' @examples 
-indata <- readRDS("./private/data/clean/7_2_10_input_data.rds")
-corrthresh <- 0.5
-vifthresh <- 10
+#' indata <- readRDS("./private/data/clean/7_2_10_input_data.rds")
+#' remove_bycorrvif("~ AnnMeanTemp + AnnPrec + MaxTWarmMonth + PrecWarmQ + 
+#'                    MinTColdMonth + PrecColdQ + PrecSeasonality + longitude * latitude",
+#'                  data = indata$insampledata$Xocc,
+#'                  corrthresh = 0.9,
+#'                  vifthresh = 30)
 
+#' @param fmla A model formula, specifies a possible set of main effects
+#' @param data A data frame to extract a the main effects from
+#' @param corrthresh A threshold.
+#' The variable with the highest correlation, and appearing later in the model matrix, 
+#' is removed until there are no pairwise correlations above `corrthresh`.
+#' @param vifthresh A threshold. The variable with the highest ViF is removed until no variables have ViF above `vifthresh`.
+#' @export
 remove_bycorrvif <- function(fmla, data, corrthresh, vifthresh){
-  mat <- model.frame(as.formula("~ -1 + AnnMeanTemp + AnnPrec + MaxTWarmMonth + PrecWarmQ + 
-                   MinTColdMonth + PrecColdQ + AnnTempRange + PrecSeasonality + longitude + latitude"),
-                     data = indata$insampledata$Xocc)
+  mat <- model.frame(as.formula(fmla),
+                     data = data)
+  mat <- mat[, colnames(mat) != "(Intercept)"] #remove the intercept column
 
   # remove correlations above threshold, one at a time, largest correlation to smallest,
   corr_removeinfo <- matrix(, nrow = 0, ncol = 3)
@@ -18,7 +34,7 @@ remove_bycorrvif <- function(fmla, data, corrthresh, vifthresh){
   repeat {
     cormat <- cor(mat)
     diag(cormat) <- NA
-    if (max(abs(cormat), na.rm = TRUE) < corrthresh) { break }
+    if (max(abs(cormat), na.rm = TRUE) <= corrthresh) { break }
     max_rowcol <- arrayInd(which.max(abs(cormat)), .dim = dim(cormat)) #row and column of the maximum correlation
     corrtoremove <- cormat[max_rowcol] #logging prep
     nametoremove <- colnames(mat)[max(max_rowcol)] #logging prep
@@ -28,6 +44,8 @@ remove_bycorrvif <- function(fmla, data, corrthresh, vifthresh){
                            KeptPartner = partnerthatremains))
     mat <- mat[, -max(max_rowcol)] #remove the variable which is later in the mat matrix
   }
+  correlationremained <- cor(mat)
+  print(correlationremained)
   
   # apply ViF to the remaining variables, remove one by one
   mat$yran <- rnorm(nrow(mat)) #simulate a y value, its value doesn't actually matter for ViF, just needed to create an lm
@@ -46,7 +64,7 @@ remove_bycorrvif <- function(fmla, data, corrthresh, vifthresh){
     
     # for each of these models compute the generalised variance inflation factors
     gvifs <- car::vif(mod)
-    if (max(gvifs) < vifthresh){ break }
+    if (max(gvifs) <= vifthresh){ break }
     maxind <- which.max(gvifs)
     ViF_removeinfo <- rbind(ViF_removeinfo,
                             list(Removed = names(gvifs)[[maxind]],
@@ -57,6 +75,8 @@ remove_bycorrvif <- function(fmla, data, corrthresh, vifthresh){
   return(list(
     Kept = colnames(mat),
     Corr_Removed = corr_removeinfo,
-    ViF_Removed = ViF_removeinfo
+    Corr_Remained = correlationremained,
+    ViF_Removed = ViF_removeinfo,
+    ViF_Remained = gvifs
          ))
 }
