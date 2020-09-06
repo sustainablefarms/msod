@@ -21,6 +21,7 @@
 #' The variable with the highest correlation, and appearing later in the model matrix, 
 #' is removed until there are no pairwise correlations above `corrthresh`.
 #' @param vifthresh A threshold. The variable with the highest ViF is removed until no variables have ViF above `vifthresh`.
+#' @param centrescalemains If TRUE then [prep.designmatprocess()] and [apply.designmatprocess()] are used to centre and scale main effects (after any logarithms).
 #' @export
 remove_bycorrvif <- function(fmla, data, corrthresh, vifthresh, centrescalemains = FALSE){
   if (centrescalemains) {
