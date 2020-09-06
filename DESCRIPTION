@@ -21,6 +21,7 @@ Suggests:
     parallel,
     runjags,
     ggplot2,
+    car,
     corrplot
 ByteCompile: true
 Roxygen: list(markdown = TRUE)
