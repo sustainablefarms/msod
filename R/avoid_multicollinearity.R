@@ -22,9 +22,14 @@
 #' is removed until there are no pairwise correlations above `corrthresh`.
 #' @param vifthresh A threshold. The variable with the highest ViF is removed until no variables have ViF above `vifthresh`.
 #' @export
-remove_bycorrvif <- function(fmla, data, corrthresh, vifthresh){
-  mat <- model.frame(as.formula(fmla),
-                     data = data)
+remove_bycorrvif <- function(fmla, data, corrthresh, vifthresh, centrescalemains = FALSE){
+  if (centrescalemains) {
+    prepprocess <- prep.designmatprocess(data, fmla)
+    mat <- apply.designmatprocess(prepprocess, data)
+  } else {
+    mat <- model.matrix(as.formula(fmla),
+                       data = data)
+  }
   mat <- mat[, colnames(mat) != "(Intercept)"] #remove the intercept column
 
   # remove correlations above threshold, one at a time, largest correlation to smallest,
@@ -48,7 +53,8 @@ remove_bycorrvif <- function(fmla, data, corrthresh, vifthresh){
   # print(correlationremained)
   
   # apply ViF to the remaining variables, remove one by one
-  mat$yran <- rnorm(nrow(mat)) #simulate a y value, its value doesn't actually matter for ViF, just needed to create an lm
+  mat <- cbind(mat, yran = rnorm(nrow(mat))) #simulate a y value, its value doesn't actually matter for ViF, just needed to create an lm
+  mat <- data.frame(mat, check.names = FALSE) #need a dataframe for lm()
   ViF_removeinfo <- matrix(nrow = 0, ncol = 2) #create an empty data frame for logging
   colnames(ViF_removeinfo) <- c("Removed", "ViF")
   ViF_removeinfo <- as.data.frame(ViF_removeinfo)
