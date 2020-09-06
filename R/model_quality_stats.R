@@ -30,7 +30,13 @@ modelqualstats <- function(fit, holdoutXocc, holdoutyXobs, ModelSite, cl){
                            cl = cl)
   print("Computed: Predicted Number of Species for Holdout Data")
   
-  prednumbers_insample <- predsumspecies(fit, UseFittedLV = !is.null(fit$data$nlv), cl = cl)
+  prednumbers_insample <- prednumbers_insample_fitLV <- prednumbers_insample_margLV <- NULL
+  if (!is.null(fit$data$nlv) && fit$data$nlv > 0){
+    prednumbers_insample_fitLV <- predsumspecies(fit, UseFittedLV = TRUE, cl = cl)
+    prednumbers_insample_margLV <- predsumspecies(fit, UseFittedLV = FALSE, cl = cl)
+  } else {
+    prednumbers_insample <- predsumspecies(fit, UseFittedLV = FALSE, cl = cl)
+  }
   print("Computed: Predicted Number of Species for Insample Data")
   
   quality <- list(
@@ -40,7 +46,9 @@ modelqualstats <- function(fit, holdoutXocc, holdoutyXobs, ModelSite, cl){
     insample = list(
       waic = waic,
       loo = looest,
-      predspecnum = prednumbers_insample)
+      predspecnum = prednumbers_insample,
+      predspecnum_fitLV = prednumbers_insample_fitLV,
+      predspecnum_margLV = prednumbers_insample_margLV)
   )
   return(quality)
 }
