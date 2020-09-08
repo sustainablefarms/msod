@@ -537,7 +537,7 @@ elpd_compare(elpds = do.call(cbind, lapply(fittedmods, function(x) x$quality$ins
   plot_compare_loo() +
   ggtitle("WAICS Differences")
 
-elpd_compare(elpds = do.call(cbind, lapply(fittedmods, function(x) x$quality$insample$waic$pointwise[, 1])) %>%
+elpd_compare(elpds = do.call(cbind, lapply(fittedmods, function(x) x$quality$insample$waic$pointwise[, 1]))) %>%
   plot_compare_loo() +
   ggtitle("LOO-PSIS Differences")
 ```
