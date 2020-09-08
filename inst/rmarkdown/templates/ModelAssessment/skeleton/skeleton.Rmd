@@ -41,7 +41,7 @@ varname2type <- function(varnames){
 # Data Import
 ```{r importmodelfits}
 modelspecs <- readRDS("./7_3_03_modelspecs.rds")
-filenames <- lapply(modelspecs, function(x) gsub("./tmpdata/", "./fittedmodels/", x$filename))
+filenames <- lapply(modelspecs, function(x) x$filename )
 
 # test loading models
 a <- vapply(filenames, file.exists, FUN.VALUE = FALSE)
@@ -54,17 +54,18 @@ fittedmods <- lapply(filenames, function(x) {
 ```
 
 ```{r importdata, echo = FALSE, include = FALSE}
-inputdata <- readRDS("~/dlinkingdatacode/private/data/clean/7_2_10_input_data.rds")
+inputdata <- readRDS(readLines("../link_7_2_10_input_data.txt")[[1]])
 # the following whittle out the covariates that we are interested in the residual diagnostics
 detcovar <- model.matrix(~ ModelSiteID + MeanWind +  MeanTime + MeanClouds + MeanTemp + ObserverId - 1,
              data = inputdata$insampledata$yXobs) %>%
   as_tibble() %>% rename(ModelSite = ModelSiteID)
-occcovar <- model.matrix(as.formula(modelspecs[[3]]$OccFmla),
+occcovar <- model.matrix(as.formula(modelspecs[[1]]$OccFmla),
              data = inputdata$insampledata$Xocc) %>%
   as_tibble() %>%
   mutate(ModelSite = inputdata$insampledata$Xocc$ModelSiteID,
          StudyId = inputdata$insampledata$Xocc$StudyId,
-         Latitude = inputdata$insampledata$Xocc$latitude) %>%
+         latitude = inputdata$insampledata$Xocc$latitude,
+         SurveyYear = inputdata$insampledata$Xocc$SurveyYear) %>%
   dplyr::select(-`(Intercept)`)
 treatfactor_occ <- occcovar %>%
   summarise_all(~ n_distinct(.)) %>%
@@ -186,7 +187,7 @@ plt1 / plt2
 ```
 
 
-## Convergence (Geweke)
+## Geweke (Convergence)
 See http://www.ugrad.stat.ubc.ca/R/library/coda/html/geweke.diag.html for a very quick description of this.
 The Geweke values are Z-scores (technically t-distributed in this situation?).
 95% of (independent) Geweke values should be within 2 standard deviations (i.e. just 2 for Z-scores) of the mean.
@@ -219,20 +220,6 @@ plt2 <- gwk %>%
 
 plt1 / plt2
 ```
-
-
-## Autocorrelation 
-```{r autocorr_fromsummary}
-cleanersummaries %>%
-  ggplot() +
-  facet_grid(rows = vars(type), cols = vars(Model), scales = "free_y") +
-  geom_histogram(aes(x = AC_10), bins = 30) +
-  geom_vline(aes(xintercept = 0.1), col = "red") +
-  theme(strip.text.x.top = element_text(angle = 90)) +
-  scale_y_continuous(name = "Number of Parameters")
-```
-
-*Comment on autocorrelation of model parameters. A threshold of 0.1 has been arbitrarily chosen.*
 
 ## Conclusions
 *Summarise behaviour of the MCMC chains*
@@ -313,18 +300,10 @@ cleanersummaries %>%
 
 ## LPD of Holdout Data
 ```{r holdoutlpd}
-lpds_df <- as_tibble(do.call(cbind, lapply(lpds_l, function(x) x$lpds)))
+lpds_df <- as_tibble(do.call(cbind, lapply(fittedmods,
+                                           function(x) x$quality$holdout$lpd$lpds)))
 melpd <- data.frame(Estimate = apply(lpds_df, 2, mean),
                     SE = apply(lpds_df, 2, sd) / sqrt(nrow(lpds_df)))
-
-mean_2se <- function(x, mult = 2){
-  n <- length(x)
-  xbar <- sum(x)/n
-  sd <- sqrt(sum((x - xbar)^2)/(n - 1))
-  return(c(ymin = xbar - mult * sd / sqrt(n),
-           y = xbar,
-           ymax = xbar + mult * sd / sqrt(n)))
-}
 
 lpds_df %>%
   as_tibble() %>%
@@ -334,7 +313,7 @@ lpds_df %>%
   # facet_grid(rows = vars(model), scales = "free_y") +
   geom_violin(aes(x = Site_lpd, y = model), adjust = 0.2) +
   stat_summary(aes(x = Site_lpd, y = model),
-               fun.data=mean_2se, fun.args = list(mult=2), geom="crossbar", width=0.2 ) +
+               fun.data=mean_se, fun.args = list(mult=2), geom="crossbar", width=0.2 ) +
   stat_summary(aes(x = Site_lpd, y = model),
                fun = median, geom = "point", shape = 23, size = 2) +
   ggtitle("Log-Posterior Density of Holdout ModelSites")
@@ -345,7 +324,7 @@ lpds_df %>%
 Below is the lpd computed for each ModelSite for both the InSample and out of sample data.
 
 ```{r distributioninsampleoutsamplelpd}
-insamplelpds_df <- do.call(cbind, lapply(waics_l, function(x) x$waic$pointwise[, "elpd_waic"])) %>%
+insamplelpds_df <- do.call(cbind, lapply(fittedmods, function(x) x$quality$insample$waic$pointwise[, "elpd_waic"])) %>%
   as_tibble() %>% mutate(InSample = TRUE)
 
 df <- lpds_df %>% as_tibble() %>% mutate(InSample = FALSE) # %>% tidyr::pivot_longer(-InSample, names_to = "model", values_to = "site_lpd")
@@ -360,19 +339,19 @@ df %>%
   facet_grid(rows = vars(model), scales = "free_y", switch = "y") +
   geom_violin(aes(x = site_lpd, y = InSample, col = InSample), adjust = 0.2, position = position_dodge(1)) +
   stat_summary(aes(x = site_lpd, y = InSample, group = InSample),
-               fun.data=mean_2se, fun.args = list(mult=2), geom="crossbar", width=0.2 ) +
+               fun.data=mean_se, fun.args = list(mult=2), geom="crossbar", width=0.2 ) +
   theme(strip.text.y.left = element_text(angle = 0)) +
   ggtitle("Log Posterior Density of ModelSites")
 ```
 
 ## WAIC, LOO-PSIS and Holdout
 ```{r waics}
-waics_average_elpd_per_point <- lapply(waics_l, function(x) x$waic$estimates["elpd_waic", ]/nrow(x$waic$pointwise))
+waics_average_elpd_per_point <- lapply(fittedmods, function(x) x$quality$insample$waic$estimates["elpd_waic", ]/nrow(x$quality$insample$waic$pointwise))
 waics_average_elpd_per_point <- simplify2array(waics_average_elpd_per_point)
 waics_average_elpd_per_point <- t(waics_average_elpd_per_point) %>% as_tibble(rownames = "Model")
 waics_average_elpd_per_point$type = "WAIC"
 
-loo_average_elpd_per_point <- lapply(waics_l, function(x) x$loo$estimates["elpd_loo", ]/nrow(x$waic$pointwise))
+loo_average_elpd_per_point <- lapply(fittedmods, function(x) x$quality$insample$loo$estimates["elpd_loo", ]/nrow(x$quality$insample$loo$pointwise))
 loo_average_elpd_per_point <- simplify2array(loo_average_elpd_per_point)
 loo_average_elpd_per_point <- t(loo_average_elpd_per_point) %>% as_tibble(rownames = "Model")
 loo_average_elpd_per_point$type = "LOO-PSIS"
@@ -393,11 +372,11 @@ df %>%
 ### Diagnostics from LOO-PSIS
 ModelSites which diagnositics suggest have a bad WAIC estimate or loo-psis estimate are investigated below:
 ```{r loohard_modelsites}
-lpds_df_diagnose <- bind_rows(lapply(waics_l, 
+lpds_df_diagnose <- bind_rows(lapply(fittedmods, 
                                     function(x) {
-                                      waicsvals <- as_tibble(x$waic$pointwise[, c("elpd_waic", "p_waic")])
-                                      loovals <- as_tibble(x$loo$pointwise[, c("elpd_loo", "p_loo")])
-                                      loodiagnose <- as_tibble(x$loo$diagnostics)
+                                      waicsvals <- as_tibble(x$quality$insample$waic$pointwise[, c("elpd_waic", "p_waic")])
+                                      loovals <- as_tibble(x$quality$insample$loo$pointwise[, c("elpd_loo", "p_loo")])
+                                      loodiagnose <- as_tibble(x$quality$insample$loo$diagnostics)
                                       return(cbind(ModelSite = 1:nrow(waicsvals), waicsvals, loovals, loodiagnose))
                                       }),
                              .id = "model") 
@@ -535,8 +514,8 @@ According to help page 'loo-glossary', if p_loo << [total parameters in the mode
 ## Model Difference, lpd per site
 ```{r difflpd}
 elpd_compare(lpds_df)
-elpd_compare(elpds = do.call(cbind, lapply(waics_l, function(x) x$waic$pointwise[, 1])))
-elpd_compare(elpds = do.call(cbind, lapply(waics_l, function(x) x$loo$pointwise[, 1])))
+elpd_compare(elpds = do.call(cbind, lapply(fittedmods, function(x) x$quality$insample$waic$pointwise[, 1])))
+elpd_compare(elpds = do.call(cbind, lapply(fittedmods, function(x) x$quality$insample$loo$pointwise[, 1])))
 
 plot_compare_loo <- function(compare.loo.obj){
   plt <- compare.loo.obj %>%
@@ -554,22 +533,24 @@ elpd_compare(lpds_df) %>%
   plot_compare_loo() +
   ggtitle("Holdout elpd Differences")
 
-elpd_compare(elpds = do.call(cbind, lapply(waics_l, function(x) x$waic$pointwise[, 1]))) %>%
+elpd_compare(elpds = do.call(cbind, lapply(fittedmods, function(x) x$quality$insample$waic$pointwise[, 1]))) %>%
   plot_compare_loo() +
   ggtitle("WAICS Differences")
 
-elpd_compare(elpds = do.call(cbind, lapply(waics_l, function(x) x$loo$pointwise[, 1]))) %>%
+elpd_compare(elpds = do.call(cbind, lapply(fittedmods, function(x) x$quality$insample$waic$pointwise[, 1])) %>%
   plot_compare_loo() +
   ggtitle("LOO-PSIS Differences")
 ```
 
 # Biodiversity Accuracy
 ## Holdout
-```{r EnumspeciesHoldout, fig.height = 9}
+```{r EnumspeciesHoldout, fig.height = 7, fig.width = 12}
 obsnumbers <- detectednumspec(inputdata$holdoutdata$yXobs[, inputdata$species], 
                               inputdata$holdoutdata$yXobs[, "ModelSiteID", drop = TRUE])
-Enum_det <- do.call(cbind, lapply(Enums_holdout, function(x) x["Esum_det", , drop = TRUE]))
-Vnum_det <- do.call(cbind, lapply(Enums_holdout, function(x) x["Vsum_det", , drop = TRUE]))
+Enum_det <- do.call(cbind, lapply(fittedmods, function(x)
+  x$quality$holdout$predspecnum["Esum_det", , drop = TRUE]))
+Vnum_det <- do.call(cbind, lapply(fittedmods, function(x)
+  x$quality$holdout$predspecnum["Vsum_det", , drop = TRUE]))
 
 Enum_compare(obsnumbers, Enum_det, Vnum_det)
 meanplt <- Enum_compare(obsnumbers, Enum_det, Vnum_det) %>%
@@ -605,11 +586,13 @@ print(meanplt / (varplt + coverageplt) + plot_annotation('Holdout Biodiversity')
 ```
 
 ## In-Sample, marginal LV
-```{r EnumspeciesInsample, fig.height = 9}
+```{r EnumspeciesInsample, fig.height = 9, fig.width = 12}
 obsnumbers <- detectednumspec(inputdata$insample$yXobs[, inputdata$species], 
                               inputdata$insample$yXobs[, "ModelSiteID", drop = TRUE])
-Enum_det <- do.call(cbind, lapply(Enums_insample, function(x) x["Esum_det", , drop = TRUE]))
-Vnum_det <- do.call(cbind, lapply(Enums_insample, function(x) x["Vsum_det", , drop = TRUE]))
+Enum_det <- do.call(cbind, lapply(fittedmods, function(x)
+  x$quality$insample$predspecnum["Esum_det_margpost", , drop = TRUE]))
+Vnum_det <- do.call(cbind, lapply(fittedmods, function(x)
+  x$quality$insample$predspecnum["Vsum_det_margpost", , drop = TRUE]))
 
 Enum_compare(obsnumbers, Enum_det, Vnum_det)
 meanplt <- Enum_compare(obsnumbers, Enum_det, Vnum_det) %>%
@@ -760,8 +743,7 @@ Note that there are too many data points to apply the shapiro-Wilks normality te
 
 ```{r all_resid_occ_normality}
 resid_occ_l <- lapply(fittedmods, ds_occupancy_residuals.fit, type = "median", seed = 321, conditionalLV = FALSE)
-# vapply(resid_occ_l, function(x) shapiro.test(sample(unlist(x[, -1]), 5000))$p.value, FUN.VALUE = 3.3)
-vapply(resid_occ_l, function(x) goftest::ad.test(unlist(x[, -1], null = "pnorm"))$p.value, FUN.VALUE = 3.3)
+vapply(resid_occ_l, function(x) goftest::ad.test(unlist(x[, -1]), null = "pnorm")$p.value, FUN.VALUE = 3.3)
 as_tibble(lapply(resid_occ_l, function(x) unlist(x[, -1]))) %>%
   tidyr::pivot_longer(everything(), names_to = "Model", values_to = "Residual") %>%
   ggplot() +
@@ -798,10 +780,11 @@ rm(resid_det_l)
 rm(resid_occ_l)
 ```
 
-```{r residocc_plots_manymodels, fig.width = 14}
+```{r residocc_plots_manymodels, fig.width = 20}
 seeds = c(321, 120)
 df_l <- lapply(seeds, function(x) {
-  resid_occ_l <- lapply(fittedmods, function(fit) {
+  resid_occ_l <- lapply(fittedmods,
+                        function(fit) {
     resids <- ds_occupancy_residuals.fit(fit, type = "median", seed = x, conditionalLV = (!is.null(fit$nlv) && fit$nlv > 0))
     return(resids)})
   resid_occ_df <- bind_rows(resid_occ_l, .id = "Model")
