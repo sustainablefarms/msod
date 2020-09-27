@@ -100,9 +100,7 @@ names(Enums_insample_condLV) <- gsub("someclimate_year_woody500m_msnm_det1stO", 
 cleanersummary <- function(fit) {
   vals <- fit$summaries %>%
     as_tibble(rownames = "bugsvarname") %>%
-    mutate(AC_10 = case_when(
-      is.finite(AC.400) ~ AC.400,
-      TRUE ~ as.numeric(NA))) %>%
+    rename_with(function(x) "AC_10", starts_with("AC")) %>%
     mutate(varname = gsub("\\[.*\\]", "", bugsvarname)) %>%
     mutate(type = varname2type(bugsvarname))
   suppressWarnings(vals <- vals %>%
