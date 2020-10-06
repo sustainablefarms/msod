@@ -548,7 +548,7 @@ test_that("No LV and identical sites", {
   expect_equal(meandiff[ncol(EVsum)], 0, tol = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
-  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:50 ])))
+  expect_lt(abs(meandiff[length(meandiff)]), max(abs(meandiff[floor(length(meandiff) / 20) + 1:20 ])))
 
   # Expect sd to be close to theoretical sd. Hopefully within 10%
   expect_equivalent(sd(NumSpecies), sqrt(EVsum["Vsum_det", 1]), tol = 0.1 * sqrt(EVsum["Vsum_det", 1]))
