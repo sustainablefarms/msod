@@ -111,9 +111,9 @@ likelihoods.fit <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL, ch
   
   
   if (is.null(Xocc)){ #Extract the Xocc, yXobs etc from the fitted object, no preprocessing required
-    arraydata.list <- prep_data_by_modelsite(fit$data$Xocc, fit$data$Xobs, fit$data$y, fit$data$ModelSite)
+    sitedata <- fit$data
   } else {
-    arraydata.list <- prep_data_by_modelsite.newdata(fit, Xocc, yXobs, ModelSite)
+    sitedata <- prep_new_data(fit, Xocc, yXobs, ModelSite)
   }
   
   u.b_arr <- bugsvar2array(draws, "u.b", 1:fit$data$n, 1:ncol(fit$data$Xocc))  # rows are species, columns are occupancy covariates
@@ -121,55 +121,29 @@ likelihoods.fit <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL, ch
   lv.coef_arr <- bugsvar2array(draws, "lv.coef", 1:fit$data$n, 1:ncol(lvsim)) # rows are species, columns are lv
   
   if (is.null(cl)) {
-    likel.l <- lapply(arraydata.list, likelihood_joint_marginal.ModelSiteDataRow,
+    likel.l <- lapply(1:nrow(sitedata$Xocc), function(modelsiteid) {
+      Xocc <- sitedata$Xocc[modelsiteid, , drop = FALSE]
+      Xobs <- sitedata$Xobs[sitedata$ModelSite == modelsiteid, , drop = FALSE]
+      y <- sitedata$y[sitedata$ModelSite == modelsiteid, , drop = FALSE]
+      lkl <- likelihood_joint_marginal.ModelSiteDataRow(
+                      Xocc,Xobs, y,
                       u.b_arr, v.b_arr, lv.coef_arr, lvsim = lvsim)
+      return(lkl)
+    })
   }
   else {
-    likel.l <- parallel::parLapply(cl = cl, arraydata.list, likelihood_joint_marginal.ModelSiteDataRow,
-                                   u.b_arr, v.b_arr, lv.coef_arr, lvsim = lvsim)
+    likel.l <- parallel::parLapply(cl = cl, 1:nrow(sitedata$Xocc), function(modelsiteid) {
+      Xocc <- sitedata$Xocc[modelsiteid, , drop = FALSE]
+      Xobs <- sitedata$Xobs[sitedata$ModelSite == modelsiteid, , drop = FALSE]
+      y <- sitedata$y[sitedata$ModelSite == modelsiteid, , drop = FALSE]
+      lkl <- likelihood_joint_marginal.ModelSiteDataRow(
+                      Xocc,Xobs, y,
+                      u.b_arr, v.b_arr, lv.coef_arr, lvsim = lvsim)
+      return(lkl)
+    })
   }
   likel.mat <- do.call(cbind, likel.l) # each row is a draw, each column is a modelsite (which are independent data points)
   return(likel.mat)
-}
-
-
-
-#' @describeIn likelihoods.fit Given a fitted model, and input data, prepare the data for computing likelihood
-#' @param fit is an object created by run.detectionoccupancy
-#' @param Xocc A dataframe of covariates related to occupancy. One row per ModelSite.
-#' Must also include the ModelSiteVars columns to uniquely specify ModelSite.
-#' @param yXobs A dataframe of species observations (1 or 0) and covariates related to observations. One row per visit.
-#' Each column is either a covariate or a species.
-#' Must also include the ModelSiteVars columns to uniquely specify ModelSite.
-#' @param ModelSite A list of column names in y, Xocc and Xobs that uniquely specify the ModelSite. Can be simply a ModelSite index
-#' @return An array with each row a model site and elements that are dataframes for each of Xocc, Xobs, y.
-#' @export
-prep_data_by_modelsite.newdata <- function(fit, Xocc, yXobs, ModelSite){
-  data.list <- prep_new_data(fit, Xocc, yXobs, ModelSite)
-  data <- prep_data_by_modelsite(data.list$Xocc, data.list$Xobs, data.list$y, data.list$ModelSite)
-}
-
-#' @describeIn likelihoods.fit Given data prepared by prep.data (or prep_new_data),
-#'  convert to an array with each row a model site and elements that each a dataframe for 
-#'  the Xocc, Xobs, y. ModelSite must be a vector that indicates the row in Xocc corresponding to the observation in Xobs 
-#'  @export
-prep_data_by_modelsite <- function(Xocc, Xobs, y, ModelSite, outformat = "list"){
-  Xocc <- Xocc %>%
-    as_tibble(.name_repair = "minimal") %>%
-    tibble::rowid_to_column(var = "ModelSite") %>%
-    tidyr::nest(Xocc = -ModelSite)
-  Xobs <- Xobs %>%
-    as_tibble(.name_repair = "minimal") %>%
-    mutate(ModelSite = ModelSite) %>%
-    tidyr::nest(Xobs = -ModelSite)
-  y <- y %>%
-    as_tibble(.name_repair = "minimal") %>%
-    mutate(ModelSite = ModelSite) %>%
-    tidyr::nest(y = -ModelSite)
-  data <- inner_join(Xocc, Xobs, by = "ModelSite", suffix = c("occ", "obs")) %>%
-    inner_join(y, by = "ModelSite", suffix = c("X", "y"))
-  if (outformat == "list") {data <- lapply(1:nrow(data), function(i) data[i,, drop = FALSE])}
-  return(data)
 }
 
 #' @describeIn likelihoods.fit Compute the joint-species LV-marginal likelihood for a ModelSite
@@ -178,11 +152,11 @@ prep_data_by_modelsite <- function(Xocc, Xobs, y, ModelSite, outformat = "list")
 #' @param lv.coef_arr LV loadings. Each row is a species, each column a LV, each layer (dim = 3) is a draw
 #' @param data_i A row of a data frame created by \code{prep_data_by_modelsite}. Each row contains data for a single ModelSite. 
 #' @param lvsim A matrix of simulated LV values. Columns correspond to latent variables, each row is a simulation
+#' @param Xocc A matrix of processed occupancy covariate values for the model site. Must have 1 row.
+#' @param Xobs A matrix of processed detection covariate values for each visit to the model site. 
+#' @param y Matrix of species detections for each visit to the model site.
 #' @export
-likelihood_joint_marginal.ModelSiteDataRow <- function(data_i, u.b_arr, v.b_arr, lv.coef_arr, lvsim){
-  Xocc <- data_i[, "Xocc", drop = TRUE][[1]]
-  Xobs <- data_i[, "Xobs", drop = TRUE][[1]]
-  y <- data_i[, "y", drop = TRUE][[1]]
+likelihood_joint_marginal.ModelSite <- function(Xocc, Xobs, y, u.b_arr, v.b_arr, lv.coef_arr, lvsim){
   stopifnot(length(dim(u.b_arr)) == 3)
   drawid <- 1:dim(u.b_arr)[[3]]
 
