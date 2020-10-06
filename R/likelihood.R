@@ -179,31 +179,20 @@ prep_data_by_modelsite <- function(Xocc, Xobs, y, ModelSite, outformat = "list")
 #' @param data_i A row of a data frame created by \code{prep_data_by_modelsite}. Each row contains data for a single ModelSite. 
 #' @param lvsim A matrix of simulated LV values. Columns correspond to latent variables, each row is a simulation
 #' @export
-likelihood_joint_marginal.ModelSiteDataRow <- function(data_i, u.b_arr, v.b_arr, lv.coef_arr, lvsim, cl = NULL){
+likelihood_joint_marginal.ModelSiteDataRow <- function(data_i, u.b_arr, v.b_arr, lv.coef_arr, lvsim){
   Xocc <- data_i[, "Xocc", drop = TRUE][[1]]
   Xobs <- data_i[, "Xobs", drop = TRUE][[1]]
   y <- data_i[, "y", drop = TRUE][[1]]
   stopifnot(length(dim(u.b_arr)) == 3)
   drawid <- 1:dim(u.b_arr)[[3]]
 
-  if (is.null(cl)){
-    Likl_margLV <- lapply(drawid, 
-                          function(thetaid) likelihood_joint_marginal.ModelSite.theta(
-      Xocc, Xobs, y,
-      u.b = drop_to_matrix(u.b_arr[,, thetaid, drop = FALSE], dimdrop = 3),
-      v.b = drop_to_matrix(v.b_arr[,, thetaid, drop = FALSE], dimdrop = 3),
-      lv.coef = drop_to_matrix(lv.coef_arr[,, thetaid, drop = FALSE], dimdrop = 3),
-      lvsim))
-  } else {
-    parallel::clusterExport(cl, list("Xocc", "Xobs", "y", "lvsim"))
-    parallel::clusterEvalQ(cl, library(dplyr))
-    Likl_margLV <- parallel::parLapply(cl, drawid, function(thetaid) likelihood_joint_marginal.ModelSite.theta(
-      Xocc, Xobs, y,
-      u.b = drop_to_matrix(u.b_arr[,, thetaid, drop = FALSE], dimdrop = 3),
-      v.b = drop_to_matrix(v.b_arr[,, thetaid, drop = FALSE], dimdrop = 3),
-      lv.coef = drop_to_matrix(lv.coef_arr[,, thetaid, drop = FALSE], dimdrop = 3),
-      lvsim))
-  }
+  Likl_margLV <- lapply(drawid, 
+                        function(thetaid) likelihood_joint_marginal.ModelSite.theta(
+    Xocc, Xobs, y,
+    u.b = drop_to_matrix(u.b_arr[,, thetaid, drop = FALSE], dimdrop = 3),
+    v.b = drop_to_matrix(v.b_arr[,, thetaid, drop = FALSE], dimdrop = 3),
+    lv.coef = drop_to_matrix(lv.coef_arr[,, thetaid, drop = FALSE], dimdrop = 3),
+    lvsim))
   return(Likl_margLV)
 }
 
