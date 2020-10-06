@@ -148,6 +148,7 @@ pdetect_condoccupied <- function(fit, type = "median", Xobs = NULL){
 #'  ignoring other species and assuming no knowledge of the latent variable values.
 #' @param fit is a fitted runjags model
 #' @param type is the type of point estimate to use. See get_theta().
+#' If type is `marginal` then gives probability of each species seperately (marginal over other species?) using full posterior draw.
 #' @param Xocc A matrix of occupancy coefficient, with each row corresponding to a ModelSite (i.e. a spatial location and year).
 #'  If \code{NULL} the Xocc data saved in \code{fit} will be used.
 #' @return A matrix of occupany probabilities. Each row is a ModelSite, corresponding to the rows in Xocc. Each column is a species.
