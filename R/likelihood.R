@@ -125,7 +125,7 @@ likelihoods.fit <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL, ch
       Xocc <- sitedata$Xocc[modelsiteid, , drop = FALSE]
       Xobs <- sitedata$Xobs[sitedata$ModelSite == modelsiteid, , drop = FALSE]
       y <- sitedata$y[sitedata$ModelSite == modelsiteid, , drop = FALSE]
-      lkl <- likelihood_joint_marginal.ModelSiteDataRow(
+      lkl <- likelihood_joint_marginal.ModelSite(
                       Xocc,Xobs, y,
                       u.b_arr, v.b_arr, lv.coef_arr, lvsim = lvsim)
       return(lkl)
@@ -136,7 +136,7 @@ likelihoods.fit <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL, ch
       Xocc <- sitedata$Xocc[modelsiteid, , drop = FALSE]
       Xobs <- sitedata$Xobs[sitedata$ModelSite == modelsiteid, , drop = FALSE]
       y <- sitedata$y[sitedata$ModelSite == modelsiteid, , drop = FALSE]
-      lkl <- likelihood_joint_marginal.ModelSiteDataRow(
+      lkl <- likelihood_joint_marginal.ModelSite(
                       Xocc,Xobs, y,
                       u.b_arr, v.b_arr, lv.coef_arr, lvsim = lvsim)
       return(lkl)
