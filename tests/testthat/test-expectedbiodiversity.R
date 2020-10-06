@@ -216,7 +216,7 @@ test_that("In sample data; marginal on LV values", {
   expect_equal(meandiff[ncol(numspec)], 0, tol = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
-  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:50 ])))
+  expect_lt(abs(meandiff[length(meandiff)]), max(abs(meandiff[floor(length(meandiff) / 20) + 1:20 ])))
   
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
   ininterval <- (NumSpecies > numspec["Esum_det_margpost", ] - 2 * sqrt(numspec["Vsum_det_margpost", ])) & 
@@ -274,13 +274,9 @@ test_that("Holdout data; has LVs", {
   artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, nlv = 4) #means LV nearly don't matter
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
-  originalXocc <- Rfast::eachrow(Rfast::eachrow(artfit$data$Xocc, artfit$XoccProcess$scale, oper = "*"),
-                                 artfit$XoccProcess$center, oper = "+")
-  colnames(originalXocc) <- colnames(artfit$data$Xocc)
+  originalXocc <- unstandardise.designmatprocess(artfit$XoccProcess, artfit$data$Xocc)
   originalXocc <- cbind(ModelSite = 1:nrow(originalXocc), originalXocc)
-  originalXobs <- Rfast::eachrow(Rfast::eachrow(artfit$data$Xobs, artfit$XobsProcess$scale, oper = "*"),
-                                 artfit$XobsProcess$center, oper = "+")
-  colnames(originalXobs) <- colnames(artfit$data$Xobs)
+  originalXobs <- unstandardise.designmatprocess(artfit$XobsProcess, artfit$data$Xobs)
   originalXobs <- cbind(ModelSite = artfit$data$ModelSite, originalXobs)
   outofsample_y <- simulate_fit(artfit, esttype = 1, UseFittedLV = FALSE)
   
@@ -305,7 +301,7 @@ test_that("Holdout data; has LVs", {
   expect_equal(meandiff[ncol(Enumspec)], 0, tol = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
-  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:50 ])))
+  expect_lt(abs(meandiff[length(meandiff)]), max(abs(meandiff[floor(length(meandiff) / 100) + 1:20 ])))
   
   Enum_compare_sum <- Enum_compare(NumSpecies,
                                    as.matrix(Enumspec["Esum_det_median", ], ncol = 1),
@@ -328,13 +324,9 @@ test_that("Holdout data; no LVs", {
   artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, nlv = 0) #means LV nearly don't matter
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
-  originalXocc <- Rfast::eachrow(Rfast::eachrow(artfit$data$Xocc, artfit$XoccProcess$scale, oper = "*"),
-                                 artfit$XoccProcess$center, oper = "+")
-  colnames(originalXocc) <- colnames(artfit$data$Xocc)
+  originalXocc <- unstandardise.designmatprocess(artfit$XoccProcess, artfit$data$Xocc)
   originalXocc <- cbind(ModelSite = 1:nrow(originalXocc), originalXocc)
-  originalXobs <- Rfast::eachrow(Rfast::eachrow(artfit$data$Xobs, artfit$XobsProcess$scale, oper = "*"),
-                                 artfit$XobsProcess$center, oper = "+")
-  colnames(originalXobs) <- colnames(artfit$data$Xobs)
+  originalXobs <- unstandardise.designmatprocess(artfit$XobsProcess, artfit$data$Xobs)
   originalXobs <- cbind(ModelSite = artfit$data$ModelSite, originalXobs)
   outofsample_y <- simulate_fit(artfit, esttype = 1, UseFittedLV = FALSE)
   
@@ -359,7 +351,7 @@ test_that("Holdout data; no LVs", {
   expect_equal(meandiff[ncol(Enumspec)], 0, tol = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
-  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:50 ])))
+  expect_lt(abs(meandiff[length(meandiff)]), max(abs(meandiff[floor(length(meandiff) / 100) + 1:20 ])))
   
   Enum_compare_sum <- Enum_compare(NumSpecies,
                                    as.matrix(Enumspec["Esum_det", ], ncol = 1),
