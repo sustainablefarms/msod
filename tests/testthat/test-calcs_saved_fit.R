@@ -14,10 +14,10 @@ test_that("Likelihood is historically consistent", {
   
   set.seed(333)  #sets seed for simulated LV
   lkl_sites <- likelihoods.fit(fit, numlvsims = 10)
-  expect_known_output(lkl_sites, file = "./tests/testthat/lkl_sites.txt", print = TRUE)
+  expect_known_output(lkl_sites, file = "./tests/testthat/lkl_sites.txt", print = TRUE, update = TRUE)
 })
 
 test_that("Occupancy of species prediction is historically consistent", {
   pocc_theta01 <- poccupy_species(fit, type = 1, conditionalLV = TRUE)
-  expect_known_output(pocc_theta01, file = "./tests/testthat/pocc_theta01.txt", print = TRUE)
+  expect_known_output(pocc_theta01, file = "./tests/testthat/pocc_theta01.txt", print = TRUE, update = FALSE)
 })

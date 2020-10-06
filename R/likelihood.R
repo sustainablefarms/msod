@@ -173,15 +173,28 @@ likelihood_joint_marginal.ModelSiteDataRow <- function(data_i, draws, lvsim, cl 
   Xocc <- data_i[, "Xocc", drop = TRUE][[1]]
   Xobs <- data_i[, "Xobs", drop = TRUE][[1]]
   y <- data_i[, "y", drop = TRUE][[1]]
+  drawid <- 1:nrow(draws)
+  u.b_arr <- bugsvar2array(draws, "u.b", 1:ncol(y), 1:ncol(Xocc))  # rows are species, columns are occupancy covariates
+  v.b_arr <- bugsvar2array(draws, "v.b", 1:ncol(y), 1:ncol(Xobs))  # rows are species, columns are observation covariates
+  lv.coef_arr <- bugsvar2array(draws, "lv.coef", 1:ncol(y), 1:ncol(lvsim)) # rows are species, columns are lv
 
   if (is.null(cl)){
-    Likl_margLV <- apply(draws, 1, function(theta) likelihood_joint_marginal.ModelSite.theta(
-      Xocc, Xobs, y, theta, lvsim))
+    Likl_margLV <- lapply(drawid, 
+                          function(thetaid) likelihood_joint_marginal.ModelSite.theta(
+      Xocc, Xobs, y,
+      u.b = drop_to_matrix(u.b_arr[,, thetaid, drop = FALSE], dimdrop = 3),
+      v.b = drop_to_matrix(v.b_arr[,, thetaid, drop = FALSE], dimdrop = 3),
+      lv.coef = drop_to_matrix(lv.coef_arr[,, thetaid, drop = FALSE], dimdrop = 3),
+      lvsim))
   } else {
     parallel::clusterExport(cl, list("Xocc", "Xobs", "y", "lvsim"))
     parallel::clusterEvalQ(cl, library(dplyr))
-    Likl_margLV <- parallel::parApply(cl, draws, 1, function(theta) likelihood_joint_marginal.ModelSite.theta(
-      Xocc, Xobs, y, theta, lvsim))
+    Likl_margLV <- parallel::parLapply(cl, drawid, function(thetaid) likelihood_joint_marginal.ModelSite.theta(
+      Xocc, Xobs, y,
+      u.b = drop_to_matrix(u.b_arr[,, thetaid, drop = FALSE], dimdrop = 3),
+      v.b = drop_to_matrix(v.b_arr[,, thetaid, drop = FALSE], dimdrop = 3),
+      lv.coef = drop_to_matrix(lv.coef_arr[,, thetaid, drop = FALSE], dimdrop = 3),
+      lvsim))
   }
   return(Likl_margLV)
 }
@@ -190,24 +203,21 @@ likelihood_joint_marginal.ModelSiteDataRow <- function(data_i, draws, lvsim, cl 
 #' @param Xocc A matrix of occupancy covariates. Must have a single row. Columns correspond to covariates.
 #' @param Xobs A matrix of detection covariates, each row is a visit.
 #' @param y A matrix of detection data for a given model site. 1 corresponds to detected. Each row is visit, each column is a species.
-#' @param theta A vector of model parameters, labelled according to the BUGS labelling convention seen in runjags
+#' @param v.b Covariate loadings. Each row is a species, each column a detection covariate
+#' @param u.b A vector of model parameters, labelled according to the BUGS labelling convention seen in runjags
+#' @param lv.coef Loadings for the latent variables. Each row is a species, each column corresponds to a LV.
 #' @param lvsim A matrix of simulated LV values. Columns correspond to latent variables, each row is a simulation
 #' @export
-likelihood_joint_marginal.ModelSite.theta <- function(Xocc, Xobs, y, theta, lvsim){
+likelihood_joint_marginal.ModelSite.theta <- function(Xocc, Xobs, y, u.b, v.b, lv.coef, lvsim){
 stopifnot(nrow(Xocc) == 1)
 stopifnot(nrow(Xobs) == nrow(y))
 y <- as.matrix(y)
 Xocc <- as.matrix(Xocc)
 Xobs <- as.matrix(Xobs)
-u.b <- bugsvar2matrix(theta, "u.b", 1:ncol(y), 1:ncol(Xocc))  # rows are species, columns are occupancy covariates
-v.b <- bugsvar2matrix(theta, "v.b", 1:ncol(y), 1:ncol(Xobs))  # rows are species, columns are observation covariates
-lv.coef <- bugsvar2matrix(theta, "lv.coef", 1:ncol(y), 1:ncol(lvsim)) # rows are species, columns are lv
 sd_u_condlv <- sqrt(1 - rowSums(lv.coef^2)) #for each species the standard deviation of the indicator random variable 'u', conditional on values of LV
 
 ## Probability of Detection, CONDITIONAL on occupied
-Detection.LinPred <- as.matrix(Xobs) %*% t(v.b)
-Detection.Pred.Cond <- exp(Detection.LinPred) / (exp(Detection.LinPred) + 1)   #this is the inverse logit function
-
+Detection.Pred.Cond <- pdetection_occupied.ModelSite.theta(Xobs, v.b)
 
 ## Likelihood (probability) of single visit given occupied
 Likl_condoccupied <- Detection.Pred.Cond * y + (1 - Detection.Pred.Cond) * (1 - y) # non-detection is complement of detection probability
@@ -216,19 +226,14 @@ Likl_condoccupied <- Detection.Pred.Cond * y + (1 - Detection.Pred.Cond) * (1 - 
 ## Joint likelihood (probability) of detections of all visits CONDITIONAL on occupied
 Likl_condoccupied.JointVisit <- apply(Likl_condoccupied, 2, prod)
 
-## Likelihood (proability) of y given unoccupied is either 1 or 0 for detections. Won't include that here yet.
+## Likelihood (probability) of y given unoccupied is either 1 or 0 for detections. Won't include that here yet.
 NoneDetected <- as.numeric(colSums(y) == 0)
 
 ## Probability of Site Occupancy
 ModelSite.Occ.eta_external <- as.matrix(Xocc) %*% t(u.b) #columns are species
 
 # probability of occupancy given LV
-ModelSite.Occ.eta_LV <- lvsim %*% t(lv.coef) #occupancy contribution from latent variables, performed all together
-ModelSite.Occ.eta <- Rfast::eachrow(ModelSite.Occ.eta_LV, ModelSite.Occ.eta_external, oper = "+") #add the external part to each simulation
-# Make u standard deviations equal to 1 by dividing other values by sd
-# P(u < -ModelSite.Occ.eta) = P(u / sd < -ModelSite.Occ.eta / sd) = P(z < -ModelSite.Occ.eta / sd)
-ModelSite.Occ.eta_standardised <- Rfast::eachrow(ModelSite.Occ.eta, sd_u_condlv, oper = "/") 
-ModelSite.Occ.Pred.CondLV <- 1 - pnorm(-ModelSite.Occ.eta_standardised, mean = 0, sd = 1)
+ModelSite.Occ.Pred.CondLV <- poccupy.ModelSite.theta(Xocc, u.b, lv.coef, LVvals = lvsim)
 
 # likelihood given LV
 Likl.JointVisit.condLV <- Rfast::eachrow(ModelSite.Occ.Pred.CondLV, Likl_condoccupied.JointVisit, oper = "*") #per species likelihood, occupied component. Works because species conditionally independent given LV
