@@ -108,16 +108,25 @@ likelihoods.fit <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL, ch
   } else {
     lvsim <- matrix(rnorm(fit$data$nlv * numlvsims), ncol = fit$data$nlv, nrow = numlvsims) #simulated lv values, should average over thousands
   }
+  
+  
   if (is.null(Xocc)){ #Extract the Xocc, yXobs etc from the fitted object, no preprocessing required
     arraydata.list <- prep_data_by_modelsite(fit$data$Xocc, fit$data$Xobs, fit$data$y, fit$data$ModelSite)
   } else {
     arraydata.list <- prep_data_by_modelsite.newdata(fit, Xocc, yXobs, ModelSite)
   }
+  
+  u.b_arr <- bugsvar2array(draws, "u.b", 1:fit$data$n, 1:ncol(fit$data$Xocc))  # rows are species, columns are occupancy covariates
+  v.b_arr <- bugsvar2array(draws, "v.b", 1:fit$data$n, 1:ncol(fit$data$Xobs))  # rows are species, columns are observation covariates
+  lv.coef_arr <- bugsvar2array(draws, "lv.coef", 1:fit$data$n, 1:ncol(lvsim)) # rows are species, columns are lv
+  
   if (is.null(cl)) {
-    likel.l <- lapply(arraydata.list, likelihood_joint_marginal.ModelSiteDataRow, draws = draws, lvsim = lvsim)
+    likel.l <- lapply(arraydata.list, likelihood_joint_marginal.ModelSiteDataRow,
+                      u.b_arr, v.b_arr, lv.coef_arr, lvsim = lvsim)
   }
   else {
-    likel.l <- parallel::parLapply(cl = cl, arraydata.list, likelihood_joint_marginal.ModelSiteDataRow, draws = draws, lvsim = lvsim)
+    likel.l <- parallel::parLapply(cl = cl, arraydata.list, likelihood_joint_marginal.ModelSiteDataRow,
+                                   u.b_arr, v.b_arr, lv.coef_arr, lvsim = lvsim)
   }
   likel.mat <- do.call(cbind, likel.l) # each row is a draw, each column is a modelsite (which are independent data points)
   return(likel.mat)
@@ -164,19 +173,18 @@ prep_data_by_modelsite <- function(Xocc, Xobs, y, ModelSite, outformat = "list")
 }
 
 #' @describeIn likelihoods.fit Compute the joint-species LV-marginal likelihood for a ModelSite
-#' @param draws A large matrix. Each column is a model parameter, with array elements named according to the BUGS naming convention.
-#' Each row of \code{draws} is a simulation from the posterior.
+#' @param u.b_arr Occupancy covariate loadings. Each row is a species, each column an occupancy covariate, each layer (dim = 3) is a draw
+#' @param v.b_arr Detection covariate loadings. Each row is a species, each column an detection covariate, each layer (dim = 3) is a draw
+#' @param lv.coef_arr LV loadings. Each row is a species, each column a LV, each layer (dim = 3) is a draw
 #' @param data_i A row of a data frame created by \code{prep_data_by_modelsite}. Each row contains data for a single ModelSite. 
 #' @param lvsim A matrix of simulated LV values. Columns correspond to latent variables, each row is a simulation
 #' @export
-likelihood_joint_marginal.ModelSiteDataRow <- function(data_i, draws, lvsim, cl = NULL){
+likelihood_joint_marginal.ModelSiteDataRow <- function(data_i, u.b_arr, v.b_arr, lv.coef_arr, lvsim, cl = NULL){
   Xocc <- data_i[, "Xocc", drop = TRUE][[1]]
   Xobs <- data_i[, "Xobs", drop = TRUE][[1]]
   y <- data_i[, "y", drop = TRUE][[1]]
-  drawid <- 1:nrow(draws)
-  u.b_arr <- bugsvar2array(draws, "u.b", 1:ncol(y), 1:ncol(Xocc))  # rows are species, columns are occupancy covariates
-  v.b_arr <- bugsvar2array(draws, "v.b", 1:ncol(y), 1:ncol(Xobs))  # rows are species, columns are observation covariates
-  lv.coef_arr <- bugsvar2array(draws, "lv.coef", 1:ncol(y), 1:ncol(lvsim)) # rows are species, columns are lv
+  stopifnot(length(dim(u.b_arr)) == 3)
+  drawid <- 1:dim(u.b_arr)[[3]]
 
   if (is.null(cl)){
     Likl_margLV <- lapply(drawid, 
@@ -256,7 +264,7 @@ return(Likl_margLV)
 #                   draws = draws[1:10, ],
 #                   lvsim = lvsim)
 # Above took 10 000 milliseconds on first go.
-# After bugsvar2array faster, took 8000ms. Could pool bugsvar2array work to be even faster.
+# After bugsvar2array faster, took 8000ms. Could pool bugsvar2array work to be even faster (this has been done as of Oct 6).
 # After avoiding all dataframe use, dropped to 3000ms
 # Can do all of JointSpVst_Liklhood.LV()'s work as matrix manipulations, dropped to 1800ms
 # Down to 860ms: replaced use of "rep" with Rfast's functions eachrow, and also replaced row product with Rfast::rowprod. 
