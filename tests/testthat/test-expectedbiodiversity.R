@@ -406,13 +406,9 @@ test_that("Subset biodiversity matches simulations", {
   expect_equal(mean(inci_insample_margLV), 0.95, tol = 0.05)
   
   # Predict number within subset, outside sample, marginal LV
-  originalXocc <- Rfast::eachrow(Rfast::eachrow(artfit$data$Xocc, artfit$XoccProcess$scale, oper = "*"),
-                                 artfit$XoccProcess$center, oper = "+")
-  colnames(originalXocc) <- colnames(artfit$data$Xocc)
+  originalXocc <- unstandardise.designmatprocess(artfit$XoccProcess, artfit$data$Xocc)
   originalXocc <- cbind(ModelSite = 1:nrow(originalXocc), originalXocc)
-  originalXobs <- Rfast::eachrow(Rfast::eachrow(artfit$data$Xobs, artfit$XobsProcess$scale, oper = "*"),
-                                 artfit$XobsProcess$center, oper = "+")
-  colnames(originalXobs) <- colnames(artfit$data$Xobs)
+  originalXobs <- unstandardise.designmatprocess(artfit$XobsProcess, artfit$data$Xobs)
   originalXobs <- cbind(ModelSite = artfit$data$ModelSite, originalXobs)
   outofsample_y <- simulate_fit(artfit, esttype = 1, UseFittedLV = FALSE)
   
@@ -472,13 +468,9 @@ test_that("Subset biodiversity to single species matches simulations", {
   # expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
   
   # Predict number within subset, outside sample, marginal LV
-  originalXocc <- Rfast::eachrow(Rfast::eachrow(artfit$data$Xocc, artfit$XoccProcess$scale, oper = "*"),
-                                 artfit$XoccProcess$center, oper = "+")
-  colnames(originalXocc) <- colnames(artfit$data$Xocc)
+  originalXocc <- unstandardise.designmatprocess(artfit$XoccProcess, artfit$data$Xocc)
   originalXocc <- cbind(ModelSite = 1:nrow(originalXocc), originalXocc)
-  originalXobs <- Rfast::eachrow(Rfast::eachrow(artfit$data$Xobs, artfit$XobsProcess$scale, oper = "*"),
-                                 artfit$XobsProcess$center, oper = "+")
-  colnames(originalXobs) <- colnames(artfit$data$Xobs)
+  originalXobs <- unstandardise.designmatprocess(artfit$XobsProcess, artfit$data$Xobs)
   originalXobs <- cbind(ModelSite = artfit$data$ModelSite, originalXobs)
   outofsample_y <- simulate_fit(artfit, esttype = 1, UseFittedLV = FALSE)
   
