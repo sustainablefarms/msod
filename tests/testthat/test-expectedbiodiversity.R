@@ -73,7 +73,7 @@ test_that("In sample data; fitted LV values; different draws", {
     ggplot2::geom_ribbon(ggplot2::aes(x= CumSites, ymin = -2 * sqrt(var), ymax = 2 * sqrt(var)), fill = "grey") +
     ggplot2::geom_line(ggplot2::aes(x = CumSites, y = diff), col = "blue", lwd = 2)
   # print(plt)
-  expect_lt(abs(meandiff_2nd[ncol(Enumspec)]), 3 * sd_final_2nd)
+  expect_lt(abs(meandiff_2nd[ncol(Enumspec_2ndonly)]), 3 * sd_final_2nd)
   
   
   # Anticipate prediction from combined draw is similar when occupancy + detection simulated with parameters chosen with equal chance from artfit$mcmc[[1]]
@@ -93,8 +93,8 @@ test_that("In sample data; fitted LV values; different draws", {
     ggplot2::geom_line(ggplot2::aes(x = CumSites, y = diff), col = "blue", lwd = 2)
   # print(plt)
   
-  sd_final <- sqrt(meanvar[ncol(Enumspec)])
-  expect_lt(abs(meandiff[ncol(Enumspec)]), 3 * sd_final)
+  sd_final <- sqrt(meanvar[ncol(numspec)])
+  expect_lt(abs(meandiff[ncol(numspec)]), 3 * sd_final)
   
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
   ininterval_marg <- (NumSpecies_interleaved > numspec["Esum_det_margpost", ] - 2 * sqrt(numspec["Vsum_det_margpost", ])) & 
@@ -104,7 +104,7 @@ test_that("In sample data; fitted LV values; different draws", {
   # and that within-model median parameters *do not*
   ininterval_median <- (NumSpecies_interleaved > numspec["Esum_det_median", ] - 2 * sqrt(numspec["Vsum_det_median", ])) & 
     (NumSpecies_interleaved < numspec["Esum_det_median", ] + 2 * sqrt(numspec["Vsum_det_median", ]))
-  expect_equal(mean(ininterval_median), 0.95, tol = 0.05)
+  expect_lt(mean(ininterval_median), 0.90)
 })
 
 test_that("In sample data; fitted LV values", {
