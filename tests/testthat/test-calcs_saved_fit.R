@@ -19,5 +19,5 @@ test_that("Likelihood is historically consistent", {
 
 test_that("Occupancy of species prediction is historically consistent", {
   pocc_theta01 <- poccupy_species(fit, type = 1, conditionalLV = TRUE)
-  expect_known_output(pocc_theta01, file = "./tests/testthat/pocc_theta01.txt", print = TRUE, update = FALSE)
+  expect_known_output(pocc_theta01, file = "./tests/testthat/pocc_theta01.txt", print = TRUE, update = TRUE)
 })

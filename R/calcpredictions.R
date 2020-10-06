@@ -152,36 +152,44 @@ pdetect_condoccupied <- function(fit, type = "median", Xobs = NULL){
 #'  If \code{NULL} the Xocc data saved in \code{fit} will be used.
 #' @return A matrix of occupany probabilities. Each row is a ModelSite, corresponding to the rows in Xocc. Each column is a species.
 #' @export
-poccupy_species <- function(fit, type = "median", Xocc = NULL, conditionalLV = TRUE){
-  if (!fit$summary.available){ fit <- add.summary(fit)}
-  fitdata <- as_list_format(fit$data)
-  # build arrays of point estimates
-  theta <- get_theta(fit, type = type)
-  ## u.b (occupancy coefficients)
-  u.b <- bugsvar2matrix(theta, "u.b", 1:fitdata$n, 1:fitdata$Vocc) # rows are species, columns are occupancy covariates
-  
-  if (conditionalLV){
-    stopifnot(any(grepl("LV", names(theta)))) #means LV values not saved in model
-    ## LV values
-    LV <- bugsvar2matrix(theta, "LV", 1:fitdata$J, 1:fitdata$nlv) # rows are model sites, columns are latent variables
-    ## LV loadings
-    lv.coef <- bugsvar2matrix(theta, "lv.coef", 1:fitdata$n, 1:fitdata$nlv) # rows are species columns are occupancy covariates
-    sd_u_condlv <- sqrt(1 - rowSums(lv.coef^2))
+poccupy_species <- function(fit, type = "median", conditionalLV = TRUE){
+  if (type == "marginal"){
+    draws <- do.call(rbind, fit$mcmc)
+  } else {
+    theta <- get_theta(fit, type)
+    draws <- matrix(theta, nrow = 1)
+    colnames(draws) <- names(theta)
   }
   
-  if (is.null(Xocc)){Xocc <- fitdata$Xocc}
-  
-  ## Probability of Site Occupancy
-  ModelSite.Occ.eta <- Xocc %*% t(u.b) #rows are ModelSites, columns are species
+  u.b_arr <- bugsvar2array(draws, "u.b", 1:fit$data$n, 1:ncol(fit$data$Xocc))
   if (conditionalLV){
-    ModelSite.Occ.eta <- ModelSite.Occ.eta + LV %*% t(lv.coef)
-    # Make u standard deviations equal to 1 by dividing other values by sd
-    # P(u < -ModelSite.Occ.eta) = P(u / sd < -ModelSite.Occ.eta / sd) = P(z < -ModelSite.Occ.eta / sd)
-    ModelSite.Occ.eta <- Rfast::eachrow(ModelSite.Occ.eta, sd_u_condlv, oper = "/")     
-    }
-  ModelSite.Occ.Pred.CondLV <- 1 - pnorm(-ModelSite.Occ.eta, mean = 0,
-                                         sd = 1)
+    lv.coef_arr <- bugsvar2array(draws, "lv.coef", 1:fit$data$n, 1:fit$data$nlv)
+    LVvals <- bugsvar2array(draws, "LV", 1:fit$data$J, 1:fit$data$nlv)
+    pocc_l <- lapply(1:nrow(fit$data$Xocc), function(siteid){
+      poccupy.ModelSite(fit$data$Xocc[siteid, , drop = FALSE], 
+                        u.b_arr, 
+                        lv.coef_arr, 
+                        LVvals[siteid, , , drop = FALSE])
+    })
+  } else if (!is.null(fit$data$nlv) && (fit$data$nlv > 0)){
+    lv.coef_arr <- bugsvar2array(draws, "lv.coef", 1:fit$data$n, 1:fit$data$nlv)
+    LVvals <- matrix(rnorm(fit$data$nlv * nrow(draws)),
+                           nrow = nrow(draws),
+                           ncol = fit$data$nlv)
+    pocc_l <- lapply(1:nrow(fit$data$Xocc), function(siteid){
+      poccupy.ModelSite(fit$data$Xocc[siteid, , drop = FALSE], 
+                        u.b_arr, 
+                        lv.coef_arr, 
+                        LVvals)
+    }) 
+  } else {
+    pocc_l <- lapply(1:nrow(fit$data$Xocc), function(siteid){
+      poccupy.ModelSite(fit$data$Xocc[siteid, , drop = FALSE], 
+                        u.b_arr)
+    }) 
+  }
+  pocc <- do.call(rbind, pocc_l)
   
-  if (!is.null(fit$species)){colnames(ModelSite.Occ.Pred.CondLV) <- fit$species} # a special modification of runjags with occupation detection meta info
-  return(ModelSite.Occ.Pred.CondLV)
+  if (!is.null(fit$species)){colnames(pocc) <- fit$species}
+  return(pocc)
 }
