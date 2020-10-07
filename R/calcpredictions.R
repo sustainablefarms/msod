@@ -84,14 +84,14 @@ Endetect_modelsite <- function(fit, type = "median", Xocc = NULL, Xobs = NULL, M
 #' If FALSE returned probabilities assume no knowledge of the latent variable values and that species are independent.
 #' @return A matrix of detection probabilities. Each row is a visit, corresponding to the rows in Xobs. Each column is a species.
 #' @export
-pdetect_indvisit <- function(fit, type = "median", Xocc = NULL, Xobs = NULL, ModelSite = NULL, conditionalLV = TRUE){
+pdetect_indvisit <- function(fit, type = "median", conditionalLV = TRUE){
   if (!fit$summary.available){ fit <- add.summary(fit)}
   
   # Get ModelSite Occupany Predictions
-  ModelSite.Occ.Pred <- poccupy_species(fit, type = type, Xocc = Xocc, conditionalLV = conditionalLV)
+  ModelSite.Occ.Pred <- poccupy_species(fit, type = type, conditionalLV = conditionalLV)
   
   # Get Detection Probabilities Assuming Occupied
-  Visits.DetCond.Pred <- pdetect_condoccupied(fit, type = type, Xobs = Xobs)
+  Visits.DetCond.Pred <- pdetect_condoccupied(fit, type = type)
  
   # combine with probability of occupancy 
   fitdata <- as_list_format(fit$data)
@@ -153,7 +153,7 @@ pdetect_condoccupied <- function(fit, type = "median", Xobs = NULL){
 #'  If \code{NULL} the Xocc data saved in \code{fit} will be used.
 #' @return A matrix of occupany probabilities. Each row is a ModelSite, corresponding to the rows in Xocc. Each column is a species.
 #' @export
-poccupy_species <- function(fit, type = "median", Xocc = NULL, conditionalLV = TRUE){
+poccupy_species <- function(fit, type = "median", conditionalLV = TRUE){
   if (type == "marginal"){
     draws <- do.call(rbind, fit$mcmc)
   } else {
@@ -162,12 +162,7 @@ poccupy_species <- function(fit, type = "median", Xocc = NULL, conditionalLV = T
     colnames(draws) <- names(theta)
   }
   
-  if (!is.null(Xocc) && conditionalLV){stop("Can't condition on LV when new data supplied")}
-  if (is.null(Xocc)){
-    Xocc <- fit$data$Xocc
-  }
-  
-  pocc <- poccupy_species_raw(draws, Xocc, fit$species, fit$data$nlv, conditionalLV = conditionalLV)
+  pocc <- poccupy_species_raw(draws, fit$data$Xocc, fit$species, fit$data$nlv, conditionalLV = conditionalLV)
   return(pocc)
 }
 
