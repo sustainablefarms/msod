@@ -13,7 +13,7 @@ poccupy.ModelSite <- function(Xocc, u.b_arr, lv.coef_arr = NULL, LVvals = NULL){
     pocc_l <- lapply(1:dim(u.b_arr)[[3]],
                      function(drawid){
                        pocc <- poccupy.ModelSite.theta(Xocc, 
-                                                       u.b_arr[,, drawid],
+                                                       drop_to_matrix(u.b_arr[,, drawid, drop = FALSE]),
                                                        lv.coef,
                                                        LVvals)
                        return(pocc)
@@ -27,9 +27,9 @@ poccupy.ModelSite <- function(Xocc, u.b_arr, lv.coef_arr = NULL, LVvals = NULL){
     pocc_l <- lapply(1:dim(LVvals)[[3]],
            function(drawid){
              pocc <- poccupy.ModelSite.theta(Xocc, 
-                                     u.b_arr[,, drawid],
-                                     lv.coef_arr[,, drawid],
-                                     LVvals[,, drawid])
+                                     drop_to_matrix(u.b_arr[,, drawid, drop = FALSE]),
+                                     drop_to_matrix(lv.coef_arr[,, drawid, drop = FALSE]),
+                                     drop_to_matrix(LVvals[,, drawid, drop = FALSE]))
              return(pocc)
            })
   }
@@ -38,8 +38,8 @@ poccupy.ModelSite <- function(Xocc, u.b_arr, lv.coef_arr = NULL, LVvals = NULL){
     pocc_l <- lapply(1:dim(u.b_arr)[[3]],
                      function(drawid){
                        pocc <- poccupy.ModelSite.theta(Xocc, 
-                                                       u.b_arr[,, drawid],
-                                                       lv.coef_arr[,, drawid],
+                                                       drop_to_matrix(u.b_arr[,, drawid, drop = FALSE]),
+                                                       drop_to_matrix(lv.coef_arr[,, drawid, drop = FALSE]),
                                                        LVvals)
                        return(pocc)
                      })

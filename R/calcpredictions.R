@@ -153,7 +153,7 @@ pdetect_condoccupied <- function(fit, type = "median", Xobs = NULL){
 #'  If \code{NULL} the Xocc data saved in \code{fit} will be used.
 #' @return A matrix of occupany probabilities. Each row is a ModelSite, corresponding to the rows in Xocc. Each column is a species.
 #' @export
-poccupy_species <- function(fit, type = "median", conditionalLV = TRUE){
+poccupy_species <- function(fit, type = "median", Xocc = NULL, conditionalLV = TRUE){
   if (type == "marginal"){
     draws <- do.call(rbind, fit$mcmc)
   } else {
@@ -162,35 +162,46 @@ poccupy_species <- function(fit, type = "median", conditionalLV = TRUE){
     colnames(draws) <- names(theta)
   }
   
-  u.b_arr <- bugsvar2array(draws, "u.b", 1:fit$data$n, 1:ncol(fit$data$Xocc))
+  if (!is.null(Xocc) && conditionalLV){stop("Can't condition on LV when new data supplied")}
+  if (is.null(Xocc)){
+    Xocc <- fit$data$Xocc
+  }
+  
+  pocc <- poccupy_species_raw(draws, Xocc, fit$species, fit$data$nlv, conditionalLV = conditionalLV)
+  return(pocc)
+}
+
+poccupy_species_raw <- function(draws, Xocc, speciesnames, nlv = NULL, conditionalLV = TRUE){
+  nspecies <- length(speciesnames)
+  u.b_arr <- bugsvar2array(draws, "u.b", 1:nspecies, 1:ncol(Xocc))
   if (conditionalLV){
-    lv.coef_arr <- bugsvar2array(draws, "lv.coef", 1:fit$data$n, 1:fit$data$nlv)
-    LVvals <- bugsvar2array(draws, "LV", 1:fit$data$J, 1:fit$data$nlv)
-    pocc_l <- lapply(1:nrow(fit$data$Xocc), function(siteid){
-      poccupy.ModelSite(fit$data$Xocc[siteid, , drop = FALSE], 
+    lv.coef_arr <- bugsvar2array(draws, "lv.coef", 1:nspecies, 1:nlv)
+    LVvals <- bugsvar2array(draws, "LV", 1:nrow(Xocc), 1:nlv)
+    pocc_l <- lapply(1:nrow(Xocc), function(siteid){
+      poccupy.ModelSite(Xocc[siteid, , drop = FALSE], 
                         u.b_arr, 
                         lv.coef_arr, 
                         LVvals[siteid, , , drop = FALSE])
     })
-  } else if (!is.null(fit$data$nlv) && (fit$data$nlv > 0)){
-    lv.coef_arr <- bugsvar2array(draws, "lv.coef", 1:fit$data$n, 1:fit$data$nlv)
-    LVvals <- matrix(rnorm(fit$data$nlv * nrow(draws)),
-                           nrow = nrow(draws),
-                           ncol = fit$data$nlv)
-    pocc_l <- lapply(1:nrow(fit$data$Xocc), function(siteid){
-      poccupy.ModelSite(fit$data$Xocc[siteid, , drop = FALSE], 
+  } else if (!is.null(nlv) && (nlv > 0)){ #simulate LV values!
+    lv.coef_arr <- bugsvar2array(draws, "lv.coef", 1:nspecies, 1:nlv)
+    LVvals <- matrix(rnorm(nlv * nrow(draws)),
+                     nrow = nrow(draws),
+                     ncol = nlv)
+    pocc_l <- lapply(1:nrow(Xocc), function(siteid){
+      poccupy.ModelSite(Xocc[siteid, , drop = FALSE], 
                         u.b_arr, 
                         lv.coef_arr, 
                         LVvals)
     }) 
   } else {
-    pocc_l <- lapply(1:nrow(fit$data$Xocc), function(siteid){
-      poccupy.ModelSite(fit$data$Xocc[siteid, , drop = FALSE], 
+    pocc_l <- lapply(1:nrow(Xocc), function(siteid){
+      poccupy.ModelSite(Xocc[siteid, , drop = FALSE], 
                         u.b_arr)
     }) 
   }
   pocc <- do.call(rbind, pocc_l)
   
-  if (!is.null(fit$species)){colnames(pocc) <- fit$species}
+  colnames(pocc) <- speciesnames
   return(pocc)
 }
