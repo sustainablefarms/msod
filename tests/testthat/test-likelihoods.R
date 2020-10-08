@@ -45,6 +45,30 @@ test_that("Likelihood computations run in sample data with out LV", {
   expect_equal(dim(lkl), c(2, 20))
 })
 
+test_that("lppds insample and outsample data identical when observations identical", {
+  artmodel <- artificial_runjags(nlv = 0)
+  
+  lkl <- likelihoods.fit(artmodel)
+  lkl <- Rfast::rep_row(lkl, 50)
+  waic <- loo::waic(log(lkl))
+  
+  originalXocc <- unstandardise.designmatprocess(artmodel$XoccProcess, artmodel$data$Xocc)
+  originalXocc <- cbind(ModelSite = 1:nrow(originalXocc), originalXocc)
+  originalXobs <- unstandardise.designmatprocess(artmodel$XobsProcess, artmodel$data$Xobs)
+  originalXobs <- cbind(ModelSite = artmodel$data$ModelSite, originalXobs)
+  
+  outofsample_y <- artmodel$data$y
+  outofsample_lppd <- lppd.newdata(artmodel,
+                                   Xocc = originalXocc,
+                                   yXobs = cbind(originalXobs, outofsample_y),
+                                   ModelSite = "ModelSite")
+  
+  # of a randomly selected NEW ModelSite
+  lppd_pred_fromoutofsample <- mean(outofsample_lppd$lpds)
+  lppd_pred_fromwaic <- waic$estimates["elpd_waic", "Estimate"] / nrow(artmodel$data$Xocc)
+  expect_equal(lppd_pred_fromoutofsample, lppd_pred_fromwaic)
+})
+
 test_that("lppds insample and outsample data similar on very artifical simple situation", {
   artmodel <- artificial_runjags(nlv = 0)
   
@@ -52,17 +76,15 @@ test_that("lppds insample and outsample data similar on very artifical simple si
   lkl <- Rfast::rep_row(lkl, 50)
   waic <- loo::waic(log(lkl))
   
-  originalXocc <- Rfast::eachrow(Rfast::eachrow(artmodel$data$Xocc, artmodel$XoccProcess$scale, oper = "*"),
-                                 artmodel$XoccProcess$center, oper = "+")
-  colnames(originalXocc) <- colnames(artmodel$data$Xocc)
-  originalXobs <- Rfast::eachrow(Rfast::eachrow(artmodel$data$Xobs, artmodel$XobsProcess$scale, oper = "*"),
-                                 artmodel$XobsProcess$center, oper = "+")
-  colnames(originalXobs) <- colnames(artmodel$data$Xobs)
+  originalXocc <- unstandardise.designmatprocess(artmodel$XoccProcess, artmodel$data$Xocc)
+  originalXocc <- cbind(ModelSite = 1:nrow(originalXocc), originalXocc)
+  originalXobs <- unstandardise.designmatprocess(artmodel$XobsProcess, artmodel$data$Xobs)
+  originalXobs <- cbind(ModelSite = artmodel$data$ModelSite, originalXobs)
   
   outofsample_y <- simulate_fit(artmodel, esttype = 1, UseFittedLV = FALSE)
   outofsample_lppd <- lppd.newdata(artmodel,
-               Xocc = cbind(ModelSite = 1:nrow(originalXocc), originalXocc),
-               yXobs = cbind(ModelSite = artmodel$data$ModelSite, originalXobs, outofsample_y),
+               Xocc = originalXocc,
+               yXobs = cbind(originalXobs, outofsample_y),
                ModelSite = "ModelSite")
   
   # of a randomly selected NEW ModelSite
