@@ -160,7 +160,7 @@ poccupy_species <- function(fit, type = "median", conditionalLV = TRUE){
     colnames(draws) <- names(theta)
   }
   
-  nspecies <- length(speciesnames)
+  nspecies <- length(fit$data$n)
   u.b_arr <- bugsvar2array(draws, "u.b", 1:nspecies, 1:ncol(Xocc))
   
   if ((!is.null(nlv) && (nlv > 0))){
@@ -180,7 +180,26 @@ poccupy_species <- function(fit, type = "median", conditionalLV = TRUE){
   }
   
   pocc <- poccupy_species_raw(fit$data$Xocc, u.b_arr, lv.coef_arr, LVvals)
-  colnames(pocc) <- speciesnames
+  colnames(pocc) <- fit$species
+  return(pocc)
+}
+
+poccupy_new_data <- function(fit, Xocc){
+  Xocc <- apply.designmatprocess(fit$XoccProcess, Xocc)
+  if ((!is.null(nlv) && (nlv > 0))){
+    #simulate LV values!
+    lv.coef_arr <- bugsvar2array(draws, "lv.coef", 1:nspecies, 1:nlv)
+    LVvals <- matrix(rnorm(nlv * nrow(draws)),
+                     nrow = nrow(draws),
+                     ncol = nlv)
+  } else { #model has no LV
+    stopifnot(!conditionalLV)
+    lv.coef_arr <- NULL
+    LVvals <- NULL
+  }
+  
+  pocc <- poccupy_species_raw(Xocc, u.b_arr, lv.coef_arr, LVvals)
+  colnames(pocc) <- fit$species
   return(pocc)
 }
 
