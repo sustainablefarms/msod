@@ -118,7 +118,7 @@ pdetect_condoccupied <- function(fit, type = "median"){
   if (!fit$summary.available){ fit <- add.summary(fit)}
   fit$data <- as_list_format(fit$data)
 
-  if (type == "marginal"){
+  if (is.character(type) && type == "marginal"){
     draws <- do.call(rbind, fit$mcmc)
   } else {
     theta <- get_theta(fit, type)
@@ -152,7 +152,7 @@ pdetect_condoccupied <- function(fit, type = "median"){
 #' @return A matrix of occupany probabilities. Each row is a ModelSite, corresponding to the rows in Xocc. Each column is a species.
 #' @export
 poccupy_species <- function(fit, type = "median", conditionalLV = TRUE){
-  if (type == "marginal"){
+  if (is.character(type) && type == "marginal"){
     draws <- do.call(rbind, fit$mcmc)
   } else {
     theta <- get_theta(fit, type)
