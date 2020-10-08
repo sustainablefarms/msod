@@ -116,22 +116,22 @@ pdetect_indvisit <- function(fit, type = "median", conditionalLV = TRUE){
 #' @param ModelSite A list mapping each row in \code{Xobs} to the row in \code{Xocc} that represents the ModelSite visited.
 #' @return A matrix of detection probabilities. Each row is a visit, corresponding to the rows in Xobs. Each column is a species.
 #' @export
-pdetect_condoccupied <- function(fit, type = "median", Xobs = NULL){
+pdetect_condoccupied <- function(fit, type = "median"){
   if (!fit$summary.available){ fit <- add.summary(fit)}
-  fitdata <- as_list_format(fit$data)
-  
-  # build list of point estimates
-  theta <- get_theta(fit, type = type)
+  fit$data <- as_list_format(fit$data)
+
+  if (type == "marginal"){
+    draws <- do.call(rbind, fit$mcmc)
+  } else {
+    theta <- get_theta(fit, type)
+    draws <- matrix(theta, nrow = 1)
+    colnames(draws) <- names(theta)
+  }
   
   ## v.b (detection coefficients)
-  v.b <- bugsvar2matrix(theta, "v.b", 1:fitdata$n, 1:fitdata$Vobs) # rows are species, columns are observation (detection) covariates
- 
-  ## Get observation covariates 
-  if (is.null(Xobs)){Xobs <- fitdata$Xobs}
+  v.b_arr <- bugsvar2array(draws, "v.b", 1:fit$data$n, 1:fit$data$Vobs) # rows are species, columns are observation (detection) covariates
   
-  ## Probability of Detection, assuming occupied
-  Detection.LinPred <- Xobs %*% t(v.b)
-  Detection.Pred <- exp(Detection.LinPred) / (exp(Detection.LinPred) + 1)   #this is the inverse logit function
+  Detection.Pred <- pdetection_occupied_raw(fit$data$Xobs, v.b_arr)
   
   if (!is.null(fit$species)){colnames(Detection.Pred) <- fit$species} # a special modification of runjags with occupation detection meta info
   return(Detection.Pred)
