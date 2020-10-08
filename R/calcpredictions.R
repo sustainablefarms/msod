@@ -94,11 +94,9 @@ pdetect_indvisit <- function(fit, type = "median", conditionalLV = TRUE){
   Visits.DetCond.Pred <- pdetect_condoccupied(fit, type = type)
  
   # combine with probability of occupancy 
-  fitdata <- as_list_format(fit$data)
-  if (is.null(ModelSite)){
-    if ("ObservedSite" %in% names(fitdata)){ModelSite <- fitdata$ObservedSite} #to enable calculation on the early fitted objects with different name
-    if ("ModelSite" %in% names(fitdata)){ModelSite <- fitdata$ModelSite}
-  }
+  fit$data <- as_list_format(fit$data)
+  if ("ObservedSite" %in% names(fit$data)){ModelSite <- fit$data$ObservedSite} #to enable calculation on the early fitted objects with different name
+  if ("ModelSite" %in% names(fit$data)){ModelSite <- fit$data$ModelSite}
   
   ## Full Probability of Detection (marginalises across occupancy, detection and latent variables)
   Detection.Pred.Marg <- ModelSite.Occ.Pred[ModelSite, ] * Visits.DetCond.Pred
