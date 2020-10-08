@@ -160,7 +160,9 @@ poccupy_species <- function(fit, type = "median", conditionalLV = TRUE){
     colnames(draws) <- names(theta)
   }
   
-  nspecies <- length(fit$data$n)
+  Xocc <- fit$data$Xocc
+  nlv <- fit$data$nlv
+  nspecies <- fit$data$n
   u.b_arr <- bugsvar2array(draws, "u.b", 1:nspecies, 1:ncol(Xocc))
   
   if ((!is.null(nlv) && (nlv > 0))){
@@ -206,7 +208,6 @@ poccupy_new_data <- function(fit, Xocc){
 poccupy_species_raw <- function(Xocc, u.b_arr, lv.coef_arr = NULL, LVvals = NULL){
   if (length(dim(LVvals)) == 3){
     stopifnot(dim(lv.coef_arr)[[3]] == dim(LVvals)[[3]])
-    stopifnot(dim(LVvals)[[1]] == 1)
     pocc_l <- lapply(1:nrow(Xocc), function(siteid){
       poccupy.ModelSite(Xocc[siteid, , drop = FALSE], 
                         u.b_arr, 
