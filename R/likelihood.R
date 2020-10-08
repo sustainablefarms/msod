@@ -160,13 +160,15 @@ likelihood_joint_marginal.ModelSite <- function(Xocc, Xobs, y, u.b_arr, v.b_arr,
   stopifnot(length(dim(u.b_arr)) == 3)
   drawid <- 1:dim(u.b_arr)[[3]]
 
-  Likl_margLV <- lapply(drawid, 
+  Likl_margLV <- vapply(drawid, 
                         function(thetaid) likelihood_joint_marginal.ModelSite.theta(
-    Xocc, Xobs, y,
-    u.b = drop_to_matrix(u.b_arr[,, thetaid, drop = FALSE], dimdrop = 3),
-    v.b = drop_to_matrix(v.b_arr[,, thetaid, drop = FALSE], dimdrop = 3),
-    lv.coef = drop_to_matrix(lv.coef_arr[,, thetaid, drop = FALSE], dimdrop = 3),
-    lvsim))
+        Xocc, Xobs, y,
+        u.b = drop_to_matrix(u.b_arr[,, thetaid, drop = FALSE], dimdrop = 3),
+        v.b = drop_to_matrix(v.b_arr[,, thetaid, drop = FALSE], dimdrop = 3),
+        lv.coef = drop_to_matrix(lv.coef_arr[,, thetaid, drop = FALSE], dimdrop = 3),
+        lvsim),
+        FUN.VALUE = -0.001
+    )
   return(Likl_margLV)
 }
 
