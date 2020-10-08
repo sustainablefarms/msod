@@ -160,41 +160,49 @@ poccupy_species <- function(fit, type = "median", conditionalLV = TRUE){
     colnames(draws) <- names(theta)
   }
   
-  pocc <- poccupy_species_raw(draws, fit$data$Xocc, fit$species, fit$data$nlv, conditionalLV = conditionalLV)
+  nspecies <- length(speciesnames)
+  u.b_arr <- bugsvar2array(draws, "u.b", 1:nspecies, 1:ncol(Xocc))
+  
+  if ((!is.null(nlv) && (nlv > 0))){
+    if (conditionalLV){
+      lv.coef_arr <- bugsvar2array(draws, "lv.coef", 1:nspecies, 1:nlv)
+      LVvals <- bugsvar2array(draws, "LV", 1:nrow(Xocc), 1:nlv)
+    } else {#simulate LV values!
+      lv.coef_arr <- bugsvar2array(draws, "lv.coef", 1:nspecies, 1:nlv)
+      LVvals <- matrix(rnorm(nlv * nrow(draws)),
+                       nrow = nrow(draws),
+                       ncol = nlv)
+    }
+  } else { #model has no LV
+    stopifnot(!conditionalLV)
+    lv.coef_arr <- NULL
+    LVvals <- NULL
+  }
+  
+  pocc <- poccupy_species_raw(fit$data$Xocc, u.b_arr, lv.coef_arr, LVvals)
+  colnames(pocc) <- speciesnames
   return(pocc)
 }
 
-poccupy_species_raw <- function(draws, Xocc, speciesnames, nlv = NULL, conditionalLV = TRUE){
-  nspecies <- length(speciesnames)
-  u.b_arr <- bugsvar2array(draws, "u.b", 1:nspecies, 1:ncol(Xocc))
-  if (conditionalLV){
-    lv.coef_arr <- bugsvar2array(draws, "lv.coef", 1:nspecies, 1:nlv)
-    LVvals <- bugsvar2array(draws, "LV", 1:nrow(Xocc), 1:nlv)
+poccupy_species_raw <- function(Xocc, u.b_arr, lv.coef_arr = NULL, LVvals = NULL){
+  if (length(dim(LVvals)) == 3){
+    stopifnot(dim(lv.coef_arr)[[3]] == dim(LVvals)[[3]])
+    stopifnot(dim(LVvals)[[1]] == 1)
     pocc_l <- lapply(1:nrow(Xocc), function(siteid){
       poccupy.ModelSite(Xocc[siteid, , drop = FALSE], 
                         u.b_arr, 
                         lv.coef_arr, 
                         LVvals[siteid, , , drop = FALSE])
     })
-  } else if (!is.null(nlv) && (nlv > 0)){ #simulate LV values!
-    lv.coef_arr <- bugsvar2array(draws, "lv.coef", 1:nspecies, 1:nlv)
-    LVvals <- matrix(rnorm(nlv * nrow(draws)),
-                     nrow = nrow(draws),
-                     ncol = nlv)
+  } else {
     pocc_l <- lapply(1:nrow(Xocc), function(siteid){
       poccupy.ModelSite(Xocc[siteid, , drop = FALSE], 
                         u.b_arr, 
                         lv.coef_arr, 
                         LVvals)
-    }) 
-  } else {
-    pocc_l <- lapply(1:nrow(Xocc), function(siteid){
-      poccupy.ModelSite(Xocc[siteid, , drop = FALSE], 
-                        u.b_arr)
-    }) 
+    })
   }
   pocc <- do.call(rbind, pocc_l)
   
-  colnames(pocc) <- speciesnames
   return(pocc)
 }
