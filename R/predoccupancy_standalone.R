@@ -24,9 +24,8 @@
 #' @param Xocc a matrix of covariates in same scale as inputs to the fitted model *before* scaling and centering. Each row is a ModelSite
 #' @export
 poccupancy_standalone_nolv <- function(Xocc, XoccProcess, u.b){
-  XoccStd <- model.matrix(as.formula(XoccProcess$fmla), data = as.data.frame(Xocc))
-  XoccStd <- scale(XoccStd, center = XoccProcess$center, scale = XoccProcess$scale)
-  
+  XoccStd <- apply.designmatprocess(XoccProcess, Xocc)
+
   # occupancy probability
   ModelSite.Occ.eta <- as.matrix(XoccStd) %*% t(u.b)
   ModelSite.Occ.Pred <- 1 - pnorm(-ModelSite.Occ.eta, mean = 0, sd = 1)

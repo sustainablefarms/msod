@@ -1,6 +1,6 @@
 context("Likelihoods and Predictions Historically Consistent")
 
-fit <- readRDS(system.file("extdata", "cutfit_7_4_11_2LV.rds", package="sustfarmld"))
+fit <- readRDS("./private/data/testdata/cutfit_7_4_11_2LV.rds")
 
 test_that("Likelihood is historically consistent", {
   # lvsim <- matrix(rnorm(fit$data$nlv * numlvsims), ncol = fit$data$nlv, nrow = numlvsims)
