@@ -15,22 +15,18 @@
 #'  computes the expected number of detections of each species *independent* of other species.
 #' @param fit is a fitted runjags model
 #' @param type is the type of point estimate to use. See get_theta for supported options.
-#' @param Xocc A matrix of occupancy coefficient, with each row corresponding to a ModelSite (i.e. a spatial location and year).
-#'  If \code{NULL} the Xocc data saved in \code{fit} will be used.
-#' @param Xobs A matrix of observation (detection) coefficients. Default is the observation coefficients saved in \code{fit}
-#' @param ModelSite A list mapping each row in \code{Xobs} to the row in \code{Xocc} that represents the ModelSite visited.
 #' @param conditionalLV If TRUE returned probabilities are conditioned on estimated latent variable values (and species are independent due to model structure)
 #' If FALSE returned probabilities assume no knowledge of the latent variable values and that species are independent.
 #' @return A 2 dimensional array. For each species (column) and each model site (row), the expected number of detections.
 #' @export
-Endetect_modelsite <- function(fit, type = "median", Xocc = NULL, Xobs = NULL, ModelSite = NULL, conditionalLV = TRUE){
+Endetect_modelsite <- function(fit, type = "median", conditionalLV = TRUE){
   if (!fit$summary.available){ fit <- add.summary(fit)}
   
   # Get ModelSite Occupany Predictions
-  ModelSite.Occ.Pred <- poccupy_species(fit, type = type, Xocc = Xocc, conditionalLV = conditionalLV)
+  ModelSite.Occ.Pred <- poccupy_species(fit, type = type, conditionalLV = conditionalLV)
   
   # Get Detection Probabilities Assuming Occupied
-  Visits.DetCond.Pred <- pdetect_condoccupied(fit, type = type, Xobs = Xobs)
+  Visits.DetCond.Pred <- pdetect_condoccupied(fit, type = type)
   
   # combine with probability of occupancy 
   fitdata <- as_list_format(fit$data)
