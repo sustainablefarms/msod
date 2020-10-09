@@ -13,6 +13,7 @@ Imports:
     lubridate,
     readxl,
     testthat,
+    dplyr,
     ncdf4
 Suggests:
     arrangements,
@@ -22,6 +23,8 @@ Suggests:
     runjags,
     ggplot2,
     car,
+    odbc,
+    sp,
     corrplot
 ByteCompile: true
 Roxygen: list(markdown = TRUE)
