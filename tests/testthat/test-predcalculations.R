@@ -172,7 +172,7 @@ test_that("pdetect_condoccupied and poccupy_species ordering of sites / visits w
 
 test_that("Expected number of detections for each model site matches the simulated mean number of observations", {
   fit <- artificial_runjags()
-  Endetections <- Endetect_modelsite(fit, type = 1)
+  Endetections <- Endetect_modelsite(fit, type = 1)$E_ndetect
   
   simulate_combinevisits <- function(fit, esttype){
     sim <- simulate_fit(fit, esttype = 1, UseFittedLV = TRUE)
