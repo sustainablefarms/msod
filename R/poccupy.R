@@ -7,20 +7,17 @@
 #' @param u.b_arr A 3-array of occupancy covariates. Each row is a species, each column is a covariate, and layer is a draw from the posterior.
 #' @details Compute the probability of each species individually (non-joint) using the full posterior distribution for a single ModelSite.
 poccupy.ModelSite <- function(Xocc, u.b_arr, lv.coef_arr = NULL, LVvals = NULL){
-  if (is.null(lv.coef_arr) && is.null(LVvals)){
-    lv.coef <- matrix(0, nrow = nrow(u.b_arr), ncol = 2)
-    LVvals <- matrix(0, nrow = 1, ncol = 2)
+  if (is.null(lv.coef_arr) && is.null(LVvals)){ #model doesn't have latent variables
     pocc_l <- lapply(1:dim(u.b_arr)[[3]],
                      function(drawid){
                        pocc <- poccupy.ModelSite.theta(Xocc, 
-                                                       drop_to_matrix(u.b_arr[,, drawid, drop = FALSE]),
-                                                       lv.coef,
-                                                       LVvals)
+                                                       drop_to_matrix(u.b_arr[,, drawid, drop = FALSE])
+                       )
                        return(pocc)
                      })
   }
   
-  if (length(dim(LVvals)) == 3){
+  if (length(dim(LVvals)) == 3){ #model has LV and the probabilities are conditional on the fitted LV value.
     stopifnot(dim(lv.coef_arr)[[3]] == dim(LVvals)[[3]])
     stopifnot(dim(LVvals)[[1]] == 1)
     

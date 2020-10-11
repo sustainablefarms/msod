@@ -41,11 +41,6 @@ expectedspeciesnum.ModelSite.theta <- function(Xocc, Xobs = NULL, u.b, v.b = NUL
   stopifnot(nrow(Xocc) == 1)
   if (is.null(Xobs)) {stopifnot(is.null(v.b))}
   Xocc <- as.matrix(Xocc)
-  if (is.null(lv.coef)){ # create dummy LV  
-    stopifnot(is.null(LVvals))
-    lv.coef <- matrix(0, nrow = nrow(u.b), ncol = 2)
-    LVvals <- matrix(0, nrow = 2, ncol = 2)
-    } # dummy LV
   ModelSite.Occ.Pred.CondLV <- poccupy.ModelSite.theta(Xocc, u.b, lv.coef, LVvals)
   
   ## Expected number of species occupying modelsite, given model and theta, and marginal across LV

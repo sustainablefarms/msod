@@ -211,9 +211,7 @@ poccupy_species_raw <- function(Xocc, u.b_arr, lv.coef_arr = NULL, LVvals = NULL
   } else {
     pocc_l <- lapply(1:nrow(Xocc), function(siteid){
       poccupy.ModelSite(Xocc[siteid, , drop = FALSE], 
-                        u.b_arr, 
-                        lv.coef_arr, 
-                        LVvals)
+                        u.b_arr)
     })
   }
   pocc <- do.call(rbind, pocc_l)
