@@ -47,6 +47,7 @@ test_that("Expected Individual Species Detections are Historically Consistent", 
   En_condLV <- Endetect_modelsite(fit, type = 1, conditionalLV = TRUE)$E_ndetect
   expect_known_output(En_condLV, file = "En_condLV.txt", print = TRUE, update = FALSE)
   
+  set.seed(232413)
   En_margLV <- Endetect_modelsite(fit, type = 1, conditionalLV = FALSE)$E_ndetect
   expect_known_output(En_margLV, file = "En_margLV.txt", print = TRUE, update = FALSE)
 })

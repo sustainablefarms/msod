@@ -23,7 +23,7 @@ Endetect_modelsite <- function(fit, type = "median", conditionalLV = TRUE){
   if (!fit$summary.available){ fit <- add.summary(fit)}
   
   # Get ModelSite Occupany Predictions
-  ModelSite.Occ.Pred <- poccupy_species(fit, type = type, conditionalLV = conditionalLV, numLVsims = 1E10)
+  ModelSite.Occ.Pred <- poccupy_species(fit, type = type, conditionalLV = conditionalLV, numLVsims = 1E4)
   
   # Get Detection Probabilities Assuming Occupied
   Visits.DetCond.Pred <- pdetect_condoccupied(fit, type = type)
