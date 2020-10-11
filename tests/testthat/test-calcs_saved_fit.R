@@ -26,7 +26,7 @@ test_that("Occupancy of species prediction is historically consistent", {
   pocc_theta01_margLV <- poccupy_species(fit, type = 1, conditionalLV = FALSE)
   rownames(pocc_theta01_margLV) <- 1:10
   names(dimnames(pocc_theta01_margLV)) <- c("", "row")
-  expect_known_output(pocc_theta01_margLV, file = "pocc_theta01_margLV.txt", print = TRUE, update = TRUE) #values saves from code commit 072c730
+  expect_known_output(pocc_theta01_margLV, file = "pocc_theta01_margLV.txt", print = TRUE, update = FALSE) #values saved from code with commit ef9fe09c1da
 })
 
 test_that("Detection Probility of Species is historically consistent", { #values generate from code at commit 072c730
