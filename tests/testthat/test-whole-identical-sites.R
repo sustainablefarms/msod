@@ -1,9 +1,8 @@
 # test that the following are consistent: 
-library(testthat)
-library(sustfarmld)
 # simulation data, runjags MCMC (posterior distribution matches true), predicted likelihoods, expected species detections, DS residuals
 
 context("Wholistic tests using identical, independent, ModelSites")
+skip_if(parallel::detectCores() < 10)
 
 # Create a process with known parameters
 artmodel <- artificial_runjags(nspecies = 5, nsites = 2000, nvisitspersite = 2, nlv = 0,
@@ -32,11 +31,13 @@ fit_runjags <- run.detectionoccupancy(originalXocc, cbind(originalXobs, artmodel
 cl <- parallel::makeCluster(10)
 lkl_runjags <- likelihoods.fit(fit_runjags, cl = cl)
 lkl_artmodel <- likelihoods.fit(artmodel, cl = cl)
-Enumspec <- predsumspecies(fit_runjags, UseFittedLV = FALSE, cl = cl)
+Enumspec <- predsumspecies(fit_runjags, UseFittedLV = FALSE, type = "marginal", cl = cl)
 parallel::stopCluster(cl)
 
 save(fit_runjags, artmodel, originalXocc, originalXobs,
-     lkl_runjags, lkl_artmodel,  Enumspec, file = "./tests/testthat/benchmark_identicalsitesmodel.Rdata")
+     lkl_runjags, lkl_artmodel,  Enumspec, file = "../../tests/testthat/benchmark_identicalsitesmodel.Rdata")
+
+load("benchmark_identicalsitesmodel.Rdata")
 
 test_that("Posterior credible distribution overlaps true parameters", {
   var2compare <- colnames(artmodel$mcmc[[1]])

@@ -7,13 +7,9 @@ context("Wholistic tests on model with different ModelSites and LVs")
 artmodel <- artificial_runjags(nspecies = 60, nsites = 2000, nvisitspersite = 2, nlv = 4)
 
 # fit to data and simulations using runjags
-originalXocc <- Rfast::eachrow(Rfast::eachrow(artmodel$data$Xocc, artmodel$XoccProcess$scale, oper = "*"),
-                               artmodel$XoccProcess$center, oper = "+")
-colnames(originalXocc) <- colnames(artmodel$data$Xocc)
+originalXocc <- unstandardise.designmatprocess(artmodel$XoccProcess, artmodel$data$Xocc)
 originalXocc <- cbind(ModelSite = 1:nrow(originalXocc), originalXocc)
-originalXobs <- Rfast::eachrow(Rfast::eachrow(artmodel$data$Xobs, artmodel$XobsProcess$scale, oper = "*"),
-                               artmodel$XobsProcess$center, oper = "+")
-colnames(originalXobs) <- colnames(artmodel$data$Xobs)
+originalXobs <- unstandardise.designmatprocess(artmodel$XobsProcess, artmodel$data$Xobs)
 originalXobs <- cbind(ModelSite = artmodel$data$ModelSite, originalXobs)
 
 fit_runjags <- run.detectionoccupancy(originalXocc, cbind(originalXobs, artmodel$data$y), 
