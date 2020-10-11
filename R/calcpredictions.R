@@ -163,11 +163,12 @@ poccupy_species <- function(fit, type = "median", conditionalLV = TRUE, numLVsim
     if (conditionalLV){
       lv.coef_arr <- bugsvar2array(draws, "lv.coef", 1:nspecies, 1:nlv)
       LVvals <- bugsvar2array(draws, "LV", 1:nrow(Xocc), 1:nlv)
-    } else {#simulate LV values!
-      lv.coef_arr <- bugsvar2array(draws, "lv.coef", 1:nspecies, 1:nlv)
-      LVvals <- matrix(rnorm(nlv * numLVsims),
-                       nrow = numLVsims,
-                       ncol = nlv)
+    } else { #unknown LV values, with known lv.coef
+      #however, as poccupy is looking at each species individually, 
+      #the lv.coefs can be ignored when not conditional on the LV
+      #(the occupancy variable is a Gaussian with mean given by Xocc, and variance of 1)
+      lv.coef_arr <- NULL
+      LVvals <- NULL
     }
   } else { #model has no LV
     stopifnot(!conditionalLV)
@@ -180,19 +181,14 @@ poccupy_species <- function(fit, type = "median", conditionalLV = TRUE, numLVsim
   return(pocc)
 }
 
-poccupy_new_data <- function(fit, Xocc){
+poccupy_new_data <- function(fit, Xocc, numLVsims){
   Xocc <- apply.designmatprocess(fit$XoccProcess, Xocc)
-  if ((!is.null(nlv) && (nlv > 0))){
-    #simulate LV values!
-    lv.coef_arr <- bugsvar2array(draws, "lv.coef", 1:nspecies, 1:nlv)
-    LVvals <- matrix(rnorm(nlv * nrow(draws)),
-                     nrow = nrow(draws),
-                     ncol = nlv)
-  } else { #model has no LV
-    stopifnot(!conditionalLV)
-    lv.coef_arr <- NULL
-    LVvals <- NULL
-  }
+  #unknown LV values, with known lv.coef
+  #as poccupy is looking at each species individually, 
+  #the lv.coefs can be ignored when not conditional on the LV
+  #(the occupancy variable is a Gaussian with mean given by Xocc, and variance of 1)
+  lv.coef_arr <- NULL
+  LVvals <- NULL
   
   pocc <- poccupy_species_raw(Xocc, u.b_arr, lv.coef_arr, LVvals)
   colnames(pocc) <- fit$species
