@@ -133,7 +133,7 @@ test_that("In sample data; fitted LV values", {
   expect_equal(meandiff[ncol(numspec)], 0, tol = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
-  expect_lt(abs(meandiff[length(meandiff)]), max(abs(meandiff[floor(length(meandiff) / 20) + 1:50 ])))
+  expect_lt(abs(meandiff[length(meandiff)]), max(abs(meandiff[floor(length(meandiff) / 20) + 1:20 ])))
   
   Enum_compare_sum <- Enum_compare(NumSpecies,
                as.matrix(numspec["Esum_det_median", ], ncol = 1),
@@ -260,7 +260,7 @@ test_that("In sample data; no LV", {
   expect_equal(meandiff[ncol(Enumspecdet)], 0, tol = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
-  expect_lt(abs(meandiff[length(meandiff)]), abs(mean(meandiff[floor(length(meandiff) / 20) + 1:50 ])))
+  expect_lt(abs(meandiff[length(meandiff)]), max(abs(meandiff[floor(length(meandiff) / 20) + 1:20 ])))
   
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
   ininterval <- (NumSpecies > Enumspecdet["Esum_det", ] - 2 * sqrt(Enumspecdet["Vsum_det", ])) & 
