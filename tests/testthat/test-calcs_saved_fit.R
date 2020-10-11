@@ -17,15 +17,15 @@ test_that("Likelihood is historically consistent", {
   expect_known_output(lkl_sites, file = "lkl_sites.txt", print = TRUE, update = FALSE)
 })
 
+library(sustfarmld); library(testthat)
 test_that("Occupancy of species prediction is historically consistent", {
   pocc_theta01_condLV <- poccupy_species(fit, type = 1, conditionalLV = TRUE)
-  expect_known_output(pocc_theta01, file = "pocc_theta01_condLV.txt", print = TRUE, update = FALSE)
+  expect_known_output(pocc_theta01_condLV, file = "pocc_theta01_condLV.txt", print = TRUE, update = FALSE)
   
-  pocc_theta01_margLV <- poccupy_species(fit, type = 1, conditionalLV = TRUE)
-  expect_known_output(pocc_theta01, file = "pocc_theta01_margLV.txt", print = TRUE, update = FALSE)
+  pocc_theta01_margLV <- poccupy_species(fit, type = 1, conditionalLV = FALSE)
+  expect_known_output(pocc_theta01_margLV, file = "pocc_theta01_margLV.txt", print = TRUE, update = FALSE) #values saves from code commit 072c730
 })
 
-library(sustfarmld); library(testthat)
 test_that("Detection Probility of Species is historically consistent", { #values generate from code at commit 072c730
   pdet_theta01 <- pdetect_condoccupied(fit, type = 1)
   expect_known_output(pdet_theta01, file = "pdet_theta01.txt", print = TRUE, update = FALSE)
