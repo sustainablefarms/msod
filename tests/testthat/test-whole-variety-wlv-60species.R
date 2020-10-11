@@ -2,6 +2,7 @@
 # compare artmodel generated likelihood and Enum species to fit_runjags versions, and Enum species to observations
 
 context("Wholistic tests on model with different ModelSites and LVs")
+skip_if(parallel::detectCores() < 10)
 
 # Create a process with known parameters
 artmodel <- artificial_runjags(nspecies = 60, nsites = 2000, nvisitspersite = 2, nlv = 4)
