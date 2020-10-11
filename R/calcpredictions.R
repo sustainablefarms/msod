@@ -23,7 +23,7 @@ Endetect_modelsite <- function(fit, type = "median", conditionalLV = TRUE){
   if (!fit$summary.available){ fit <- add.summary(fit)}
   
   # Get ModelSite Occupany Predictions
-  ModelSite.Occ.Pred <- poccupy_species(fit, type = type, conditionalLV = conditionalLV)
+  ModelSite.Occ.Pred <- poccupy_species(fit, type = type, conditionalLV = conditionalLV, numLVsims = 1E10)
   
   # Get Detection Probabilities Assuming Occupied
   Visits.DetCond.Pred <- pdetect_condoccupied(fit, type = type)
@@ -145,7 +145,7 @@ pdetect_condoccupied <- function(fit, type = "median"){
 #'  If \code{NULL} the Xocc data saved in \code{fit} will be used.
 #' @return A matrix of occupany probabilities. Each row is a ModelSite, corresponding to the rows in Xocc. Each column is a species.
 #' @export
-poccupy_species <- function(fit, type = "median", conditionalLV = TRUE){
+poccupy_species <- function(fit, type = "median", conditionalLV = TRUE, numLVsims = 10000){
   if (is.character(type) && type == "marginal"){
     draws <- do.call(rbind, fit$mcmc)
   } else {
@@ -165,8 +165,8 @@ poccupy_species <- function(fit, type = "median", conditionalLV = TRUE){
       LVvals <- bugsvar2array(draws, "LV", 1:nrow(Xocc), 1:nlv)
     } else {#simulate LV values!
       lv.coef_arr <- bugsvar2array(draws, "lv.coef", 1:nspecies, 1:nlv)
-      LVvals <- matrix(rnorm(nlv * nrow(draws)),
-                       nrow = nrow(draws),
+      LVvals <- matrix(rnorm(nlv * numLVsims),
+                       nrow = numLVsims,
                        ncol = nlv)
     }
   } else { #model has no LV
