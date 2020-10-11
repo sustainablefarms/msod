@@ -71,7 +71,7 @@ test_that("Uncertainty dominated by latent variables.", {
                   obsnum = NumSpecies,
                   SIMPLIFY = TRUE)
   # although LV not supplied, the LV vals are not far from Gaussian so expect the predictions marginal across the LV distribution will work
-  expect_gt(mean(inci_margLV), 0.9)
+  expect_gt(mean(inci_margLV), 0.8)
   
   # expect the confidence intervals to be larger when LV isn't known
   expect_true(all(ci_margLVsize - ci_fittedLVsize >= 0))
