@@ -26,15 +26,15 @@ test_that("Occupancy of species prediction is historically consistent", {
   pocc_theta01_margLV <- poccupy_species(fit, type = 1, conditionalLV = FALSE)
   rownames(pocc_theta01_margLV) <- 1:10
   names(dimnames(pocc_theta01_margLV)) <- c("", "row")
-  expect_known_output(pocc_theta01_margLV, file = "pocc_theta01_margLV.txt", print = TRUE, update = FALSE) #values saved from code with commit ef9fe09c1da
+  expect_known_output(pocc_theta01_margLV, file = "pocc_theta01_margLV.txt", print = TRUE, update = FALSE) #values saved from code with commit a0812ddad
 })
 
-test_that("Detection Probility of Species is historically consistent", { #values generate from code at commit 072c730
+test_that("Detection Probility of Species is historically consistent", { #values generate from code at commit a0812ddad
   pdet_theta01 <- pdetect_condoccupied(fit, type = 1)
   expect_known_output(pdet_theta01, file = "pdet_theta01.txt", print = TRUE, update = FALSE)
 })
 
-test_that("Expected Biodiversity is Historically Consistent", { #values generate from code at commit 072c730
+test_that("Expected Biodiversity is Historically Consistent", { #values generate from code at commit a0812ddad
   Enspecies_condLV <- predsumspecies(fit, UseFittedLV = TRUE, type = "marginal")
   expect_known_output(Enspecies_condLV, file = "Especrich_condLV.txt", print = TRUE, update = FALSE)
   
@@ -43,7 +43,7 @@ test_that("Expected Biodiversity is Historically Consistent", { #values generate
   expect_known_output(Enspecies_margLV, file = "Especrich_margLV.txt", print = TRUE, update = FALSE)
 })
 
-test_that("Expected Individual Species Detections are Historically Consistent", { #values generate from code at commit 072c730
+test_that("Expected Individual Species Detections are Historically Consistent", { #values generate from code at commit a0812ddad
   En_condLV <- Endetect_modelsite(fit, type = 1, conditionalLV = TRUE)$E_ndetect
   expect_known_output(En_condLV, file = "En_condLV.txt", print = TRUE, update = FALSE)
   
