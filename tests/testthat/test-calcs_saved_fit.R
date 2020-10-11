@@ -22,19 +22,25 @@ test_that("Occupancy of species prediction is historically consistent", {
   expect_known_output(pocc_theta01, file = "pocc_theta01.txt", print = TRUE, update = FALSE)
 })
 
+library(sustfarmld); library(testthat)
+test_that("Detection Probility of Species is historically consistent", { #values generate from code at commit 072c730
+  pdet_theta01 <- pdetect_condoccupied(fit, type = 1)
+  expect_known_output(pdet_theta01, file = "pdet_theta01.txt", print = TRUE, update = FALSE)
+})
+
 test_that("Expected Biodiversity is Historically Consistent", { #values generate from code at commit 072c730
-  Enspecies_condLV <- predsumspecies(fit, UseFittedLV = TRUE)
+  Enspecies_condLV <- predsumspecies(fit, UseFittedLV = TRUE, type = "marginal")
   expect_known_output(Enspecies_condLV, file = "Especrich_condLV.txt", print = TRUE, update = FALSE)
   
   set.seed(1341) #for simulated LV values
-  Enspecies_margLV <- predsumspecies(fit, UseFittedLV = FALSE)
+  Enspecies_margLV <- predsumspecies(fit, UseFittedLV = FALSE, type = "marginal")
   expect_known_output(Enspecies_margLV, file = "Especrich_margLV.txt", print = TRUE, update = FALSE)
 })
 
 test_that("Expected Individual Species Detections are Historically Consistent", { #values generate from code at commit 072c730
-  En_condLV <- Endetect_modelsite(fit, type = 1, conditionalLV = TRUE)
+  En_condLV <- Endetect_modelsite(fit, type = 1, conditionalLV = TRUE)$E_ndetect
   expect_known_output(En_condLV, file = "En_condLV.txt", print = TRUE, update = FALSE)
   
-  En_margLV <- Endetect_modelsite(fit, type = 1, conditionalLV = FALSE)
+  En_margLV <- Endetect_modelsite(fit, type = 1, conditionalLV = FALSE)$E_ndetect
   expect_known_output(En_margLV, file = "En_margLV.txt", print = TRUE, update = FALSE)
 })
