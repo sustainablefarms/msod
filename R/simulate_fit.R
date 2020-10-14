@@ -51,10 +51,10 @@ simulate_fit <- function(fit, esttype = "median", UseFittedLV = TRUE){
 #' @param u.b.min, u.b.max, v.b.min, v.b.max The upper and lower bouonds of the u.b and v.b parameters.
 #'  May be a single number or an array with rows corresponding to species and columns to covariates.
 #' @param lv.coef.min, lv.coef.max Same as u.b.min and u.b.max for the latent variable loadings.
-#'  @examples 
-#'  artfit <- artificial_runjags(nspecies = 2, nsites = 10, nvisitspersite = 4, nlv = 2)
-#'  # with high correlation between occupancy of species
-#'  artfit <- artificial_runjags(nspecies = 2, nsites = 10, nvisitspersite = 4, nlv = 2,
+#' @examples 
+#' artfit <- artificial_runjags(nspecies = 2, nsites = 10, nvisitspersite = 4, nlv = 2)
+#' \# with high correlation between occupancy of species
+#' artfit <- artificial_runjags(nspecies = 2, nsites = 10, nvisitspersite = 4, nlv = 2,
 #'                               OccFmla = "~ 1",
 #'                               u.b.min = 0.8,
 #'                               lv.coef.min = 0.3)

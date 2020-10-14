@@ -1,5 +1,4 @@
 #' @title Standalone Occupancy Probabilities and Biodiversity Across Sites
-#' @rdname predict_standalone
 #' @description Operates for models without latent variables. 
 #' Given occupancy parameters, computes the probability of each species being detected at each site and at *any* site.
 #' @details From Xocc a matrix of the model's cannonical covariates will be computed and then centred and scaled according to [XoccProcess].
@@ -19,7 +18,7 @@
 #' Vrichness <- sum(pocc_any * (1 - pocc_any))
 #' 
 
-#' @describeIn predict_standalone Predicts occupancy of species at each site for a model without latent variables.
+#' @describeIn predict_standalone_nolv Predicts occupancy of species at each site for a model without latent variables.
 #' @return A matrix. Each row is a row of Xocc (a model site), each column is a species. Values are the probabilty a species occupies the model site.
 #' @param Xocc a matrix of covariates in same scale as inputs to the fitted model *before* scaling and centering. Each row is a ModelSite
 #' @export
@@ -32,7 +31,7 @@ poccupancy_standalone_nolv <- function(Xocc, XoccProcess, u.b){
   return(ModelSite.Occ.Pred)
 }
 
-#' @describeIn predict_standalone The probability of occupancy in any of the ModelSites, where ModelSites are treated as independent.
+#' @describeIn predict_standalone_nolv The probability of occupancy in any of the ModelSites, where ModelSites are treated as independent.
 #' @param poccupancy is an output of poccupancy_standalone_nolv. Each row is a ModelSite, each column is a species.
 #' Values are the probability of a species occupying a ModelSite
 #' @export
@@ -42,7 +41,7 @@ panyoccupancy_indsites_nolv <- function(poccupancy){
   return(anyoccupancy)
 }
 
-#' @describeIn predict_standalone For species richness across multiple independent ModelSites 
+#' @describeIn predict_standalone_nolv For species richness across multiple independent ModelSites 
 #' @export
 multisiterichness_nolv <- function(Xocc, XoccProcess, u.b){
   poccupancy <- poccupancy_standalone_nolv(Xocc, XoccProcess, u.b)
