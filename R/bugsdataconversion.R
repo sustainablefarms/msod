@@ -1,5 +1,5 @@
 #' @title Converting BUGS Variable Names
-#' @describeIn bugsvar2array For converting values for array-valued parameters from the bugs variable format to an array
+#' @description For converting values for array-valued parameters from the bugs variable format to an array
 #' @param values is a list of values named according to the bugs variables names
 #' @param varname is the desired variable name (e.g. 'u.b')
 #' @param rowidx is a list of rows to extract, by number
