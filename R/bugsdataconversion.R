@@ -1,4 +1,4 @@
-#' @title Converting BUGS Variable Names
+#' @title Converting Parameter Values in BUGS Name and Format to Arrays and Matrices
 #' @description For converting values for array-valued parameters from the bugs variable format to an array
 #' @param values is a list of values named according to the bugs variables names
 #' @param varname is the desired variable name (e.g. 'u.b')
@@ -40,40 +40,6 @@ matrix2bugsvar <- function(theta, name){
   bugsnames <- paste0(name, "[",idx$row, ",", idx$col, "]") #order matters, expand.grid must go through rows and then columns
   names(values) <- bugsnames
   return(values)
-}
-
-#' @title A helper function to get a vector of parameters from a fitted object
-#' @param fit fitted runjags object with summary included
-#' @param type An integer will select the draw from the posterior
-#' (e.g. type = 5 will return the vector of parameters in the 5th sample from the posterior, mcmc chains are concatenated)
-#' A charactor vector can be used to the parameters based on summarary statistics like quantiles and moments.
-#' Supported values so far "median" and "mean".
-#' If [type] is "marginal" or "all" then all draws are returned.
-#' @export
-get_theta <- function(fit, type){
-  if (is.numeric(type) && length(type) > 1 && !is.null(names(type))){ #assumed passed 'type' is actually the desired theta
-    return(type)
-  }
-  if (is.numeric(type) && length(type) == 1){
-    chainidx <- floor(type / (fit$sample + 1 )) + 1
-    sampleinchain <- type - fit$sample * (chainidx - 1)
-    theta <- fit$mcmc[[chainidx]][sampleinchain, ]
-    return(theta)
-  }
-  if (type == "median"){theta <- apply(do.call(rbind, fit$mcmc), MARGIN = 2, median)}
-  if (type == "mean"){theta <- apply(do.call(rbind, fit$mcmc), MARGIN = 2, mean)}
-  if (type == "marginal" | type == "all"){theta <- do.call(rbind, fit$mcmc)}
-  return(theta)
-}
-
-#' @title A quick replacement to [runjags::list.format()] that does nothing if the argument is already a list.
-#' @param data Same as [runjags::list.format()]. Typically found in the `data` slot of runjags object.
-#' @param checkvalid See [runjags::list.format()].
-#' @export as_list_format
-as_list_format <- function(data, checkvalid = TRUE){
-  if ("list" %in% class(data)){return(data)}
-  out <- runjags::list.format(data, checkvalid = checkvalid)
-  return(out)
 }
 
 drop_to_matrix <- function(array, dimdrop = 3){
