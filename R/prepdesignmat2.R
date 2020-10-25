@@ -19,7 +19,7 @@ prep.designmatprocess_v2 <- function(indata, fmla, keep = NULL, drop = NULL){
   wanteddata <- fmlaNdata$indata[, keep, drop = FALSE]
   
   # check that above extraction got all required data
-  tryCatch(mf <- model.matrix(fmlaNdata$fmla, wanteddata),
+  tryCatch(mf <- model.matrix(fmlaNdata$fmla, data = wanteddata),
            error = function(e) stop(paste("Didn't parse formula correctly and required columns have been removed.",
                                            "Use argument 'keep' to ensure column remains.", 
                                            e)))
