@@ -10,16 +10,13 @@ artmodel <- artificial_runjags(nspecies = 5, nsites = 2000, nvisitspersite = 2, 
                                OccFmla = "~ 1")
 
 # fit to data and simulations using runjags
-originalXocc <- Rfast::eachrow(Rfast::eachrow(artmodel$data$Xocc, artmodel$XoccProcess$scale, oper = "*"),
-                               artmodel$XoccProcess$center, oper = "+")
-colnames(originalXocc) <- colnames(artmodel$data$Xocc)
-originalXocc <- cbind(ModelSite = 1:nrow(originalXocc), originalXocc)
-originalXobs <- Rfast::eachrow(Rfast::eachrow(artmodel$data$Xobs, artmodel$XobsProcess$scale, oper = "*"),
-                               artmodel$XobsProcess$center, oper = "+")
-colnames(originalXobs) <- colnames(artmodel$data$Xobs)
-originalXobs <- cbind(ModelSite = artmodel$data$ModelSite, originalXobs)
+origXocc <- unstandardise.designmatprocess(artmodel$XoccProcess, artmodel$data$Xocc)
+origXocc <- cbind(ModelSite = 1:nrow(origXocc), origXocc)
 
-fit_runjags <- run.detectionoccupancy(originalXocc, cbind(originalXobs, artmodel$data$y), 
+origXobs <- unstandardise.designmatprocess(artmodel$XobsProcess, artmodel$data$Xobs)
+origXobs <- cbind(ModelSite = artmodel$data$ModelSite, origXobs)
+
+fit_runjags <- run.detectionoccupancy(origXocc, cbind(origXobs, artmodel$data$y), 
                        species = colnames(artmodel$data$y),
                        ModelSite = "ModelSite",
                        OccFmla = artmodel$XoccProcess$fmla,
