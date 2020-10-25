@@ -42,7 +42,7 @@ apply.designmatprocess_v2 <- function(designmatprocess, indata){
   datastd <- apply_center_n_scale(fmlaNdata$indata, designmatprocess$center, designmatprocess$scale)
   origNAaction <- options("na.action" = "na.pass") #setting so that model.matrix preserves the NA values
   designmat <- model.matrix(fmlaNdata$fmla, as.data.frame(datastd), na.rm = FALSE)
-  options("na.action" = origNAaction) # returning setting
+  options(origNAaction) # returning setting
   return(designmat)
 }
 
