@@ -31,13 +31,16 @@ runjags.options(rjo)
 cl <- parallel::makeCluster(10)
 lkl_runjags <- likelihoods.fit(fit_runjags, cl = cl)
 lkl_artmodel <- likelihoods.fit(artmodel, cl = cl)
+pbopt <- pbapply::pboptions(type = "none")
 Enumspec <- predsumspecies(fit_runjags, UseFittedLV = FALSE, type = "marginal", cl = cl)
+pbapply::pboptions(pbopt)
 parallel::stopCluster(cl)
 
 save(fit_runjags, artmodel, origXocc, origXobs,
      lkl_runjags, lkl_artmodel,  Enumspec, file = "../../tests/testthat/benchmark_identicalsitesmodel.Rdata")
 
 load("benchmark_identicalsitesmodel.Rdata")
+pbopt <- pbapply::pboptions(type = "none")
 
 test_that("Posterior credible distribution overlaps true parameters", {
   var2compare <- colnames(artmodel$mcmc[[1]])
@@ -129,3 +132,5 @@ test_that("Expected Number of Detected Species", {
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
   expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
 })
+
+pbapply::pboptions(pbopt)
