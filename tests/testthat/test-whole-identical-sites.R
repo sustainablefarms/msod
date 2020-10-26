@@ -4,6 +4,8 @@
 context("Wholistic tests using identical, independent, ModelSites")
 skip_if(parallel::detectCores() < 10)
 
+rjo <- runjags::runjags.options("silent.jags" = TRUE)
+
 # Create a process with known parameters
 artmodel <- artificial_runjags(nspecies = 5, nsites = 2000, nvisitspersite = 2, nlv = 0,
                                ObsFmla = "~ 1",
@@ -24,6 +26,7 @@ fit_runjags <- run.detectionoccupancy(origXocc, cbind(origXobs, artmodel$data$y)
                        initsfunction = function(chain, indata){return(NULL)},
                        MCMCparams = list(n.chains = 2, adapt = 1000, burnin = 10000, sample = 500, thin = 40),
                        nlv = 0)
+runjags.options(rjo)
 
 cl <- parallel::makeCluster(10)
 lkl_runjags <- likelihoods.fit(fit_runjags, cl = cl)
@@ -31,7 +34,7 @@ lkl_artmodel <- likelihoods.fit(artmodel, cl = cl)
 Enumspec <- predsumspecies(fit_runjags, UseFittedLV = FALSE, type = "marginal", cl = cl)
 parallel::stopCluster(cl)
 
-save(fit_runjags, artmodel, originalXocc, originalXobs,
+save(fit_runjags, artmodel, origXocc, origXobs,
      lkl_runjags, lkl_artmodel,  Enumspec, file = "../../tests/testthat/benchmark_identicalsitesmodel.Rdata")
 
 load("benchmark_identicalsitesmodel.Rdata")
@@ -126,4 +129,3 @@ test_that("Expected Number of Detected Species", {
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
   expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
 })
-

@@ -1,6 +1,8 @@
 context("Wholistic tests on model with different ModelSites and no LVs")
 skip_if(parallel::detectCores() < 10)
 
+rjo <- runjags::runjags.options("silent.jags" = TRUE)
+
 # Create a process with known parameters
 artmodel <- artificial_runjags(nspecies = 10, nsites = 2000, nvisitspersite = 2, nlv = 0)
 
@@ -18,7 +20,9 @@ fit_runjags <- run.detectionoccupancy(originalXocc, cbind(originalXobs, artmodel
                                       initsfunction = function(chain, indata){return(NULL)},
                                       MCMCparams = list(n.chains = 2, adapt = 1000, burnin = 10000, sample = 500, thin = 40),
                                       nlv = 0)
-save(fit_runjags, artmodel, originalXocc, originalXobs, file = "./tests/testthat/benchmark_varietysitesmodel_nolv.Rdata")
+save(fit_runjags, artmodel, originalXocc, originalXobs, file = "benchmark_varietysitesmodel_nolv.Rdata")
+
+runjags.options(rjo)
 
 gwk <- tibble::enframe(coda::geweke.diag(fit_runjags, frac1=0.1, frac2=0.5)$z, name = "varname")
 qqnorm(gwk$value)
@@ -114,4 +118,3 @@ test_that("Expected Number of Detected Species", {
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
   expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
 })
-

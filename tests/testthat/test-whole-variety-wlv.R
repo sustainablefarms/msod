@@ -4,6 +4,8 @@
 context("Wholistic tests on model with different ModelSites and LVs")
 skip_if(parallel::detectCores() < 10)
 
+rjo <- runjags::runjags.options("silent.jags" = TRUE)
+
 # Create a process with known parameters
 artmodel <- artificial_runjags(nspecies = 10, nsites = 2000, nvisitspersite = 2, nlv = 4)
 
@@ -22,6 +24,8 @@ fit_runjags <- run.detectionoccupancy(originalXocc, cbind(originalXobs, artmodel
                                       # MCMCparams = list(n.chains = 2, adapt = 1000, burnin = 10000, sample = 500, thin = 40),
                                       nlv = 4)
 save(fit_runjags, artmodel, originalXocc, originalXobs, file = "./tests/testthat/benchmark_varietysitesmodel_initsgiven.Rdata")
+
+runjags.options(rjo)
 
 gwk <- tibble::enframe(coda::geweke.diag(fit_runjags, frac1=0.1, frac2=0.5)$z, name = "varname")
 qqnorm(gwk$value)

@@ -11,6 +11,8 @@ test_that("Prep works with complicated formula", {
   origXobs <- unstandardise.designmatprocess(artmodel$XobsProcess, artmodel$data$Xobs)
   origXobs <- cbind(ModelSite = artmodel$data$ModelSite, origXobs)
   
+  rjo <- runjags::runjags.options("silent.jags" = TRUE)
+  
   fit_runjags <- run.detectionoccupancy(origXocc, cbind(origXobs, artmodel$data$y), 
                                         species = colnames(artmodel$data$y),
                                         ModelSite = "ModelSite",
@@ -19,7 +21,11 @@ test_that("Prep works with complicated formula", {
                                         initsfunction = function(chain, indata){return(NULL)},
                                         MCMCparams = list(n.chains = 1, adapt = 0, burnin = 0, sample = 1, thin = 1),
                                         nlv = 4)
+  
+  runjags.options(rjo)
+  
   expect_equal(fit_runjags$XoccProcess$version, 2)
   expect_equal(fit_runjags$XobsProcess$version, 2)
   expect_gt(sum(grepl("sigma", colnames(fit_runjags$mcmc[[1]]))), 0)
 })
+
