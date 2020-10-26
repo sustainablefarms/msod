@@ -7,7 +7,7 @@ skip_if(parallel::detectCores() < 10)
 rjo <- runjags::runjags.options("silent.jags" = TRUE)
 
 # Create a process with known parameters
-artmodel <- artificial_runjags(nspecies = 5, nsites = 2000, nvisitspersite = 2, nlv = 0,
+artmodel <- artificial_runjags(nspecies = 10, nsites = 2000, nvisitspersite = 2, nlv = 0,
                                ObsFmla = "~ 1",
                                OccFmla = "~ 1")
 
@@ -46,7 +46,7 @@ test_that("Posterior credible distribution overlaps true parameters", {
   var2compare <- colnames(artmodel$mcmc[[1]])
   inCI <- (fit_runjags$summaries[var2compare, "Lower95"] <= artmodel$mcmc[[1]][1, var2compare]) &
     (fit_runjags$summaries[var2compare, "Upper95"] >= artmodel$mcmc[[1]][1, var2compare])
-  expect_equal(mean(inCI), 0.95, tol = 0.051)
+  expect_equal(sum(inCI), qbinom(0.95, size = length(var2compare), prob = 0.95, lower.tail = FALSE))
 })
 
 
