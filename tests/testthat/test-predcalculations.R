@@ -193,7 +193,7 @@ test_that("Expected number of detections for each model site matches the simulat
   skewdetnum <- apply(sims, MARGIN = c(1, 2), Rfast::skew)
   SE <- sddetnum/ sqrt(n)
   
-  expect_gt(mean( abs(Endetections - meandetnum)/ SE < 2),  
-                      0.95)
+  expect_equal(mean( abs(Endetections - meandetnum)/ SE < 2),  
+                      0.95, tolerance = 0.03)
   # image(abs(Endetections - meandetnum)/ SE < 2)
 })
