@@ -21,7 +21,7 @@ library(coda)
 library(runjags)
 library(ggplot2)
 library(patchwork)
-library(sustfarmld)
+library(msod)
 ```
 
 ```{r varname2type}

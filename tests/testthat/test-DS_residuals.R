@@ -1,6 +1,4 @@
-library(testthat);
 library(discreteRV)
-library(sustfarmld)
 
 context("Tests of Dunn-Smyth Residuals")
 

@@ -65,7 +65,7 @@ test_that("Predicted likelihoods match observations", {
   }
   cl <- parallel::makeCluster(10)
   parallel::clusterExport(cl, c("makemoreobs", "fit_runjags", "artmodel"))
-  parallel::clusterEvalQ(cl, library(sustfarmld))
+  parallel::clusterEvalQ(cl, library(msod))
   jointoutcomes_more <- pbapply::pbreplicate(10000, makemoreobs(), simplify = FALSE, cl = cl)
   
   # likelihood by simulation
