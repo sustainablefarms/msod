@@ -171,7 +171,7 @@ test_that("pdetect_condoccupied and poccupy_species ordering of sites / visits w
 })
 
 test_that("Expected number of detections for each model site matches the simulated mean number of observations", {
-  fit <- artificial_runjags()
+  fit <- artificial_runjags(nspecies = 100)
   Endetections <- Endetect_modelsite(fit, type = 1)$E_ndetect
   
   simulate_combinevisits <- function(fit, esttype){
@@ -194,7 +194,6 @@ test_that("Expected number of detections for each model site matches the simulat
   SE <- sddetnum/ sqrt(n)
   
   expect_gt(mean( abs(Endetections - meandetnum)/ SE < 2),  
-            #expect this to be true for 95% of model sites, but seems to be closer to 90% a lot of the time. WHY!!??
-                      0.90)
+                      0.95)
   # image(abs(Endetections - meandetnum)/ SE < 2)
 })
