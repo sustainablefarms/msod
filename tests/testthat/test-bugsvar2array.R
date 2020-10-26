@@ -1,5 +1,5 @@
 # test bugsvar2array
-library(testthat)
+context("Conversion to and from BUGS variable format")
 
 # build test array
 idx <- expand.grid(row = 1:4, col = 1:3)

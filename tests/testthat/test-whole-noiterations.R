@@ -1,5 +1,5 @@
 
-Context("Runjags with few iterations")
+context("Runjags with few iterations")
 
 test_that("Prep works with complicated formula", {
   artmodel <- artificial_runjags(nspecies = 60, nsites = 100, nvisitspersite = 2, nlv = 4,

@@ -1,6 +1,6 @@
 # test of simulation methods.
 
-Context("Simulation Methods")
+context("Simulation Methods")
 
 test_that("Opposite loadings of LV gives anticorrelated simulated detections for species", {
   # simulate for species with high Detection, opposite impact by the LV
