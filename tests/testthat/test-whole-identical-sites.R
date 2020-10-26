@@ -50,19 +50,19 @@ test_that("Posterior credible distribution overlaps true parameters", {
 })
 
 
+# extra, fake observations for more accurate simulated likelihood
+makemoreobs <- function(){
+  my_add <- cbind(ModelSite = fit_runjags$data$ModelSite, simulate_fit(artmodel, esttype = 1, UseFittedLV = FALSE))
+  obs_per_site_add <- lapply(1:nrow(fit_runjags$data$Xocc), function(x) my_add[my_add[, "ModelSite"] == x, -1])
+  jointoutcomes_add <- vapply(obs_per_site_add, paste0, collapse = ",", FUN.VALUE = "achar")
+  return(jointoutcomes_add)
+}
 
 test_that("Predicted likelihoods match observations", {
   my <- cbind(ModelSite = fit_runjags$data$ModelSite, fit_runjags$data$y)
   obs_per_site <- lapply(1:nrow(fit_runjags$data$Xocc), function(x) my[my[, "ModelSite"] == x, -1])
   jointoutcomes <- vapply(obs_per_site, paste0, collapse = ",", FUN.VALUE = "achar")
   
-  # extra, fake observations for more accurate simulated likelihood
-  makemoreobs <- function(){
-    my_add <- cbind(ModelSite = fit_runjags$data$ModelSite, simulate_fit(artmodel, esttype = 1, UseFittedLV = FALSE))
-    obs_per_site_add <- lapply(1:nrow(fit_runjags$data$Xocc), function(x) my_add[my_add[, "ModelSite"] == x, -1])
-    jointoutcomes_add <- vapply(obs_per_site_add, paste0, collapse = ",", FUN.VALUE = "achar")
-    return(jointoutcomes_add)
-  }
   cl <- parallel::makeCluster(10)
   parallel::clusterExport(cl, c("makemoreobs", "fit_runjags", "artmodel"))
   parallel::clusterEvalQ(cl, library(msod))
