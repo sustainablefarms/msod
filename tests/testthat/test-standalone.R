@@ -13,7 +13,9 @@ test_that("standalone matches poccupy_species", {
 
 test_that("Multisite richness function matches others for single sites", {
   fit <- artificial_runjags(nspecies = 60, nsites = 100, nvisitspersite = 1, nlv = 0)
+  pbopt <- pbapply::pboptions(type = "none")
   Erichnesspersite <- predsumspecies(fit, UseFittedLV = FALSE, type = "marginal")
+  pbapply::pboptions(pbopt)
   
   XoccOrig <- unstandardise.designmatprocess(fit$XoccProcess, fit$data$Xocc)
   theta <- get_theta(fit, type = 1)
@@ -32,7 +34,7 @@ test_that("Multisite richness goes to max for many sites", {
   u.b <- bugsvar2matrix(theta, "u.b", 1:fit$data$n, 1:ncol(fit$data$Xocc))
   Erichness <- multisiterichness_nolv(XoccOrig, fit$XoccProcess, u.b)
   expect_equal(Erichness[["Erichness"]], fit$data$n)
-  expect_equal(Erichness[["Vrichness"]], 0)
+  expect_equal(Erichness[["Vrichness"]], 0, tolerance = 1E-6)
 })
 
 test_that("Occupancy of any site is larger than occupancy of any single individual site", {
