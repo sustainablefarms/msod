@@ -1,6 +1,7 @@
 # test expected number of species
 
 context("Number of Detected Species Expected")
+pbopt <- pbapply::pboptions(type = "none")
 
 # tests:
 # multiple different draws*****
@@ -586,3 +587,4 @@ test_that("Expected occupied number for in sample data; fitted LV values", {
   expect_equal(meandiff[ncol(Enumspecdet)], 0, tol = 3 * sd_final)
 })
 
+pbapply::pboptions(pbopt)

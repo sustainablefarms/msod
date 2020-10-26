@@ -4,6 +4,7 @@ library(testthat)
 library(runjags)
 runjags.options(silent.jags = TRUE)
 runjags.options(silent.runjags = TRUE)
+pbopt <- pbapply::pboptions(type = "none")
 
 context("Tests of Likelihood Computations")
 
@@ -196,3 +197,5 @@ test_that("Likelihood computations match simulations with LV, multiple visits", 
   expect_equivalent(lkl, lkl_sim, tolerance = 0.01)
 })
 
+
+pbapply::pboptions(pbopt)

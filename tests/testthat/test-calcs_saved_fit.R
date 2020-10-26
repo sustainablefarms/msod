@@ -1,6 +1,6 @@
 context("Likelihoods and Predictions Historically Consistent")
 
-fit <- readRDS("../../private/data/testdata/cutfit_7_4_11_2LV.rds")
+fit <- readRDS("../../../sflddata/private/data/testdata/cutfit_7_4_11_2LV.rds")
 
 test_that("Likelihood is historically consistent", {
   # lvsim <- matrix(rnorm(fit$data$nlv * numlvsims), ncol = fit$data$nlv, nrow = numlvsims)
@@ -17,7 +17,6 @@ test_that("Likelihood is historically consistent", {
   expect_known_output(lkl_sites, file = "lkl_sites.txt", print = TRUE, update = FALSE)
 })
 
-library(sustfarmld); library(testthat)
 test_that("Occupancy of species prediction is historically consistent", {
   pocc_theta01_condLV <- poccupy_species(fit, type = 1, conditionalLV = TRUE)
   expect_known_output(pocc_theta01_condLV, file = "pocc_theta01_condLV.txt", print = TRUE, update = FALSE)
@@ -35,12 +34,14 @@ test_that("Detection Probility of Species is historically consistent", { #values
 })
 
 test_that("Expected Biodiversity is Historically Consistent", { #values generate from code at commit a0812ddad
+  pbopt <- pbapply::pboptions(type = "none")
   Enspecies_condLV <- predsumspecies(fit, UseFittedLV = TRUE, type = "marginal")
   expect_known_output(Enspecies_condLV, file = "Especrich_condLV.txt", print = TRUE, update = FALSE)
   
   set.seed(1341) #for simulated LV values
   Enspecies_margLV <- predsumspecies(fit, UseFittedLV = FALSE, type = "marginal")
   expect_known_output(Enspecies_margLV, file = "Especrich_margLV.txt", print = TRUE, update = FALSE)
+  pbapply::pboptions(pbopt)
 })
 
 test_that("Expected Individual Species Detections are Historically Consistent", { #values generate from code at commit a0812ddad

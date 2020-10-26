@@ -1,6 +1,7 @@
 library(discreteRV)
 
 context("Full distributions of species numbers")
+pbopt <- pbapply::pboptions(type = "none")
 
 ci95generous <- function(rv){
   cs <- cumsum(probs(rv))
@@ -125,3 +126,5 @@ test_that("Credible intervals accurate for model without restrictions.", {
   par(mfrow = c(4, 5))
   # mapply(comparervplot, rv1 = sumRVs_margpost_margLV[smallerci], rv2 = sumRVs_margpost_fittedLV[smallerci])
 })
+
+pbapply::pboptions(pbopt)
