@@ -14,14 +14,14 @@ test_that("Error does not occur using prep design matrix process twice", {
   OccFmla = "~ 1"
   XoccProcess <- prep.designmatprocess(covardf$Xocc, OccFmla)
   Xocc <- apply.designmatprocess(XoccProcess, covardf$Xocc)
-  expect_success(XoccProcess <- prep.designmatprocess(covardf$Xocc, OccFmla))
+  expect_silent(XoccProcess <- prep.designmatprocess(covardf$Xocc, OccFmla))
 })
 
 test_that("Error does not occur via artificial_runjags", {
   artmodel <- artificial_runjags(nspecies = 5, nsites = 2000, nvisitspersite = 2, nlv = 0,
                                  ObsFmla = "~ 1",
                                  OccFmla = "~ 1")
-  expect_success(artificial_runjags(nspecies = 5, nsites = 2000, nvisitspersite = 2, nlv = 0,
+  expect_silent(artmodel <- artificial_runjags(nspecies = 5, nsites = 2000, nvisitspersite = 2, nlv = 0,
                                   ObsFmla = "~ 1",
                                   OccFmla = "~ 1"))
 })
@@ -30,5 +30,5 @@ test_that("Error does not occur using prep design matrix process twice", {
   covardf <- simulate_covar_data(20, 2)
   OccFmla = "~ 1"
   XoccProcess <- prep.designmatprocess(covardf$Xocc, OccFmla)
-  expect_success(XoccProcess <- prep.designmatprocess(covardf$Xocc, OccFmla))
+  expect_silent(XoccProcess <- prep.designmatprocess(covardf$Xocc, OccFmla))
 })
