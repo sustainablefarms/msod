@@ -18,7 +18,7 @@ origXocc <- cbind(ModelSite = 1:nrow(origXocc), origXocc)
 origXobs <- unstandardise.designmatprocess(artmodel$XobsProcess, artmodel$data$Xobs)
 origXobs <- cbind(ModelSite = artmodel$data$ModelSite, origXobs)
 
-fit_runjags <- run.detectionoccupancy(origXocc, cbind(origXobs, artmodel$data$y), 
+fit_runjags <- run.detectionoccupancy(origXocc, cbind(origXobs, artmodel$data$y),
                        species = colnames(artmodel$data$y),
                        ModelSite = "ModelSite",
                        OccFmla = artmodel$XoccProcess$fmla,
@@ -51,7 +51,7 @@ test_that("Posterior credible distribution overlaps true parameters", {
 
 
 # extra, fake observations for more accurate simulated likelihood
-makemoreobs <- function(){
+makemoreobs <<- function(){
   my_add <- cbind(ModelSite = fit_runjags$data$ModelSite, simulate_fit(artmodel, esttype = 1, UseFittedLV = FALSE))
   obs_per_site_add <- lapply(1:nrow(fit_runjags$data$Xocc), function(x) my_add[my_add[, "ModelSite"] == x, -1])
   jointoutcomes_add <- vapply(obs_per_site_add, paste0, collapse = ",", FUN.VALUE = "achar")
@@ -59,12 +59,13 @@ makemoreobs <- function(){
 }
 
 test_that("Predicted likelihoods match observations", {
+  load("benchmark_identicalsitesmodel.Rdata", envir = .GlobalEnv)
   my <- cbind(ModelSite = fit_runjags$data$ModelSite, fit_runjags$data$y)
   obs_per_site <- lapply(1:nrow(fit_runjags$data$Xocc), function(x) my[my[, "ModelSite"] == x, -1])
   jointoutcomes <- vapply(obs_per_site, paste0, collapse = ",", FUN.VALUE = "achar")
   
   cl <- parallel::makeCluster(10)
-  parallel::clusterExport(cl, c("makemoreobs", "fit_runjags", "artmodel"))
+  parallel::clusterExport(cl, c("makemoreobs", "fit_runjags", "artmodel"), envir = .GlobalEnv)
   parallel::clusterEvalQ(cl, library(msod))
   jointoutcomes_more <- pbapply::pbreplicate(10000, makemoreobs(), simplify = FALSE, cl = cl)
   
