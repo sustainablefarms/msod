@@ -46,7 +46,7 @@ test_that("Posterior credible distribution overlaps true parameters", {
   var2compare <- colnames(artmodel$mcmc[[1]])
   inCI <- (fit_runjags$summaries[var2compare, "Lower95"] <= artmodel$mcmc[[1]][1, var2compare]) &
     (fit_runjags$summaries[var2compare, "Upper95"] >= artmodel$mcmc[[1]][1, var2compare])
-  expect_equal(sum(inCI), qbinom(0.95, size = length(var2compare), prob = 0.95, lower.tail = FALSE))
+  expect_gte(sum(inCI), qbinom(0.95, size = length(var2compare), prob = 0.95, lower.tail = FALSE))
 })
 
 

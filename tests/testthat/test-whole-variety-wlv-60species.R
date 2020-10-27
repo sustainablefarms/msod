@@ -98,8 +98,8 @@ test_that("Fitted likelihood matches true likelihood", {
 test_that("Expected Number of Detected Species", {
   cl <- parallel::makeCluster(10)
   pbopt <- pbapply::pboptions(type = "none")
-  Enumspec <- predsumspecies(fit_runjags, UseFittedLV = TRUE, cl = cl)
-  Enumspec_art <- predsumspecies(artmodel, UseFittedLV = TRUE, cl = cl)
+  Enumspec <- predsumspecies(fit_runjags, UseFittedLV = TRUE, type = "marginal", cl = cl)
+  Enumspec_art <- predsumspecies(artmodel, UseFittedLV = TRUE, type = "marginal", cl = cl)
   pbapply::pboptions(pbopt)
   parallel::stopCluster(cl)
   cbind(rj = t(Enumspec), art = t(Enumspec_art)) %>%

@@ -81,16 +81,16 @@ test_that("Fitted likelihood matches true likelihood", {
   lkl_artmodel <- likelihoods.fit(artmodel, cl = cl)
   parallel::stopCluster(cl)
   expect_equivalent(Rfast::colmeans(lkl_runjags), Rfast::colmeans(lkl_artmodel), tol = 0.01)
-  expect_equivalent(Rfast::colmeans(lkl_runjags) - Rfast::colmeans(lkl_artmodel),
+  expect_equivalent((Rfast::colmeans(lkl_runjags) - Rfast::colmeans(lkl_artmodel)) / Rfast::colmeans(lkl_runjags),
                     rep(0, ncol(lkl_artmodel)),
-                    tol = 0.1 * Rfast::colmeans(lkl_artmodel))
+                    tol = 0.1)
 })
 
 test_that("Expected Number of Detected Species", {
   cl <- parallel::makeCluster(10)
   pbopt <- pbapply::pboptions(type = "none")
-  Enumspec <- predsumspecies(fit_runjags, UseFittedLV = FALSE, cl = cl)
-  Enumspec_art <- predsumspecies(artmodel, UseFittedLV = FALSE, cl = cl)
+  Enumspec <- predsumspecies(fit_runjags, UseFittedLV = FALSE, type = "marginal", cl = cl)
+  Enumspec_art <- predsumspecies(artmodel, UseFittedLV = FALSE, type = "marginal", cl = cl)
   pbapply::pboptions(pbopt)
   parallel::stopCluster(cl)
   cbind(rj = t(Enumspec), art = t(Enumspec_art)) %>%
