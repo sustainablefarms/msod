@@ -67,7 +67,7 @@ test_that("Predicted likelihoods match observations", {
   cl <- parallel::makeCluster(10)
   parallel::clusterExport(cl, c("makemoreobs", "fit_runjags", "artmodel"), envir = .GlobalEnv)
   parallel::clusterEvalQ(cl, library(msod))
-  jointoutcomes_more <- pbapply::pbreplicate(10000, makemoreobs(), simplify = FALSE, cl = cl)
+  jointoutcomes_more <- pbapply::pbreplicate(20000, makemoreobs(), simplify = FALSE, cl = cl)
   
   # likelihood by simulation
   jointoutcomes_all <- c(jointoutcomes, unlist(jointoutcomes_more))
@@ -79,13 +79,13 @@ test_that("Predicted likelihoods match observations", {
   
   # sim vs artmodel
   expect_equivalent(Rfast::colmeans(lkl_artmodel), lkl_sim, tolerance = 0.01)
-  reldiff_art_sim <- abs(Rfast::colmeans(lkl_artmodel) - lkl_sim) / lkl_sim
+  reldiff_art_sim <- abs(Rfast::colmeans(lkl_artmodel) - lkl_sim) / Rfast::colmeans(lkl_artmodel)
   expect_lt(quantile(reldiff_art_sim, probs = 0.9), 0.1)
   
   # sim vs runjags
   expect_equivalent(Rfast::colmeans(lkl_runjags), lkl_sim, tolerance = 0.01)
   reldiff_jags_sim <- abs(Rfast::colmeans(lkl_runjags) - lkl_sim) / lkl_sim
-  expect_lt(quantile(reldiff_art_sim, probs = 0.9), 0.1)
+  expect_lt(quantile(reldiff_jags_sim, probs = 0.9), 0.1)
   
    # runjags vs artmodel
   expect_equivalent(Rfast::colmeans(lkl_runjags), Rfast::colmeans(lkl_artmodel), tolerance = 0.01)

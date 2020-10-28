@@ -81,7 +81,7 @@ test_that("Fitted likelihood matches true likelihood", {
   lkl_artmodel <- likelihoods.fit(artmodel, cl = cl)
   parallel::stopCluster(cl)
   expect_equivalent(Rfast::colmeans(lkl_runjags), Rfast::colmeans(lkl_artmodel), tol = 0.01)
-  expect_equivalent((Rfast::colmeans(lkl_runjags) - Rfast::colmeans(lkl_artmodel)) / Rfast::colmeans(lkl_runjags),
+  expect_equivalent((Rfast::colmeans(lkl_runjags) - Rfast::colmeans(lkl_artmodel)) / Rfast::colmeans(lkl_artmodel),
                     rep(0, ncol(lkl_artmodel)),
                     tol = 0.1)
 })
@@ -94,7 +94,7 @@ test_that("Expected Number of Detected Species", {
   pbapply::pboptions(pbopt)
   parallel::stopCluster(cl)
   cbind(rj = t(Enumspec), art = t(Enumspec_art)) %>%
-    tibble::as_tibble() %>%
+    tibble::as_tibble(.name_repair = "minimal") %>%
     tibble::rowid_to_column() %>%
     ggplot2::ggplot()
   expect_equivalent(Enumspec, Enumspec_art, tol = 0.1)
