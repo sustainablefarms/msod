@@ -105,7 +105,7 @@ test_that("Expected Number of Detected Species", {
   cbind(rj = t(Enumspec), art = t(Enumspec_art)) %>%
     as_tibble() %>%
     tibble::rowid_to_column() %>%
-    ggplot()
+    ggplot2::ggplot()
   expect_equivalent(Enumspec, Enumspec_art)
   
   NumSpecies <- detectednumspec(y = fit_runjags$data$y, ModelSite = fit_runjags$data$ModelSite)

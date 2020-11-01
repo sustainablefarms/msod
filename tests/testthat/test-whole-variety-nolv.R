@@ -84,6 +84,9 @@ test_that("Fitted likelihood matches true likelihood", {
   expect_equivalent((Rfast::colmeans(lkl_runjags) - Rfast::colmeans(lkl_artmodel)) / Rfast::colmeans(lkl_artmodel),
                     rep(0, ncol(lkl_artmodel)),
                     tol = 0.1)
+  expect_equivalent((Rfast::colmeans(lkl_runjags) - Rfast::colmeans(lkl_artmodel)) / Rfast::colmeans(lkl_runjags),
+                    rep(0, ncol(lkl_artmodel)),
+                    tol = 0.1)
 })
 
 test_that("Expected Number of Detected Species", {
