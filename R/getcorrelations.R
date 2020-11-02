@@ -1,36 +1,52 @@
-# the code in this file has largely been taken from boral's [https://cran.r-project.org/package=boral] get.envir.cor and get.residual.cor
-## Produce the correlation due to similarity of responses to X
-get.enviro.cor <- function(object, est = "median", prob = 0.95) 
+# the code in this file has largely been taken from boral's get.envir.cor and get.residual.cor
+
+#' @title Compute inter-species correlations due to similarity of the occupancy linear predictor at model sites
+#' @param fit An object created by [run.detectionoccupancy()]
+#' @param est Stastical summary of draws to return.
+#' @param prob A significance level
+#' @details 
+#' For each draw from the posterior, 
+#' computes the correlation and covariance between the species-specific occupancy linear predictions without latent variables across all sites.
+#' The `est`, for each species, is returned.
+#' Significantly non-zero covariance or correlation is computed by [coda::HPDinterval()] according to the signficance level `prob`.
+#' @value
+#' A list of matrices. Column and row names are species names.
+#' `cor` is the correlation estimate computed according to `est`
+#' `cor.lower` is the lower bound of the highest posterior density interval for correlation
+#' `cor.upper` is the upper bound of the highest posterior density interval for correlation
+#' `sig.cor` is `cor` where all correlations with hpd that includes 0 are set to 0.
+#' `cov` is the covariance estimate computed accordting to `est`
+#' @examples 
+fit <- readRDS("../sflddata/private/data/testdata/cutfit_7_4_11_2LV.rds")
+cor_envir <- get.enviro.cor(fit, est = "median", prob = 0.95)
+
+#' @export
+get.enviro.cor <- function(fit, est = "median", prob = 0.95) 
 {
+  nsites <- nrow(fit$data$Xocc)
+  nsp <- ncol(fit$data$y)
+  spnames <- colnames(fit$data$y)
+  draws <- do.call(rbind, fit$mcmc)
   
-  if(is.null(object$jags.model)) 
-    stop("MCMC samples not found")
-  fit.mcmc <- get.mcmcsamples(object)
-  y <- object$y
-  X <- object$X
-  
-  if(length(grep("X.coefs", colnames(fit.mcmc))) == 0) 
-    stop("Cannot find MCMC sample corresponding to coefficients for X")
-  
-  n <- nrow(y); p <- ncol(y)
-  enviro_cor_mat <- enviro_cor_mat_cilower <- enviro_cor_mat_ciupper <- enviro_cov_mat <- matrix(0,p,p)
-  sig_enviro_cor_mat <- matrix(0,p,p)
-  if(is.null(colnames(y))) 
-    colnames(y) <- 1:ncol(y)
-  rownames(enviro_cor_mat) <- rownames(enviro_cor_mat_cilower) <- rownames(enviro_cor_mat_ciupper) <- rownames(enviro_cov_mat) <- rownames(sig_enviro_cor_mat) <- colnames(y)
-  colnames(enviro_cor_mat) <- colnames(enviro_cor_mat_cilower) <- colnames(enviro_cor_mat_ciupper) <- colnames(enviro_cov_mat) <- colnames(sig_enviro_cor_mat) <- colnames(y)
-  all_enviro_cov_mat <- all_enviro_cor_mat <- array(0, dim = c(nrow(fit.mcmc),p,p))
+  enviro_cor_mat <- enviro_cor_mat_cilower <- enviro_cor_mat_ciupper <- enviro_cov_mat <- matrix(0,nsp,nsp)
+  sig_enviro_cor_mat <- matrix(0,nsp,nsp)
+
+  rownames(enviro_cor_mat) <- rownames(enviro_cor_mat_cilower) <- rownames(enviro_cor_mat_ciupper) <- rownames(enviro_cov_mat) <- rownames(sig_enviro_cor_mat) <- spnames
+  colnames(enviro_cor_mat) <- colnames(enviro_cor_mat_cilower) <- colnames(enviro_cor_mat_ciupper) <- colnames(enviro_cov_mat) <- colnames(sig_enviro_cor_mat) <- spnames
+  all_enviro_cov_mat <- all_enviro_cor_mat <- array(0, dim = c(nrow(draws),nsp,nsp))
   
   
-  for(k0 in 1:nrow(fit.mcmc)) 
-  {
-    cw_X_coefs <- matrix(fit.mcmc[k0,grep("X.coefs", colnames(fit.mcmc))], nrow=p)
-    enviro.linpreds <- tcrossprod(X,as.matrix(cw_X_coefs))
+  for(k0 in 1:nrow(draws)) 
+  { ## compute correlations per draw
+    cw_X_coefs <- bugsvar2matrix(draws[k0, ], "u.b", 1:nsp, 1:ncol(fit$data$Xocc))
+    enviro.linpreds <- tcrossprod(fit$data$Xocc,as.matrix(cw_X_coefs))
+    #enviro.linpreds is the occupancy linear predictor without LV for posterior draw k0, for each species and ModelSite.
+    #each row is a ModelSite, each column is a species
     all_enviro_cov_mat[k0,,] <- cov(enviro.linpreds)
     all_enviro_cor_mat[k0,,] <- cor(enviro.linpreds) 
   }
   
-  for(j in 1:p) { for(j2 in 1:p) 
+  for(j in 1:nsp) { for(j2 in 1:nsp) 
   { ## Average/Median over the MCMC samples
     if(est == "median") 
     { 
@@ -44,7 +60,7 @@ get.enviro.cor <- function(object, est = "median", prob = 0.95)
     } 
     
     sig_enviro_cor_mat[j,j2] <- enviro_cor_mat[j,j2]
-    get.hpd.cors <- HPDinterval(as.mcmc(all_enviro_cor_mat[,j,j2]), prob = prob)
+    get.hpd.cors <- coda::HPDinterval(coda::as.mcmc(all_enviro_cor_mat[,j,j2]), prob = prob)
     enviro_cor_mat_cilower[j,j2] <- get.hpd.cors[1] 
     enviro_cor_mat_ciupper[j,j2] <- get.hpd.cors[2]
     if(0 > get.hpd.cors[1] & 0 < get.hpd.cors[2]) 
