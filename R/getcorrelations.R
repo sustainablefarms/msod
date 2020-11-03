@@ -72,54 +72,47 @@ get.enviro.cor <- function(fit, est = "median", prob = 0.95)
   return(list(cor = enviro_cor_mat, cor.lower = enviro_cor_mat_cilower, cor.upper = enviro_cor_mat_ciupper, sig.cor = sig_enviro_cor_mat, cov = enviro_cov_mat))
 }
 
-## Produce the residual correlation based on latent variables
+#' @title Compute inter-species correlations due to latent variable loadings
+#' @param fit An object created by [run.detectionoccupancy()]
+#' @param est Stastical summary of draws to return.
+#' @param prob The target probability coverage of highest probability density intervals.
+#' @details 
+#' @value
+#' @examples 
+fit <- readRDS("../sflddata/private/data/testdata/cutfit_7_4_11_2LV.rds")
+cor_res <- get.residual.cor(fit, est = "median", prob = 0.95)
+#' @export
 get.residual.cor <- function(object, est = "median", prob = 0.95) 
 {
-  if(is.null(object$jags.model)) 
-    stop("MCMC samples not found")
+  nsites <- nrow(fit$data$Xocc)
+  nsp <- ncol(fit$data$y)
+  spnames <- colnames(fit$data$y)
+  draws <- do.call(rbind, fit$mcmc)
+  num.lv <- fit$data$nlv
   
-  fit.mcmc <- get.mcmcsamples(object)
-  y <- object$y
-  X <- object$X
-  num.lv <- object$num.lv
+  sig_rescor_mat <- rescor_mat <- rescor_mat_cilower <- rescor_mat_ciupper <- rescov_mat <- matrix(0, nrow=nsp, ncol=nsp)
+  sig_respres_mat <- respres_mat <- respres_mat_cilower <- respres_mat_ciupper <- matrix(0, nrow=nsp, ncol=nsp)
+  rownames(rescor_mat) <- rownames(rescor_mat_cilower) <- rownames(rescor_mat_ciupper) <- rownames(sig_rescor_mat) <- colnames(rescor_mat) <- colnames(rescor_mat_cilower) <- colnames(rescor_mat_ciupper) <- colnames(sig_rescor_mat) <- spnames
+  rownames(respres_mat) <- rownames(respres_mat_cilower) <- rownames(respres_mat_ciupper) <- rownames(sig_respres_mat) <- colnames(respres_mat) <- colnames(respres_mat_cilower) <- colnames(respres_mat_ciupper) <- colnames(sig_respres_mat) <- spnames
+  rownames(rescov_mat) <- colnames(rescov_mat) <- spnames
+  all_rescor_mat <- all.rescov_mat <- all_respres_mat <- array(0, dim = c(nrow(draws),nsp,nsp))
+  all_trace_rescor <- numeric(nrow(draws))
   
-  if(length(grep("lvs", colnames(fit.mcmc))) == 0) 
-    stop("Cannot find MCMC samples corresponding to latent variables")
-  
-  n <- nrow(y)
-  p <- ncol(y)
-  sig_rescor_mat <- rescor_mat <- rescor_mat_cilower <- rescor_mat_ciupper <- rescov_mat <- matrix(0, nrow=p, ncol=p)
-  sig_respres_mat <- respres_mat <- respres_mat_cilower <- respres_mat_ciupper <- matrix(0, nrow=p, ncol=p)
-  if(is.null(colnames(y))) 
-    colnames(y) <- 1:ncol(y); 
-  rownames(rescor_mat) <- rownames(rescor_mat_cilower) <- rownames(rescor_mat_ciupper) <- rownames(sig_rescor_mat) <- colnames(rescor_mat) <- colnames(rescor_mat_cilower) <- colnames(rescor_mat_ciupper) <- colnames(sig_rescor_mat) <- colnames(y)
-  rownames(respres_mat) <- rownames(respres_mat_cilower) <- rownames(respres_mat_ciupper) <- rownames(sig_respres_mat) <- colnames(respres_mat) <- colnames(respres_mat_cilower) <- colnames(respres_mat_ciupper) <- colnames(sig_respres_mat) <- colnames(y)
-  rownames(rescov_mat) <- colnames(rescov_mat) <- colnames(y)
-  all_rescor_mat <- all.rescov_mat <- all_respres_mat <- array(0, dim = c(nrow(fit.mcmc),p,p))
-  all_trace_rescor <- numeric(nrow(fit.mcmc))
-  
-  for(k0 in 1:nrow(fit.mcmc)) 
+  for(k0 in 1:nrow(draws)) 
   {
-    lv.coefs <- matrix(fit.mcmc[k0,grep("lv.coefs", colnames(fit.mcmc))],nrow=p)
-    # 		if(all(object$family == "binomial") & all(object$trial.size == 1)) 
-    # 			lv.coefs[,2:(num.lv+1)] <- lv.coefs[,2:(num.lv+1)]/matrix(sqrt(1-rowSums(lv.coefs[,2:(num.lv+1)]^2)),nrow=p,ncol=num.lv,byrow=FALSE) ## If data is Bernoulli, then scale the coefficients to acocunt for constraints (see Knott and Bartholomew, Chapter 4)
+    lv.coefs <- bugsvar2matrix(draws[k0, ], "lv.coef", 1:nsp, 1:num.lv)
     
-    lambdalambdaT <- tcrossprod(as.matrix(lv.coefs[,2:(num.lv+1)]))
+    lambdalambdaT <- tcrossprod(as.matrix(lv.coefs)) 
+    # The loadings are multiplied and then summed. 
+    # This gives the covariance because the latent variable values are Gaussian in distribution
     all.rescov_mat[k0,,] <- (lambdalambdaT) 
     all_trace_rescor[k0] <- sum(diag(lambdalambdaT))
     
-    #  		if(all(object$family == "negative.binomial")) {
-    #    			get.var.phis <- numeric(p); 
-    #    			## Multiplicative Poisson gamma model implies a log gamma random effect on the linear predictors
-    #    			for(j in 1:p) 
-    # 				get.var.phis[j] <- var(log(rgamma(2000,shape=1/lv.coefs[j,ncol(lv.coefs)],rate=1/lv.coefs[j,ncol(lv.coefs)])))
-    # 			all.rescov_mat[k0,,] <- lambdalambdaT + diag(x=get.var.phis,nrow=p)
-    # 			}
     all_rescor_mat[k0,,] <- cov2cor(all.rescov_mat[k0,,]) 
-    all_respres_mat[k0,,] <- cor2pcor(lambdalambdaT)
+    all_respres_mat[k0,,] <- corpcor::cor2pcor(lambdalambdaT)
   }
   
-  for(j in 1:p) { for(j2 in 1:p) 
+  for(j in 1:nsp) { for(j2 in 1:nsp) 
   { ## Average/Median over the MCMC samples
     if(est == "median") 
     { 
@@ -136,14 +129,14 @@ get.residual.cor <- function(object, est = "median", prob = 0.95)
     }
     
     sig_rescor_mat[j,j2] <- rescor_mat[j,j2]
-    get.hpd.cors <- HPDinterval(as.mcmc(all_rescor_mat[,j,j2]), prob = prob)
+    get.hpd.cors <- coda::HPDinterval(as.mcmc(all_rescor_mat[,j,j2]), prob = prob)
     rescor_mat_cilower[j,j2] <- get.hpd.cors[1]
     rescor_mat_ciupper[j,j2] <- get.hpd.cors[2]
     if(0 > get.hpd.cors[1] & 0 < get.hpd.cors[2]) 
       sig_rescor_mat[j,j2] <- 0
     
     sig_respres_mat[j,j2] <- respres_mat[j,j2]
-    get.hpd.cors <- HPDinterval(as.mcmc(all_respres_mat[,j,j2]), prob = prob)
+    get.hpd.cors <- coda::HPDinterval(as.mcmc(all_respres_mat[,j,j2]), prob = prob)
     respres_mat_cilower[j,j2] <- get.hpd.cors[1]
     respres_mat_ciupper[j,j2] <- get.hpd.cors[2]
     if(0 > get.hpd.cors[1] & 0 < get.hpd.cors[2]) 
