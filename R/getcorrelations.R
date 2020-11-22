@@ -17,8 +17,8 @@
 #' `sig.cor` is `cor` where all correlations with hpd that includes 0 are set to 0.
 #' `cov` is the covariance estimate computed accordting to `est`
 #' @examples 
-fit <- readRDS("../sflddata/private/data/testdata/cutfit_7_4_11_2LV.rds")
-cor_envir <- get.enviro.cor(fit, est = "median", prob = 0.95)
+#' fit <- readRDS("../sflddata/private/data/testdata/cutfit_7_4_11_2LV.rds")
+#' cor_envir <- get.enviro.cor(fit, est = "median", prob = 0.95)
 
 #' @export
 get.enviro.cor <- function(fit, est = "median", prob = 0.95) 
@@ -79,8 +79,8 @@ get.enviro.cor <- function(fit, est = "median", prob = 0.95)
 #' @details 
 #' @value
 #' @examples 
-fit <- readRDS("../sflddata/private/data/testdata/cutfit_7_4_11_2LV.rds")
-cor_res <- get.residual.cor(fit, est = "median", prob = 0.95)
+#' fit <- readRDS("../sflddata/private/data/testdata/cutfit_7_4_11_2LV.rds")
+#' cor_res <- get.residual.cor(fit, est = "median", prob = 0.95)
 #' @export
 get.residual.cor <- function(object, est = "median", prob = 0.95) 
 {
