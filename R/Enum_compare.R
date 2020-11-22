@@ -51,7 +51,7 @@ Enum_compare <- function(observed, predicted, predictedV){
   Vresid_frommodel <- colMeans(predictedV)
   SE_Eresid_obs_frommodel <- sqrt(Vresid_frommodel/length(drop(observed)))
   SE_Eresid_obs_fromobs <- sqrt(Vresid_fromobs/length(drop(observed)))
-  
+
   out <- data.frame("E[D]_model" = Eresid_frommodel,
              "E[D]_obs" = Eresid_fromobs,
              "SE(E[D]_obs)_model" = SE_Eresid_obs_frommodel,
@@ -60,6 +60,13 @@ Enum_compare <- function(observed, predicted, predictedV){
              "V[D]_obs" = Vresid_fromobs,
              check.names = FALSE
              )
+  
+  stopifnot(identical(names(Eresid_frommodel), names(Eresid_fromobs)))
+  stopifnot(identical(names(Eresid_frommodel), names(SE_Eresid_obs_frommodel)))
+  stopifnot(identical(names(Eresid_frommodel), names(SE_Eresid_obs_fromobs)))
+  stopifnot(identical(names(Eresid_frommodel), names(Vresid_frommodel)))
+  stopifnot(identical(names(Eresid_frommodel), names(Vresid_fromobs)))
+  rownames(out) <- make.unique(names(Eresid_frommodel))
   return(out)
 }
 
