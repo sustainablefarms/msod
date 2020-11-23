@@ -82,7 +82,7 @@ ds_occupancy_residuals.fit <- function(fit, type = "median", seed = NULL, condit
     arrange(VisitId, Species, ModelSite)
   
   # apply raw occupancy residuals function
-  residuals <- ds_occupancy_residuals.raw(preds, obs)
+  residuals <- ds_occupancy_residuals.raw(preds, obs, seed = seed)
   residuals %>%
     tidyr::pivot_wider(names_from = "Species",
                 values_from = "OccupancyResidual") %>%
