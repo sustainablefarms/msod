@@ -79,7 +79,7 @@ test_that("pdetect_indvisit is correct with LV", {
                             lv.coef.min = 0.6,
                             lv.coef.max = 0.6,
                             OccFmla = OccFmla,
-                            ObsFmla = ObsFmla
+                            ObsFmla = ObsFmla,
                             modeltype = "jsodm_lv",
                             nlv = 1)
   pdetect <- pdetect_indvisit(fit, type = 1)

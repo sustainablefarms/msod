@@ -168,7 +168,7 @@ test_that("In sample data; marginal on LV values", {
                                v.b.min = -0.01,
                                v.b.max = 0.01,
                                lv.coef.min = 0.4,
-                               lv.coef.max = 0.5 #hopefully LVs have a much bigger effect than occupancy etc,
+                               lv.coef.max = 0.5, #hopefully LVs have a much bigger effect than occupancy etc,
 			       modeltype = "jsodm_lv",
 			       nlv = 4
                                )
