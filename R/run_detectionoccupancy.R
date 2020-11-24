@@ -37,6 +37,8 @@ run.detectionoccupancy <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~
   XobsProcess <- prep.designmatprocess(yXobs, ObsFmla)
   
   #Specify the data
+  nlv <- list(...)[["nlv"]]
+  if (is.null(nlv)) {nlv <- 0} #temporary whilst setting up models
   data.list <- prep.data(Xocc = Xocc,
             yXobs = yXobs,
             ModelSite = ModelSite,
@@ -113,7 +115,12 @@ run.detectionoccupancy <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~
   fit.runjags$XobsProcess <- XobsProcess
   fit.runjags$ModelSite <- data.list$ModelSite
   fit.runjags$species <- species
+  
+  class(fit.runjags) <- c(modeltype, class(fit.runjags))
+  
   if (!is.null(filename)){try(saveRDS(fit.runjags, filename)) }
+  
+  ellipsis::check_dots_used()
   invisible(fit.runjags)
 }
 

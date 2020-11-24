@@ -19,6 +19,7 @@ test_that("Likelihood computations run in sample data with LV", {
     ModelSite = "ModelSite",
     OccFmla = "~ UpSite + Sine1",
     ObsFmla = "~ UpVisit + Step",
+    modeltype = "jsodm_lv",
     nlv = 2,
     MCMCparams = list(n.chains = 1, adapt = 0, burnin = 0, sample = 2, thin = 1)
   ))
@@ -38,7 +39,7 @@ test_that("Likelihood computations run in sample data with out LV", {
     ModelSite = "ModelSite",
     OccFmla = "~ UpSite + Sine1",
     ObsFmla = "~ UpVisit + Step",
-    nlv = 0,
+    modeltype = "jsodm",
     MCMCparams = list(n.chains = 1, adapt = 0, burnin = 0, sample = 2, thin = 1)
   ))
   

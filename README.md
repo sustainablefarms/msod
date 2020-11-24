@@ -23,12 +23,13 @@ Models are closely related to a JSDM by Tobler and models seen in the Boral pack
    + preparing random effects
    
 + Model Classes
-  + inheritance structure: JSODM without LV, JSODM with LV > (JSODM with LV and RE, JSODM with spatially correlated LV)
-  + Use S3 classes
+  + inheritance structure: runjags > JSODM without LV > JSODM with LV > (JSODM with LV and RE, JSODM with spatially correlated LV). Actually this seems poor, I think starting with broadest and going more narrow (narrowest == JSODM witout LV) would be more appropriate.
+  + Use S3 classes (I found this page useful https://elvinouyang.github.io/study%20notes/oop-with-r-s3-and-r6/)
     + generic functions:
-      + likelihood
+      + logLik
       + (predict) compute probabilities
       + simulate
+      + prepdata (missing values, LV and random effects parts)
 
 ## Functionality (draft)
 ### Core
