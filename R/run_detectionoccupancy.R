@@ -37,15 +37,14 @@ run.detectionoccupancy <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~
   XobsProcess <- prep.designmatprocess(yXobs, ObsFmla)
   
   #Specify the data
-  nlv <- list(...)[["nlv"]]
-  if (is.null(nlv)) {nlv <- 0} #temporary whilst setting up models
-  data.list <- prep.data(Xocc = Xocc,
+  data.list <- prepJAGSdata(modeltype,
+            Xocc = Xocc,
             yXobs = yXobs,
             ModelSite = ModelSite,
             species = species,
-            nlv = nlv,
             XoccProcess = XoccProcess,
-            XobsProcess = XobsProcess)
+            XobsProcess = XobsProcess,
+            ...)
   
   if (modeltype == "jsodm_lv"){
     ### Latent variable multi-species co-occurence model
@@ -60,7 +59,6 @@ run.detectionoccupancy <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~
                           package = "msod")
     #Specify the parameters to be monitored
     monitor.params = c('u.b','v.b','mu.u.b', 'tau.u.b','sigma.u.b', 'mu.v.b','tau.v.b', 'sigma.v.b')
-    data.list[["nlv"]] <- NULL
   }
 
 
@@ -125,50 +123,6 @@ run.detectionoccupancy <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~
 }
 
 
-#' @describeIn run.detectionoccupancy Given the input data parameters of run.detectionoccupancy prepare the data list for JAGS
-#' @param XoccProcess An object create by prep.designmatprocess for the occupancy covariates
-#' @param XobsProcess An object create by prep.designmatprocess for the observation covariates
-#' @export
-prep.data <- function(Xocc, yXobs, ModelSite, species, nlv, XoccProcess, XobsProcess){
-  # check data inputs
-  stopifnot(all(ModelSite %in% colnames(Xocc)))
-  stopifnot(all(ModelSite %in% colnames(yXobs)))
-  stopifnot(anyDuplicated(Xocc[, ModelSite]) == 0) #model site uniquely specified
-  if (all(species %in% colnames(yXobs))) {stopifnot(all(as.matrix(yXobs[, species]) %in% c(1, 0)))}
-  
-  # create model site indexes
-  # if (ModelSiteID %in% c(names(yXobs), Xocc)){warning("Overwriting ModelSiteID column in input data.")}
-  ModelSiteMat <- cbind(1:nrow(Xocc), tibble::as_tibble(Xocc[, ModelSite, drop = FALSE]))
-  visitedModelSiteMat <- dplyr::right_join(ModelSiteMat, tibble::as_tibble(yXobs[, ModelSite, drop = FALSE]), by = ModelSite, suffix = c("", ".in"))
-  visitedModelSite <- visitedModelSiteMat[, 1, drop = TRUE]
-  stopifnot(is.integer(visitedModelSite))
-  stopifnot(all(visitedModelSite <= nrow(Xocc)))
-  
-  XoccDesign <- apply.designmatprocess(XoccProcess, Xocc)
-  XobsDesign <- apply.designmatprocess(XobsProcess, yXobs)
-  
-  n = length(species) #number of species
-  J <- nrow(XoccDesign)  #number of unique sites should also be max(occ_covariates$SiteID)
-  if (all(species %in% colnames(yXobs))) { #if this is true the y is part of yXobs
-    y <- as.matrix(yXobs[, species])
-  } else { #if not then situation of prepping data of new ModelSites
-    y <- NULL
-  }
-  ModelSite <- visitedModelSite
-  data.list = list(n=n, J=J, y=y,
-                  ModelSite = ModelSite, #a list of the site visited at each visit
-                  Vvisits = nrow(XobsDesign), #number of visits in total - not sure what this is for
-                  Xocc=XoccDesign,Xobs=XobsDesign,Vocc=ncol(XoccDesign),Vobs=ncol(XobsDesign),nlv=nlv)
-  return(data.list)
-}
-
-#' @describeIn run.detectionoccupancy A short function that applies the prep.data function to new data, given an object created by run.detectionoccupancy
-#' Xocc, yXobs, ModelSite must follow some rules as for run.detectionoccupancy, except yXobs may omit the species detections
-#' @export
-prep_new_data <- function(fit, Xocc, yXobs, ModelSite){
-  data.list <- prep.data(Xocc, yXobs, ModelSite, fit$species, fit$nlv, fit$XoccProcess, fit$XobsProcess)
-  return(data.list)
-}
 
 ### Initial conditions function
 #Specify the initial values using a function

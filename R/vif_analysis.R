@@ -6,7 +6,7 @@
 #' vifs <- gvifs_lm(inputdata$insample$Xocc,
 #'          inputdata$insample$yXobs,
 #'          species = inputdata$species,
-#'          ModelSite = "ModelSiteID",
+#'          ModelSite = "ModelSiteID", 
 #'          OccFmla = OccFmla,
 #'          ObsFmla = ObsFmla
 #'          )
@@ -34,11 +34,11 @@ gvifs_lm <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~ 1", ObsFmla =
   XobsProcess <- prep.designmatprocess(yXobs, ObsFmla)
 
   #prepare the data
-  data.list <- prep.data(Xocc = Xocc,
+  data.list <- prepJAGSdata("jsodm",
+                         Xocc = Xocc,
                          yXobs = yXobs,
                          ModelSite = ModelSite,
                          species = species,
-                         nlv = 0,
                          XoccProcess = XoccProcess,
                          XobsProcess = XobsProcess)
 

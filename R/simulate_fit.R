@@ -16,14 +16,14 @@
 #' @export
 simulate_fit <- function(fit, esttype = "median", UseFittedLV = TRUE){
   fit$data <- as_list_format(fit$data)
-  if (!UseFittedLV && !is.null(fit$data$nlv > 0) && fit$data$nlv > 0 ){# if not using fitted LV values (and LV do exist) then simulate the LV
+  if (!UseFittedLV && !is.null(fit$data$nlv)){# if not using fitted LV values (and LV do exist) then simulate the LV
     simLV <- matrix(rnorm(fit$data$nlv * nrow(fit$data$Xocc)), ncol = fit$data$nlv)
     simLVbugsname <- matrix2bugsvar(simLV, name = "LV")
     theta <- get_theta(fit, type = esttype)
     theta[names(simLVbugsname)] <- simLVbugsname
     esttype <- theta #a hack that uses that get_theta can accept theta itself.
   }
-  poccupy <- poccupy_species(fit, type = esttype, conditionalLV = !is.null(fit$data$nlv > 0) && fit$data$nlv > 0) #don't use LV if they aren't in model
+  poccupy <- poccupy_species(fit, type = esttype, conditionalLV = !is.null(fit$data$nlv) && fit$data$nlv > 0) #don't use LV if they aren't in model
   pdetectcond <- pdetect_condoccupied(fit, type = esttype)
   
   occupied <- apply(poccupy, c(1, 2), function(x) rbinom(1, 1, x))
@@ -83,13 +83,17 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2, 
   else {LV <- LV[, 1:nlv, drop = FALSE]}
   XoccProcess <- prep.designmatprocess(covardfs$Xocc, OccFmla)
   XobsProcess <- prep.designmatprocess(covardfs$Xobs, ObsFmla)
+  
+  if (nlv > 0) {modeltype <- "jsodm_lv"}
+  else (modeltype <- "jsodm")
 
-  data.list <- prep.data(covardfs$Xocc, yXobs = covardfs$Xobs,
+  data.list <- prepJAGSdata(modeltype,
+                         covardfs$Xocc, yXobs = covardfs$Xobs,
                          ModelSite = "ModelSite", 
                          species = NULL,
-                         nlv = nlv, 
                          XoccProcess = XoccProcess,
-                         XobsProcess = XobsProcess)
+                         XobsProcess = XobsProcess,
+                         nlv = nlv) 
   fit <- list()
   fit$data <- data.list
   fit$data$n <- length(species)
@@ -105,7 +109,7 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2, 
   v.b <- matrix(runif(  fit$data$n * fit$data$Vobs, min = v.b.min, max = v.b.max), nrow = fit$data$n, ncol = fit$data$Vobs, byrow = FALSE)
   theta <- c(matrix2bugsvar(u.b, name = "u.b"),
              matrix2bugsvar(v.b, name = "v.b"))
-  if (nlv > 0){
+  if (modeltype == "jsodm_lv"){
     lv.coef <- matrix(runif(  fit$data$n * fit$data$nlv, min = lv.coef.min, max = lv.coef.max), nrow = fit$data$n, ncol = fit$data$nlv) #0.5 constraint makes sure rowSum(lv.coef^2) < 1
     theta <- c(theta, 
                matrix2bugsvar(lv.coef, name = "lv.coef"),
@@ -115,8 +119,9 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2, 
   fit$mcmc[[1]] <- t(as.matrix(theta))
 
   # simulate data using the LV values given above
-  fit$data$y <- simulate_fit(fit, esttype = 1, UseFittedLV = (nlv > 0))
+  fit$data$y <- simulate_fit(fit, esttype = 1, UseFittedLV = (modeltype == "jsodm_lv"))
   colnames(fit$data$y) <- species
+  class(fit) <- c(modeltype, class(fit))
   return(fit)
 }
 
