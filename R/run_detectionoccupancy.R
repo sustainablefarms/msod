@@ -27,7 +27,7 @@
 #' @export
 run.detectionoccupancy <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~ 1", ObsFmla = "~ 1",
                                   modeltype, ...,
-                                  initsfunction = defaultinitsfunction,
+                                  initsfunction = get0(paste0("paraminits.", modeltype)),
                                   MCMCparams = list(n.chains = 1, adapt = 2000, burnin = 25000, sample = 1000, thin = 30),
                                   filename = NULL){
   stopifnot(modeltype %in% availmodeltypes)
