@@ -84,7 +84,7 @@ test_that("Occupancy and Detection Residuals Gaussian for fresh conversion from 
   v.b.min <- matrix(runif(5) , ncol = 1)
   v.b.max <- v.b.min + 1E-5
   
-  fit <- artificial_runjags(nspecies = 5, nsites = 100, nvisitspersite = 6, nlv = 1,
+  fit <- artificial_runjags(nspecies = 5, nsites = 100, nvisitspersite = 6, 
                             u.b.min = u.b.min,
                             u.b.max = u.b.max,
                             v.b.min = v.b.min,
@@ -92,7 +92,9 @@ test_that("Occupancy and Detection Residuals Gaussian for fresh conversion from 
                             lv.coef.min = 0.6,
                             lv.coef.max = 0.6,
                             OccFmla = OccFmla,
-                            ObsFmla = ObsFmla)
+                            ObsFmla = ObsFmla,
+                            modeltype = "jsodm_lv",
+                            nlv = 1)
   
   #' @param preds is a dataframe with columns Species, ModelSite, pOccupancy, and pDetected_cond.
   #'  pOccupancy is the probability of ModelSite being occupied.
@@ -196,8 +198,10 @@ test_that("Detection residuals sensible and gaussian for very raw simulated data
 
 test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made of Common Species", {
   # simulate a fitted object
-  fit <- artificial_runjags(nspecies = 5, nsites = 500, nvisitspersite = 5, nlv = 2,
-                            u.b.min = 0.95)
+  fit <- artificial_runjags(nspecies = 5, nsites = 500, nvisitspersite = 5,
+                            u.b.min = 0.95,
+                            modeltype = "jsodm_lv",
+                            nlv = 2)
   
   # compute residuals 
   resid_det <- ds_detection_residuals.fit(fit, type = 1)
@@ -212,8 +216,10 @@ test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made
 
 test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made of Rare Species", {
   # simulate a fitted object
-  fit <- artificial_runjags(nspecies = 5, nsites = 500, nvisitspersite = 5, nlv = 2,
-                            u.b.max = -0.9)
+  fit <- artificial_runjags(nspecies = 5, nsites = 500, nvisitspersite = 5,
+                            u.b.max = -0.9,
+                            modeltype = "jsodm_lv",
+                            nlv = 2)
   
   # compute residuals 
   resid_det <- ds_detection_residuals.fit(fit, type = 1)
@@ -228,9 +234,11 @@ test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made
 
 test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made of Hard to Detect Species", {
   # simulate a fitted object
-  fit <- artificial_runjags(nspecies = 5, nsites = 500, nvisitspersite = 2, nlv = 2,
+  fit <- artificial_runjags(nspecies = 5, nsites = 500, nvisitspersite = 2,
                             v.b.max = -1,
-                            ObsFmla = "~ 1")
+                            ObsFmla = "~ 1",
+                            modeltype = "jsodm_lv",
+                            nlv = 2)
   
   # crnings(ompute residuals 
   resid_det <- ds_detection_residuals.fit(fit, type = 1)
@@ -245,7 +253,7 @@ test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made
 
 test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made of Variety of Species", {
   # simulate a fitted object
-  fit <- artificial_runjags(nspecies = 5, nsites = 500, nvisitspersite = 5, nlv = 2)
+  fit <- artificial_runjags(nspecies = 5, nsites = 500, nvisitspersite = 5, modeltype = "jsodm_lv", nlv = 2)
   
   # compute residuals 
   resid_det <- ds_detection_residuals.fit(fit, type = 1)
@@ -263,7 +271,7 @@ test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made
 
 test_that("DS Occupancy Residuals are Gaussian for Artificial Fitted Object", {
   # simulate a fitted object
-  fit <- artificial_runjags(nspecies = 5, nsites = 500, nvisitspersite = 2, nlv = 2)
+  fit <- artificial_runjags(nspecies = 5, nsites = 500, nvisitspersite = 2, modeltype = "jsodm_lv", nlv = 2)
   
   # compute residuals 
   resid_occ <- ds_occupancy_residuals.fit(fit, type = 1)

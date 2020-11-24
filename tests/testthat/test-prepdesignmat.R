@@ -144,10 +144,11 @@ test_that("Undoing scaling and centering works", {
 })
 
 test_that("Version 2 works inside artificial model building, with prepdata()", {
-  artmodel <- artificial_runjags(nspecies = 60, nsites = 100, nvisitspersite = 2, nlv = 4,
+  artmodel <- artificial_runjags(nspecies = 60, nsites = 100, nvisitspersite = 2, 
                                  OccFmla = "~ 1 + UpSite + Sine1 + Sine2 + UpSite*Sine2 + I(Sine1^2) + log(UpSite)",
                                  ObsFmla = "~ 1 + UpVisit + log(UpVisit) + I(UpVisit^2)"
-                                 )
+                                 modeltype = "jsodm_lv",
+                                 nlv = 4)
   expect_equivalent(colMeans(artmodel$data$Xocc[, c("(Intercept)", "UpSite", "Sine1", "Sine2", "log.UpSite.")]), c(1, 0, 0, 0, 0))
   expect_gt(abs(mean(artmodel$data$Xocc[, "I(Sine1^2)"])), 1E-6)
   expect_gt(abs(mean(artmodel$data$Xocc[, "UpSite:Sine2"])), 1E-6)

@@ -18,12 +18,14 @@ test_that("Error does not occur using prep design matrix process twice", {
 })
 
 test_that("Error does not occur via artificial_runjags", {
-  artmodel <- artificial_runjags(nspecies = 5, nsites = 2000, nvisitspersite = 2, nlv = 0,
+  artmodel <- artificial_runjags(nspecies = 5, nsites = 2000, nvisitspersite = 2, 
                                  ObsFmla = "~ 1",
-                                 OccFmla = "~ 1")
-  expect_silent(artmodel <- artificial_runjags(nspecies = 5, nsites = 2000, nvisitspersite = 2, nlv = 0,
+                                 OccFmla = "~ 1",
+                                 modeltype = "jsodm")
+  expect_silent(artmodel <- artificial_runjags(nspecies = 5, nsites = 2000, nvisitspersite = 2,
                                   ObsFmla = "~ 1",
-                                  OccFmla = "~ 1"))
+                                  OccFmla = "~ 1",
+				  modeltype = "jsodm"))
 })
 
 test_that("Error does not occur using prep design matrix process twice", {

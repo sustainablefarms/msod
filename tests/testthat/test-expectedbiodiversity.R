@@ -14,7 +14,7 @@ pbopt <- pbapply::pboptions(type = "none")
 
 test_that("In sample data; fitted LV values; different draws", {
   nsites <- 1000
-  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 1, nlv = 4)
+  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 1, modeltype = "jsodm_lv", nlv = 4)
   
   # make a new, different, second parameter set
   artfit$mcmc[[2]] <- artfit$mcmc[[1]]
@@ -61,7 +61,7 @@ test_that("In sample data; fitted LV values; different draws", {
   expect_lt(abs(meandiff_1st[ncol(Enumspec_1stonly)]), 3 * sd_final_1st)
   
   # Anticipate that it is correct for 2nd draw separated from the 1st draw
-  y_2nd <- simulate_fit(artfit, esttype = 2, UseFittedLV = TRUE)
+  y_2nd <- simulate_detections(artfit, esttype = 2)
   NumSpecies_2nd <- detectednumspec(y = y_2nd, ModelSite = artfit$data$ModelSite)
   Enumspec_2ndonly <- predsumspecies(artfit, chain = 2, UseFittedLV = TRUE)
   meanvar_2ndonly <- cumsum(Enumspec_2ndonly["Vsum_det_median", ])/((1:ncol(Enumspec_2ndonly))^2)
@@ -110,7 +110,7 @@ test_that("In sample data; fitted LV values; different draws", {
 
 test_that("In sample data; fitted LV values", {
   nsites <- 10000
-  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, nlv = 4)
+  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, modeltype = "jsodm_lv", nlv = 4)
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
   numspec <- predsumspecies(artfit, UseFittedLV = TRUE, type = "median")
@@ -162,13 +162,15 @@ test_that("In sample data; fitted LV values", {
 
 test_that("In sample data; marginal on LV values", {
   nsites <- 1000
-  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, nlv = 4,
+  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3,
                                u.b.min = -0.01,
                                u.b.max = 0.01,
                                v.b.min = -0.01,
                                v.b.max = 0.01,
                                lv.coef.min = 0.4,
-                               lv.coef.max = 0.5 #hopefully LVs have a much bigger effect than occupancy etc
+                               lv.coef.max = 0.5 #hopefully LVs have a much bigger effect than occupancy etc,
+			       modeltype = "jsodm_lv",
+			       nlv = 4
                                )
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
@@ -200,7 +202,7 @@ test_that("In sample data; marginal on LV values", {
   expect_gt(mean(ininterval), 0.95)
   
   ######################################### Now try using marginalised LV simulations #####################################
-  NumSpecies <- detectednumspec(y = simulate_fit(artfit, esttype = 1, UseFittedLV = FALSE), ModelSite = artfit$data$ModelSite)
+  NumSpecies <- detectednumspec(y = simulate_detections_LV(artfit, esttype = 1), ModelSite = artfit$data$ModelSite)
   
   meandiff <- dplyr::cummean(NumSpecies - numspec["Esum_det_median", ])
   meanvar <- cumsum(numspec["Vsum_det_median", ])/((1:ncol(numspec))^2)
@@ -238,7 +240,7 @@ test_that("In sample data; marginal on LV values", {
 
 test_that("In sample data; no LV", {
   nsites <- 10000
-  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, nlv = 0)
+  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, modeltype = "jsodm")
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
   Enumspecdet <- predsumspecies(artfit, UseFittedLV = FALSE, type = "marginal")
@@ -272,14 +274,14 @@ test_that("In sample data; no LV", {
 
 test_that("Holdout data; has LVs", {
   nsites <- 10000
-  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, nlv = 4) #means LV nearly don't matter
+  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, modeltype = "jsodm_lv", nlv = 4) 
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
   originalXocc <- unstandardise.designmatprocess(artfit$XoccProcess, artfit$data$Xocc)
   originalXocc <- cbind(ModelSite = 1:nrow(originalXocc), originalXocc)
   originalXobs <- unstandardise.designmatprocess(artfit$XobsProcess, artfit$data$Xobs)
   originalXobs <- cbind(ModelSite = artfit$data$ModelSite, originalXobs)
-  outofsample_y <- simulate_fit(artfit, esttype = 1, UseFittedLV = FALSE)
+  outofsample_y <- simulate_detections_LV(artfit, esttype = 1)
   
   Enumspec <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite", chains = NULL, nLVsim = 1000, type = "median", cl = NULL)
   
@@ -322,14 +324,14 @@ test_that("Holdout data; has LVs", {
 
 test_that("Holdout data; no LVs", {
   nsites <- 1000
-  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, nlv = 0) #means LV nearly don't matter
+  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, modeltype = "jsodm")
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
   originalXocc <- unstandardise.designmatprocess(artfit$XoccProcess, artfit$data$Xocc)
   originalXocc <- cbind(ModelSite = 1:nrow(originalXocc), originalXocc)
   originalXobs <- unstandardise.designmatprocess(artfit$XobsProcess, artfit$data$Xobs)
   originalXobs <- cbind(ModelSite = artfit$data$ModelSite, originalXobs)
-  outofsample_y <- simulate_fit(artfit, esttype = 1, UseFittedLV = FALSE)
+  outofsample_y <- simulate_detections(artfit, esttype = 1)
   
   Enumspec <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite", chains = NULL, nLVsim = 1000, type = "marginal", cl = NULL)
   
@@ -372,7 +374,7 @@ test_that("Holdout data; no LVs", {
 test_that("Subset biodiversity matches simulations", {
   # make it full test by having: different draws and latent variables, and testing both marginal and fitted latent variables
   nsites <- 1000
-  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 1, nlv = 4)
+  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 1, modeltype = "jsodm_lv", nlv = 4)
   
   # make a new, different, second parameter set
   artfit$mcmc[[2]] <- artfit$mcmc[[1]]
@@ -384,8 +386,8 @@ test_that("Subset biodiversity matches simulations", {
   artfit$mcmc[[2]][1, grepl("^LV\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^LV\\[.*", bugvarnames)] * runif(4, min = 0.5, max = 1)
    
   # Simulate equally from each draw
-  y_1st <- simulate_fit(artfit, esttype = 1, UseFittedLV = TRUE)
-  y_2nd <- simulate_fit(artfit, esttype = 2, UseFittedLV = TRUE)
+  y_1st <- simulate_detections(artfit, esttype = 1)
+  y_2nd <- simulate_detections(artfit, esttype = 2)
   y_interleaved <- y_1st
   drawselect <- as.logical(rbinom(1000, size = 1, prob = 0.5))
   y_interleaved[drawselect, ] <- y_2nd[drawselect, ]
@@ -411,7 +413,7 @@ test_that("Subset biodiversity matches simulations", {
   originalXocc <- cbind(ModelSite = 1:nrow(originalXocc), originalXocc)
   originalXobs <- unstandardise.designmatprocess(artfit$XobsProcess, artfit$data$Xobs)
   originalXobs <- cbind(ModelSite = artfit$data$ModelSite, originalXobs)
-  outofsample_y <- simulate_fit(artfit, esttype = 1, UseFittedLV = FALSE)
+  outofsample_y <- simulate_detections_LV(artfit, esttype = 1)
   
   numspec_holdout_margLV <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite",
                                      desiredspecies = speciessubset,
@@ -425,7 +427,7 @@ test_that("Subset biodiversity matches simulations", {
 test_that("Subset biodiversity to single species matches simulations", {
   # make it full test by having: different draws and latent variables, and testing both marginal and fitted latent variables
   nsites <- 1000
-  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 1, nlv = 4)
+  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 1, modeltype = "jsodm_lv", nlv = 4)
   
   # make a new, different, second parameter set
   artfit$mcmc[[2]] <- artfit$mcmc[[1]]
@@ -437,8 +439,8 @@ test_that("Subset biodiversity to single species matches simulations", {
   artfit$mcmc[[2]][1, grepl("^LV\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^LV\\[.*", bugvarnames)] * runif(4, min = 0.5, max = 1)
   
   # Simulate equally from each draw
-  y_1st <- simulate_fit(artfit, esttype = 1, UseFittedLV = TRUE)
-  y_2nd <- simulate_fit(artfit, esttype = 2, UseFittedLV = TRUE)
+  y_1st <- simulate_detections(artfit, esttype = 1)
+  y_2nd <- simulate_detections(artfit, esttype = 2)
   y_interleaved <- y_1st
   drawselect <- as.logical(rbinom(1000, size = 1, prob = 0.5))
   y_interleaved[drawselect, ] <- y_2nd[drawselect, ]
@@ -473,7 +475,7 @@ test_that("Subset biodiversity to single species matches simulations", {
   originalXocc <- cbind(ModelSite = 1:nrow(originalXocc), originalXocc)
   originalXobs <- unstandardise.designmatprocess(artfit$XobsProcess, artfit$data$Xobs)
   originalXobs <- cbind(ModelSite = artfit$data$ModelSite, originalXobs)
-  outofsample_y <- simulate_fit(artfit, esttype = 1, UseFittedLV = FALSE)
+  outofsample_y <- simulate_detections_LV(artfit, esttype = 1)
   
   numspec_holdout_margLV <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite",
                                                    desiredspecies = speciessubset,
@@ -491,7 +493,7 @@ test_that("Subset biodiversity to single species matches simulations", {
 test_that("Endetect_modelsite matches predsumspecies", {
   # make it full test by having: different draws and latent variables, and testing both marginal and fitted latent variables
   nsites <- 1000
-  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 1, nlv = 4)
+  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 1, modeltype = "jsodm_lv", nlv = 4)
   
   # using fitted LV
   Edet1 <- Endetect_modelsite(artfit, type = "median", conditionalLV = TRUE)
@@ -523,9 +525,10 @@ test_that("Endetect_modelsite matches predsumspecies", {
 #########################################################################################
 
 test_that("No LV and identical sites", {
-  artfit <- artificial_runjags(nspecies = 4, nsites = 1000, nvisitspersite = 2, nlv = 0,
+  artfit <- artificial_runjags(nspecies = 4, nsites = 1000, nvisitspersite = 2,
                                ObsFmla = "~ 1",
-                               OccFmla = "~ 1")
+                               OccFmla = "~ 1",
+                               modeltype = "jsodm")
   EVsum <- predsumspecies(artfit, UseFittedLV = FALSE, type = "marginal")
   
   # check that many other sites have the same expected number of species
@@ -563,8 +566,8 @@ test_that("No LV and identical sites", {
 
 test_that("Expected occupied number for in sample data; fitted LV values", {
   nsites <- 1000
-  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, nlv = 4,
-                               v.b.min = 20, v.b.max = 20.1) #detection is still not certain
+  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, 
+                               v.b.min = 20, v.b.max = 20.1, modeltype = "jsodm_lv", nlv = 4) #detection is still not certain
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
   Enumspecdet <- predsumspecies(artfit, UseFittedLV = TRUE, type = "marginal")

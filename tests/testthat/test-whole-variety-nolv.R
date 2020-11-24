@@ -4,7 +4,7 @@ skip_if(parallel::detectCores() < 10)
 rjo <- runjags::runjags.options("silent.jags" = TRUE)
 
 # Create a process with known parameters
-artmodel <- artificial_runjags(nspecies = 10, nsites = 2000, nvisitspersite = 2, nlv = 0)
+artmodel <- artificial_runjags(nspecies = 10, nsites = 2000, nvisitspersite = 2, modeltype = "jsodm")
 
 # fit to data and simulations using runjags
 originalXocc <- unstandardise.designmatprocess(artmodel$XoccProcess, artmodel$data$Xocc)

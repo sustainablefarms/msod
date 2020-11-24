@@ -2,8 +2,10 @@
 context("Runjags with few iterations")
 
 test_that("Prep works with complicated formula", {
-  artmodel <- artificial_runjags(nspecies = 60, nsites = 100, nvisitspersite = 2, nlv = 4,
-                                 OccFmla = "~ 1 + UpSite + Sine1 + Sine2 + UpSite*Sine2 + I(Sine1^2) + log(UpSite)")
+  artmodel <- artificial_runjags(nspecies = 60, nsites = 100, nvisitspersite = 2,
+                                 OccFmla = "~ 1 + UpSite + Sine1 + Sine2 + UpSite*Sine2 + I(Sine1^2) + log(UpSite)",
+                                 modeltype = "jsodm_lv", 
+                                 nlv = 4)
   
   origXocc <- unstandardise.designmatprocess(artmodel$XoccProcess, artmodel$data$Xocc)
   origXocc <- cbind(ModelSite = 1:nrow(origXocc), origXocc)

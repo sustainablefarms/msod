@@ -7,9 +7,10 @@ skip_if(parallel::detectCores() < 10)
 rjo <- runjags::runjags.options("silent.jags" = TRUE)
 
 # Create a process with known parameters
-artmodel <- artificial_runjags(nspecies = 10, nsites = 2000, nvisitspersite = 2, nlv = 0,
+artmodel <- artificial_runjags(nspecies = 10, nsites = 2000, nvisitspersite = 2,
                                ObsFmla = "~ 1",
-                               OccFmla = "~ 1")
+                               OccFmla = "~ 1",
+                               modeltype = "jsodm")
 
 # fit to data and simulations using runjags
 origXocc <- unstandardise.designmatprocess(artmodel$XoccProcess, artmodel$data$Xocc)
@@ -52,7 +53,7 @@ test_that("Posterior credible distribution overlaps true parameters", {
 
 # extra, fake observations for more accurate simulated likelihood
 makemoreobs <<- function(){
-  my_add <- cbind(ModelSite = fit_runjags$data$ModelSite, simulate_fit(artmodel, esttype = 1, UseFittedLV = FALSE))
+  my_add <- cbind(ModelSite = fit_runjags$data$ModelSite, simulate_detections(artmodel, esttype = 1))
   obs_per_site_add <- lapply(1:nrow(fit_runjags$data$Xocc), function(x) my_add[my_add[, "ModelSite"] == x, -1])
   jointoutcomes_add <- vapply(obs_per_site_add, paste0, collapse = ",", FUN.VALUE = "achar")
   return(jointoutcomes_add)

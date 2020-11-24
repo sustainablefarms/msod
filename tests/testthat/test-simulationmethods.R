@@ -4,12 +4,14 @@ context("Simulation Methods")
 
 test_that("Opposite loadings of LV gives anticorrelated simulated detections for species", {
   # simulate for species with high Detection, opposite impact by the LV
-  artfit1 <- artificial_runjags(nspecies = 2, nsites = 1000, nvisitspersite = 1, nlv = 1,
+  artfit1 <- artificial_runjags(nspecies = 2, nsites = 1000, nvisitspersite = 1,
                                 ObsFmla = "~ 1",
                                 OccFmla = "~ 1",
                                 u.b.min = -1,  u.b.max = -0.9, 
                                 v.b.min = 20, v.b.max = 20.1, #makes detection almost certain
-                                lv.coef.min = matrix(c(-0.6, 0.6), ncol = 1), lv.coef.max = matrix(c(-0.55, 0.65), ncol = 1))
+                                lv.coef.min = matrix(c(-0.6, 0.6), ncol = 1), lv.coef.max = matrix(c(-0.55, 0.65), ncol = 1),
+                                modeltype = "jsodm_lv",
+                                nlv = 1)
   pocc_corr <- cor(poccupy_species(artfit1, type = 1, conditionalLV = TRUE))
   expect_equivalent(pocc_corr, matrix(c(1, -1, -1, 1), ncol = 2, nrow = 2, byrow = FALSE))
   
@@ -19,12 +21,14 @@ test_that("Opposite loadings of LV gives anticorrelated simulated detections for
 })
   
 test_that("High, equal loadings of LV gives correlated simulated detections for species", {
-  artfit2 <- artificial_runjags(nspecies = 2, nsites = 1000, nvisitspersite = 1, nlv = 1,
+  artfit2 <- artificial_runjags(nspecies = 2, nsites = 1000, nvisitspersite = 1,
                                 ObsFmla = "~ 1",
                                 OccFmla = "~ 1",
                                 u.b.min = -1,  u.b.max = -0.9,
                                 v.b.min = 20, v.b.max = 20.1,
-                                lv.coef.min = matrix(c(0.6, 0.6), ncol = 1), lv.coef.max = matrix(c(0.65, 0.65), ncol = 1))
+                                lv.coef.min = matrix(c(0.6, 0.6), ncol = 1), lv.coef.max = matrix(c(0.65, 0.65), ncol = 1),
+                                modeltype = "jsodm_lv",
+                                nlv = 1)
 
   expect_equivalent(cor(poccupy_species(artfit2, type = 1, conditionalLV = TRUE)), matrix(1, ncol = 2, nrow = 2, byrow = FALSE))
   expect_equivalent(colMeans(artfit2$data$y), colMeans(poccupy_species(artfit2, type = 1, conditionalLV = TRUE)), tolerance = 0.1)
@@ -35,16 +39,18 @@ test_that("High, equal loadings of LV gives correlated simulated detections for 
 
 test_that("Distributions of Model Site Values differ when using LV vals that aren't Gaussian", {
   # the third LV is not evenly distributed across the sites
-  artfit <- artificial_runjags(nspecies = 2, nsites = 10000, nvisitspersite = 1, nlv = 3,
+  artfit <- artificial_runjags(nspecies = 2, nsites = 10000, nvisitspersite = 1,
                                ObsFmla = "~ 1",
                                OccFmla = "~ 1",
                                u.b.min = 0,  u.b.max = 0.001, 
                                v.b.min = 1, v.b.max = 1.001,
                                lv.coef.min = matrix(c(0, 0, 0.45), nrow = 2, ncol = 3, byrow = TRUE),
-                               lv.coef.max = matrix(c(0, 0, 0.65), nrow = 2, ncol = 3, byrow = TRUE))
+                               lv.coef.max = matrix(c(0, 0, 0.65), nrow = 2, ncol = 3, byrow = TRUE),
+                               modeltype = "jsodm_lv",
+                               nlv = 3)
   
   # resimulate y as if LV are not known (which is the situation for likelihood compuations)
-  even_y <- simulate_fit(artfit, esttype = 1, UseFittedLV = FALSE)
+  even_y <- simulate_detections_LV(artfit, esttype = 1)
   
   # get joint outcomes
   my <- cbind(ModelSite = artfit$data$ModelSite, even_y)
@@ -55,7 +61,7 @@ test_that("Distributions of Model Site Values differ when using LV vals that are
   even_sim_distr <- summary(factor(jointoutcomes))/length(jointoutcomes)
   
   # resimulate y as if LV are not known (which is the situation for likelihood compuations)
-  uneven_y <- simulate_fit(artfit, esttype = 1, UseFittedLV = TRUE)
+  uneven_y <- simulate_detections(artfit, esttype = 1)
   
   # get joint outcomes
   my <- cbind(ModelSite = artfit$data$ModelSite, uneven_y)

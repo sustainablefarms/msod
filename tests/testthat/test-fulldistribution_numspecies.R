@@ -12,7 +12,7 @@ ci95generous <- function(rv){
 }
 
 test_that("Full artificial model same summaries as expected_biodiversity", {
-  artfit <- artificial_runjags(nspecies = 60, nsites = 20, nvisitspersite = 3, nlv = 4)
+  artfit <- artificial_runjags(nspecies = 60, nsites = 20, nvisitspersite = 3, modeltype = "jsodm_lv", nlv = 4)
   numspec_summ <- predsumspecies(artfit, UseFittedLV = TRUE, type = "marginal")
   numspec_distr <- predsumspeciesRV(artfit, UseFittedLV = TRUE, type = "marginal")
   
@@ -21,9 +21,10 @@ test_that("Full artificial model same summaries as expected_biodiversity", {
 })
 
 test_that("Full artificial model with excellent detection, same summaries as expected_biodiversity", {
-  artfit <- artificial_runjags(nspecies = 60, nsites = 20, nvisitspersite = 3, nlv = 4,
+  artfit <- artificial_runjags(nspecies = 60, nsites = 20, nvisitspersite = 3,
                                ObsFmla = "~ 1",
-                               v.b.min = 20, v.b.max = 20.1) #makes detection almost certain
+                               v.b.min = 20, v.b.max = 20.1, #makes detection almost certain
+			       modeltype = "jsodm_lv", nlv = 4) 
   numspec_summ <- predsumspecies(artfit, UseFittedLV = TRUE, type = "marginal")
   numspec_distr <- predsumspeciesRV(artfit, UseFittedLV = TRUE, type = "marginal")
   
@@ -33,13 +34,14 @@ test_that("Full artificial model with excellent detection, same summaries as exp
 })
 
 test_that("Uncertainty dominated by latent variables.", {
-  artfit <- artificial_runjags(nspecies = 60, nsites = 100, nvisitspersite = 3, nlv = 4,
+  artfit <- artificial_runjags(nspecies = 60, nsites = 100, nvisitspersite = 3,
                                u.b.min = -0.01,
                                u.b.max = 0.01,
                                v.b.min = -0.01,
                                v.b.max = 0.01,
                                lv.coef.min = 0.4,
-                               lv.coef.max = 0.5 #hopefully LVs have a much bigger effect than occupancy etc
+                               lv.coef.max = 0.5, #hopefully LVs have a much bigger effect than occupancy etc
+                               modeltype = "jsodm_lv", nlv = 4
   )
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
@@ -79,7 +81,7 @@ test_that("Uncertainty dominated by latent variables.", {
 })
 
 test_that("Credible intervals accurate for model without restrictions.", {
-  artfit <- artificial_runjags(nspecies = 60, nsites = 200, nvisitspersite = 3, nlv = 4)
+  artfit <- artificial_runjags(nspecies = 60, nsites = 200, nvisitspersite = 3, modeltype = "jsodm_lv", nlv = 4)
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
   

@@ -48,7 +48,7 @@ test_that("Likelihood computations run in sample data with out LV", {
 })
 
 test_that("lppds insample and outsample data identical when observations identical", {
-  artmodel <- artificial_runjags(nlv = 0)
+  artmodel <- artificial_runjags(modeltype = "jsodm")
   
   lkl <- likelihoods.fit(artmodel)
   lkl <- Rfast::rep_row(lkl, 50)
@@ -72,7 +72,7 @@ test_that("lppds insample and outsample data identical when observations identic
 })
 
 test_that("lppds insample and outsample data similar on very artifical simple situation", {
-  artmodel <- artificial_runjags(nlv = 0)
+  artmodel <- artificial_runjags(modeltype = "jsodm")
   
   lkl <- likelihoods.fit(artmodel)
   lkl <- Rfast::rep_row(lkl, 50)
@@ -83,7 +83,7 @@ test_that("lppds insample and outsample data similar on very artifical simple si
   originalXobs <- unstandardise.designmatprocess(artmodel$XobsProcess, artmodel$data$Xobs)
   originalXobs <- cbind(ModelSite = artmodel$data$ModelSite, originalXobs)
   
-  outofsample_y <- simulate_fit(artmodel, esttype = 1, UseFittedLV = FALSE)
+  outofsample_y <- simulate_detections(artmodel, esttype = 1)
   outofsample_lppd <- lppd.newdata(artmodel,
                Xocc = originalXocc,
                yXobs = cbind(originalXobs, outofsample_y),
@@ -96,11 +96,12 @@ test_that("lppds insample and outsample data similar on very artifical simple si
 })
 
 test_that("Likelihood computations match simulations without LV for nearly certain detection", {
-  artfit <- artificial_runjags(nspecies = 2, nsites = 1000, nvisitspersite = 1, nlv = 0,
+  artfit <- artificial_runjags(nspecies = 2, nsites = 1000, nvisitspersite = 1, 
                                 ObsFmla = "~ 1",
                                 OccFmla = "~ 1",
                                 u.b.min = -1,  u.b.max = -0.9, 
                                 v.b.min = 20, v.b.max = 20.1, #makes detection almost certain
+                               modeltype = "jsodm"
                                 )
   jointoutcomes <- apply(artfit$data$y, 1, paste0, collapse = ",")
   
@@ -124,11 +125,12 @@ test_that("Likelihood computations match simulations without LV for nearly certa
 })
 
 test_that("Likelihood computations match simulations without LV for multiple visits", {
-  artfit <- artificial_runjags(nspecies = 2, nsites = 1000, nvisitspersite = 2, nlv = 0,
+  artfit <- artificial_runjags(nspecies = 2, nsites = 1000, nvisitspersite = 2, 
                                ObsFmla = "~ 1",
                                OccFmla = "~ 1",
                                u.b.min = 0,  u.b.max = 0.001, 
-                               v.b.min = 0, v.b.max = 0.01)
+                               v.b.min = 0, v.b.max = 0.01,
+                               modeltype = "jsodm")
   my <- cbind(ModelSite = artfit$data$ModelSite, artfit$data$y)
   obs_per_site <- lapply(1:nrow(artfit$data$Xocc), function(x) my[my[, "ModelSite"] == x, -1])
   jointoutcomes <- vapply(obs_per_site, paste0, collapse = ",", FUN.VALUE = "achar")
@@ -146,16 +148,18 @@ test_that("Likelihood computations match simulations without LV for multiple vis
 
 test_that("Likelihood computations match simulations with LV, single visits", {
   # the third LV is not evenly distributed across the sites
-  artfit <- artificial_runjags(nspecies = 2, nsites = 10000, nvisitspersite = 1, nlv = 3,
+  artfit <- artificial_runjags(nspecies = 2, nsites = 10000, nvisitspersite = 1,
                                ObsFmla = "~ 1",
                                OccFmla = "~ 1",
                                u.b.min = 0,  u.b.max = 0.001, 
                                v.b.min = 1, v.b.max = 1.001,
                                lv.coef.min = matrix(c(0, 0, 0.45), nrow = 2, ncol = 3, byrow = TRUE),
-                               lv.coef.max = matrix(c(0, 0, 0.65), nrow = 2, ncol = 3, byrow = TRUE))
+                               lv.coef.max = matrix(c(0, 0, 0.65), nrow = 2, ncol = 3, byrow = TRUE),
+                               modeltype = "jsodm_lv",
+                               nlv = 3)
                                
   # resimulate y as if LV are not known (which is the situation for likelihood compuations)
-  artfit$data$y <- simulate_fit(artfit, esttype = 1, UseFittedLV = FALSE)
+  artfit$data$y <- simulate_detections_LV(artfit, esttype = 1)
   
   # get joint outcomes
   my <- cbind(ModelSite = artfit$data$ModelSite, artfit$data$y)
@@ -174,13 +178,15 @@ test_that("Likelihood computations match simulations with LV, single visits", {
 })
 
 test_that("Likelihood computations match simulations with LV, multiple visits", {
-  artfit <- artificial_runjags(nspecies = 2, nsites = 10000, nvisitspersite = 2, nlv = 2,
+  artfit <- artificial_runjags(nspecies = 2, nsites = 10000, nvisitspersite = 2,
                                ObsFmla = "~ 1",
                                OccFmla = "~ 1",
                                u.b.min = 0,  u.b.max = 0.001, 
-                               v.b.min = 1, v.b.max = 1.001)
+                               v.b.min = 1, v.b.max = 1.001,
+                               modeltype = "jsodm_lv",
+                               nlv = 2)
   # resimulate y as if LV are not known (which is the situation for likelihood compuations)
-  artfit$data$y <- simulate_fit(artfit, esttype = 1, UseFittedLV = TRUE)
+  artfit$data$y <- simulate_detections(artfit, esttype = 1)
   
   # get joint outcomes
   my <- cbind(ModelSite = artfit$data$ModelSite, artfit$data$y)
