@@ -65,7 +65,9 @@ prepJAGSdata.jsodm_lv <- function(Xocc, yXobs, ModelSite, species, XoccProcess, 
 #' @describeIn prepJAGSdata A short function that applies the prepJAGSdata function to new data, given an object created by run.detectionoccupancy
 #' Xocc, yXobs, ModelSite must follow some rules as for run.detectionoccupancy, except yXobs may omit the species detections
 #' @export
-prep_new_data <- function(fit, Xocc, yXobs, ModelSite){
-  data.list <- prepJAGSdata(class(fit)[[1]], Xocc, yXobs, ModelSite, fit$species, fit$XoccProcess, fit$XobsProcess, fit$nlv)
+prep_new_data <- function(fit, Xocc, yXobs, ModelSite, ...){
+  data.list <- do.call(prepJAGSdata, 
+          c(list(class(fit)[[1]], Xocc, yXobs, ModelSite, fit$species, fit$XoccProcess, fit$XobsProcess), fit))
+  # data.list <- prepJAGSdata(class(fit)[[1]], Xocc, yXobs, ModelSite, fit$species, fit$XoccProcess, fit$XobsProcess, fit$nlv)
   return(data.list)
 }
