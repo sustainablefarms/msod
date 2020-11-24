@@ -137,8 +137,8 @@ test_that("In sample data; fitted LV values", {
   expect_lt(abs(meandiff[length(meandiff)]), max(abs(meandiff[floor(length(meandiff) / 20) + 1:20 ])))
   
   Enum_compare_sum <- Enum_compare(NumSpecies,
-               as.matrix(numspec["Esum_det_median", ], ncol = 1),
-               as.matrix(numspec["Vsum_det_median", ], ncol = 1)
+               data.frame(pred = numspec["Esum_det_median", ]),
+               data.frame(pred = numspec["Vsum_det_median", ])
                )
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
@@ -305,8 +305,8 @@ test_that("Holdout data; has LVs", {
   expect_lt(abs(meandiff[length(meandiff)]), max(abs(meandiff[floor(length(meandiff) / 100) + 1:20 ])))
   
   Enum_compare_sum <- Enum_compare(NumSpecies,
-                                   as.matrix(Enumspec["Esum_det_median", ], ncol = 1),
-                                   as.matrix(Enumspec["Vsum_det_median", ], ncol = 1)
+                                   data.frame(pred = Enumspec["Esum_det_median", ]),
+                                   data.frame(pred = Enumspec["Vsum_det_median", ])
   )
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
@@ -355,8 +355,8 @@ test_that("Holdout data; no LVs", {
   expect_lt(abs(meandiff[length(meandiff)]), max(abs(meandiff[floor(length(meandiff) / 100) + 1:20 ])))
   
   Enum_compare_sum <- Enum_compare(NumSpecies,
-                                   as.matrix(Enumspec["Esum_det", ], ncol = 1),
-                                   as.matrix(Enumspec["Vsum_det", ], ncol = 1)
+                                   data.frame(pred = Enumspec["Esum_det", ]),
+                                   data.frame(pred = Enumspec["Vsum_det", ])
   )
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
@@ -450,8 +450,8 @@ test_that("Subset biodiversity to single species matches simulations", {
   # Predict number within subset, in sample, using LV
   numspec_insample_fitLV <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedLV = TRUE, type = "marginal")
   Enum_compare_sum <- Enum_compare(NumSpeciesObs,
-                                   as.matrix(numspec_insample_fitLV["Esum_det", ], ncol = 1),
-                                   as.matrix(numspec_insample_fitLV["Vsum_det", ], ncol = 1)
+                                   data.frame(pred = numspec_insample_fitLV["Esum_det", ]),
+                                   data.frame(pred = numspec_insample_fitLV["Vsum_det", ])
   )
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
@@ -460,8 +460,8 @@ test_that("Subset biodiversity to single species matches simulations", {
   # Predict number within subset, in sample, marginal LV
   numspec_insample_margLV <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedLV = FALSE, type = "marginal")
   Enum_compare_sum <- Enum_compare(NumSpeciesObs,
-                                   as.matrix(numspec_insample_margLV["Esum_det", ], ncol = 1),
-                                   as.matrix(numspec_insample_margLV["Vsum_det", ], ncol = 1)
+                                   data.frame(pred = numspec_insample_margLV["Esum_det", ]),
+                                   data.frame(pred = numspec_insample_margLV["Vsum_det", ])
   )
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
@@ -479,8 +479,8 @@ test_that("Subset biodiversity to single species matches simulations", {
                                                    desiredspecies = speciessubset,
                                                    chains = NULL, nLVsim = 1000, type = "marginal", cl = NULL)
   Enum_compare_sum <- Enum_compare(NumSpeciesObs,
-                                   as.matrix(numspec_holdout_margLV["Esum_det", ], ncol = 1),
-                                   as.matrix(numspec_holdout_margLV["Vsum_det", ], ncol = 1)
+                                   data.frame(pred = numspec_holdout_margLV["Esum_det", ]),
+                                   data.frame(pred = numspec_holdout_margLV["Vsum_det", ])
   )
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
