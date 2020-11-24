@@ -25,10 +25,13 @@
 #' *   ModelSite slot is the list with values for each visit (row in detection covariates) giving the row of the ModelSite in the occupancy covariates.
 #' *   species slot is the list of species names.
 #' @export
-run.detectionoccupancy <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~ 1", ObsFmla = "~ 1", nlv = 2,
+run.detectionoccupancy <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~ 1", ObsFmla = "~ 1",
+                                  modeltype, ...,
                                   initsfunction = defaultinitsfunction,
                                   MCMCparams = list(n.chains = 1, adapt = 2000, burnin = 25000, sample = 1000, thin = 30),
                                   filename = NULL){
+  stopifnot(modeltype %in% availmodeltypes)
+  
   if (!is.null(filename)){checkwritable(filename)} # check that file can be written before continuing
   XoccProcess <- prep.designmatprocess(Xocc, OccFmla)
   XobsProcess <- prep.designmatprocess(yXobs, ObsFmla)
@@ -41,16 +44,17 @@ run.detectionoccupancy <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~
             nlv = nlv,
             XoccProcess = XoccProcess,
             XobsProcess = XobsProcess)
-  if (nlv > 0){
+  
+  if (modeltype == "jsodm_lv"){
     ### Latent variable multi-species co-occurence model
     modelFile=system.file("modeldescriptions",
-                          "7_2_1_model_description.txt",
+                          "jsodm_lv.txt",
                           package = "msod")
     #Specify the parameters to be monitored
     monitor.params = c('u.b','v.b','mu.u.b','tau.u.b','sigma.u.b', 'mu.v.b','tau.v.b', 'sigma.v.b', 'lv.coef', "LV")
-  } else {
+  } else if (modeltype == "jsodm") {
     modelFile=system.file("modeldescriptions",
-                          "7_2_3_model_description_nolv.txt",
+                          "jsodm.txt",
                           package = "msod")
     #Specify the parameters to be monitored
     monitor.params = c('u.b','v.b','mu.u.b', 'tau.u.b','sigma.u.b', 'mu.v.b','tau.v.b', 'sigma.v.b')
@@ -234,6 +238,12 @@ checkwritable <- function(x){
   }
   return(invisible(x))
 }
+
+# available model types
+availmodeltypes = c(
+  "jsodm",
+  "jsodm_lv"
+)
 
 #### Examples #####
 #' 
