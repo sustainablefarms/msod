@@ -22,6 +22,7 @@ test_that("Prep works with complicated formula", {
                                         ObsFmla = artmodel$XobsProcess$fmla,
                                         initsfunction = function(chain, indata){return(NULL)},
                                         MCMCparams = list(n.chains = 1, adapt = 0, burnin = 0, sample = 1, thin = 1),
+                                        modeltype = "jsodm_lv",
                                         nlv = 4)
   
   runjags.options(rjo)
