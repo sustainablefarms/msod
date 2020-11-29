@@ -133,12 +133,6 @@ checkwritable <- function(x){
   return(invisible(x))
 }
 
-# available model types
-availmodeltypes = c(
-  "jsodm",
-  "jsodm_lv"
-)
-
 #### Examples #####
 #' 
 #' @examples 
