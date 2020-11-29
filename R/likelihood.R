@@ -95,6 +95,7 @@ lppd.newdata <- function(fit, Xocc, yXobs, ModelSite, chains = 1, numlvsims = 10
 #' Compute the likelihoods of each ModelSite's observations given each draw of parameters in the posterior.
 #' @export
 likelihoods.fit <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL, chains = NULL, numlvsims = 1000, cl = NULL){
+  stopifnot(class(fit)[[1]] %in% c("jsodm", "jsodm_lv"))
   fit$data <- as_list_format(fit$data)
   if (is.null(chains)){chains <- 1:length(fit$mcmc)}
   draws <- do.call(rbind, fit$mcmc[chains])
