@@ -64,14 +64,18 @@ prepJAGSdata.jsodm_lv <- function(Xocc, yXobs, ModelSite, species, XoccProcess, 
 }
 
 #' @describeIn prepJAGSdata
-prepJAGSdata.jsodm_lv_exp <- function(Xocc, yXobs, ModelSite, species, XoccProcess, XobsProcess, nlv, ModelSiteDists, ...){
+prepJAGSdata.jsodm_lv_sepexp <- function(Xocc, yXobs, ModelSite, species, XoccProcess, XobsProcess, nlv, SpatDist, TimeDist, ...){
   data.list <- prepJAGSdata.jsodm_lv(Xocc, yXobs, ModelSite, species, XoccProcess, XobsProcess, nlv)
-  distmat <- ModelSiteDists(Xocc)
+  spatdistmat <- SpatDist(Xocc)
+  stopifnot("matrix" %in% class(spatdistmat))
+  timedistmat <- TimeDist(Xocc)
+  stopifnot("matrix" %in% class(timedistmat))
   warning("distances are not standardised to have mean 1, and sd of 1 (so prior of covariance scale may be inappropriate)")
-  stopifnot(ncol(distmat) == nrow(data.list$Xocc))
-  stopifnot(nrow(distmat) == nrow(data.list$Xocc))
+  stopifnot((ncol(spatdistmat) == nrow(data.list$Xocc)) && (nrow(spatdistmat) == nrow(data.list$Xocc)))
+  stopifnot((ncol(timedistmat) == nrow(data.list$Xocc)) && (nrow(timedistmat) == nrow(data.list$Xocc)))
   zeroLV <- rep(1, nrow(data.list$Xocc))
-  data.list <- c(data.list, list(distmat = distmat), list(zeroLV = zeroLV))
+  warning("prior means of LV set to 1")
+  data.list <- c(data.list, list(spatdistmat = spatdistmat, timedistmat = timedistmat, zeroLV = zeroLV))
   return(data.list)
 }
 

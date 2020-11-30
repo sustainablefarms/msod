@@ -19,11 +19,12 @@ model{
   for(k in 1:nlv) { LV[1:J,k] ~ dmnorm(zeroLV,invSigmaLV) } 
   for(k1 in 1:J) { 
     for(k2 in 1:J) { 
-      SigmaLV[k1,k2] <- exp(-distmat[k1,k2]/lv.covscale[1]) 
+      SigmaLV[k1,k2] <- exp(-spatdistmat[k1,k2]/lv.covspatscale[1]) * exp(-timedistmat[k1,k2]/lv.covtimescale[1]) 
     } 
   } 
   invSigmaLV <- inverse(SigmaLV) 
-  lv.covscale[1] ~ dnorm(0,0.1)I(0,)
+  lv.covspatscale[1] ~ dnorm(0,0.1)I(0,)
+  lv.covtimescale[1] ~ dnorm(0,0.1)I(0,)
 
 
 

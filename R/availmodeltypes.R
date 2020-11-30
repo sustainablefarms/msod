@@ -2,5 +2,5 @@
 availmodeltypes = c(
   "jsodm",
   "jsodm_lv",
-  "jsodm_lv_exp"
+  "jsodm_lv_sepexp"
 )

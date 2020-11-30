@@ -57,13 +57,13 @@ fitjsodm              <- function(Xocc, yXobs, species, ModelSite, modeltype,  #
     #Specify the parameters to be monitored
     monitor.params = c(monitor.params, 'lv.coef', "LV")
   }
-  if (modeltype == "jsodm_lv_exp"){
+  if (modeltype == "jsodm_lv_sepexp"){
     ### Latent variable multi-species co-occurence model
     modelFile=system.file("modeldescriptions",
-                          "jsodm_lv_exp.txt",
+                          "jsodm_lv_sepexp.txt",
                           package = "msod")
     #Specify the parameters to be monitored
-    monitor.params = c(monitor.params, 'lv.coef', "LV", "lv.covscale")
+    monitor.params = c(monitor.params, 'lv.coef', "LV", "lv.covspatscale", "lv.covtimescale")
   }
 
   # set up initial values
@@ -135,20 +135,22 @@ checkwritable <- function(x){
 #' 
 #' @examples 
 #' inputdata <- readRDS(readLines("../Experiments/link_7_2_10_input_data.txt")[[1]])
-distfun <- function(df) {as.matrix(dist(data.frame(x = df$latitude, y = df$longitude, z = df$SurveyYear/100)))}
-fitjags <- fitjsodm(
-  Xocc = inputdata$insampledata$Xocc[1:100, ],
-  yXobs = inputdata$insampledata$yXobs[inputdata$insampledata$yXobs$ModelSiteID <= 100, ],
-  species = inputdata$species,
-  ModelSite = "ModelSiteID",
-  modeltype = "jsodm_lv_exp",
-  OccFmla = "~ 1",
-  ObsFmla = "~ 1",
-  nlv = 2,
-  ModelSiteDists = distfun,
-  MCMCparams = list(n.chains = 1, adapt = 0, burnin = 0, sample = 1, thin = 1),
-  filename = "./runjags_demo.rds"
-)
+# spatdistfun <- function(df) {as.matrix(dist(data.frame(x = df$latitude, y = df$longitude)))}
+# timedistfun <- function(df) {as.matrix(dist(data.frame(z = df$SurveyYear)))}
+# fitjags <- fitjsodm(
+#   Xocc = inputdata$insampledata$Xocc[1:100, ],
+#   yXobs = inputdata$insampledata$yXobs[inputdata$insampledata$yXobs$ModelSiteID <= 100, ],
+#   species = inputdata$species,
+#   ModelSite = "ModelSiteID",
+#   modeltype = "jsodm_lv_sepexp",
+#   OccFmla = "~ 1",
+#   ObsFmla = "~ 1",
+#   nlv = 2,
+#   SpatDist = spatdistfun,
+#   TimeDist = timedistfun,
+#   MCMCparams = list(n.chains = 1, adapt = 0, burnin = 0, sample = 1, thin = 1),
+#   filename = "./runjags_demo.rds"
+# )
 #' fitjags <- fitjsodm(
 #'   Xocc = inputdata$insampledata$Xocc[1:100, ],
 #'   yXobs = inputdata$insampledata$yXobs[inputdata$insampledata$yXobs$ModelSiteID <= 100, ],
