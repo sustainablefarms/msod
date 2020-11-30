@@ -14,15 +14,15 @@ paraminits <- function(modeltype, chain, indata, ...){
 #' @export
 paraminits.jsodm_lv <- function(chain, indata, ...){
   out <- paraminits.jsodm(chain, indata, ...)
-  lv.coef<-matrix(1, indata$n, indata$nlv)
-  lv.coef[1:indata$nlv,1:indata$nlv]<-0
-  for(l in 1:indata$nlv-1){
-    lv.coef[l,(l+1):indata$nlv]<-NA
-  }
-  LV <- matrix(rnorm(indata$nlv * indata$J), indata$J, indata$nlv)
-  out <- c(out,
-           lv.coef = lv.coef,
-           LV = LV)
+  # lv.coef<-matrix(1, indata$n, indata$nlv)
+  # lv.coef[1:indata$nlv,1:indata$nlv]<-0
+  # for(l in 1:indata$nlv-1){
+  #   lv.coef[l,(l+1):indata$nlv]<-NA
+  # }
+  # LV <- matrix(rnorm(indata$nlv * indata$J), indata$J, indata$nlv)
+  # out <- c(out,
+  #          lv.coef = lv.coef,
+  #          LV = LV)
   return(out)
 }
 
