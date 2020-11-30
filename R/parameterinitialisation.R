@@ -26,6 +26,11 @@ paraminits.jsodm_lv <- function(chain, indata, ...){
   return(out)
 }
 
+paraminits.jsodm_lv_exp <- function(chain, indata, ...){
+  out <- paraminits.jsodm(chain, indata, ...)
+  return(out)
+}
+
 #' @describeIn paraminits Initialise parameters for the plain jsodm model
 #' @export
 paraminits.jsodm <- function(chain, indata, ...) {

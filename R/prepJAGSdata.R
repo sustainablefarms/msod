@@ -39,6 +39,7 @@ prepJAGSdata.jsodm <- function(Xocc, yXobs, ModelSite, species, XoccProcess, Xob
   
   XoccDesign <- apply.designmatprocess(XoccProcess, Xocc)
   XobsDesign <- apply.designmatprocess(XobsProcess, yXobs)
+  # rownames(XobsDesign) <- visitedModelSite
   
   n = length(species) #number of species
   J <- nrow(XoccDesign)  #number of unique sites should also be max(occ_covariates$SiteID)
@@ -56,9 +57,21 @@ prepJAGSdata.jsodm <- function(Xocc, yXobs, ModelSite, species, XoccProcess, Xob
 }
 
 #' @describeIn prepJAGSdata
-prepJAGSdata.jsodm_lv <- function(Xocc, yXobs, ModelSite, species, XoccProcess, XobsProcess, nlv, ...){
+prepJAGSdata.jsodm_lv <- function(Xocc, yXobs, ModelSite, species, XoccProcess, XobsProcess, nlv){
   data.list <- prepJAGSdata.jsodm(Xocc, yXobs, ModelSite, species, XoccProcess, XobsProcess)
   data.list <- c(data.list, nlv = nlv)
+  return(data.list)
+}
+
+#' @describeIn prepJAGSdata
+prepJAGSdata.jsodm_lv_exp <- function(Xocc, yXobs, ModelSite, species, XoccProcess, XobsProcess, nlv, ModelSiteDists, ...){
+  data.list <- prepJAGSdata.jsodm_lv(Xocc, yXobs, ModelSite, species, XoccProcess, XobsProcess, nlv)
+  distmat <- ModelSiteDists(Xocc)
+  warning("distances are not standardised to have mean 1, and sd of 1 (so prior of covariance scale may be inappropriate)")
+  stopifnot(ncol(distmat) == nrow(data.list$Xocc))
+  stopifnot(nrow(distmat) == nrow(data.list$Xocc))
+  zeroLV <- rep(1, nrow(data.list$Xocc))
+  data.list <- c(data.list, list(distmat = distmat), list(zeroLV = zeroLV))
   return(data.list)
 }
 
