@@ -110,6 +110,11 @@ fitjsodm              <- function(Xocc, yXobs, species, ModelSite, modeltype,  #
   fit.runjags$XobsProcess <- XobsProcess
   fit.runjags$species <- species
   
+  if (modeltype == "jsodm_lv_sepexp"){
+    fit.runjags$SpatDist <- SpatDist
+    fit.runjags$TimeDist <- TimeDist
+  }
+  
   # add more things to save here (e.g. items that create random effects)
   
   class(fit.runjags) <- c(modeltype, class(fit.runjags))
