@@ -8,7 +8,7 @@
 #' Xocc <- indata$holdoutdata$Xocc[1:5, ]
 #' fit <- readRDS("./tmpdata/7_3_02_clim_someclimate_year_woody500m_msnm_det1stO.rds")
 #' XoccProcess <- fit$XoccProcess
-#' occ.b <- bugsvar2matrix(get_theta(fit, type = "median"), "occ.b", rowidx = 1:fit$data$n, colidx = 1:ncol(fit$data$Xocc))
+#' occ.b <- bugsvar2matrix(get_theta(fit, type = "median"), "occ.b", rowidx = 1:fit$data$nspecies, colidx = 1:ncol(fit$data$Xocc))
 #' rownames(occ.b) <- fit$species
 #' 
 #' multisiterichness_nolv(Xocc, XoccProcess, occ.b)

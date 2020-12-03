@@ -6,9 +6,9 @@
 #' theta <- get_theta(fit, type = 1)
 #' Xocc <- fit$data$Xocc[2, , drop = FALSE]
 #' Xobs <- fit$data$Xobs[fit$data$ModelSite == 2, , drop = FALSE]
-#' numspecies <- fit$data$n
+#' numspecies <- fit$data$nspecies
 #' lvsim <- matrix(rnorm(2 * 1), ncol = 2, nrow = 2) #dummy lvsim vars
-#' ldet.b.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$n, ncol = 2), "ldet.b")
+#' ldet.b.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$nspecies, ncol = 2), "ldet.b")
 #' theta <- c(theta, ldet.b.bugs)
 #' 
 #' Enumspec <- predsumspecies(fit, UseFittedLV = TRUE, return = "median")
@@ -116,7 +116,7 @@ predsumspecies <- function(fit, desiredspecies = fit$species, chains = NULL, Use
     LVbugs.draws <- Rfast::rep_row(LVbugs, nrow(draws))
     colnames(LVbugs.draws) <- names(LVbugs)
     
-    ldet.b.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$n, ncol = 2), "ldet.b")
+    ldet.b.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$nspecies, ncol = 2), "ldet.b")
     ldet.b.draws <- Rfast::rep_row(ldet.b.bugs, nrow(draws))
     colnames(ldet.b.draws) <- names(ldet.b.bugs)
     draws <- cbind(draws, ldet.b.draws, LVbugs.draws)
@@ -130,8 +130,8 @@ predsumspecies <- function(fit, desiredspecies = fit$species, chains = NULL, Use
     Xocc = fit$data$Xocc,
     Xobs = fit$data$Xobs,
     ModelSite = fit$data$ModelSite,
-    numspeciesinmodel = fit$data$n,
-    desiredspecies = (1:fit$data$n)[fit$species %in% desiredspecies],
+    numspeciesinmodel = fit$data$nspecies,
+    desiredspecies = (1:fit$data$nspecies)[fit$species %in% desiredspecies],
     nlv = fit$data$nlv,
     draws = draws,
     useLVindraws = UseFittedLV,
@@ -151,7 +151,7 @@ predsumspecies <- function(fit, desiredspecies = fit$species, chains = NULL, Use
       Xocc = fit$data$Xocc,
       Xobs = fit$data$Xobs,
       ModelSite = fit$data$ModelSite,
-      numspecies = fit$data$n,
+      numspecies = fit$data$nspecies,
       nlv = fit$data$nlv,
       draws = thetamedian,
       useLVindraws = UseFittedLV,
@@ -376,7 +376,7 @@ predsumspecies_newdata <- function(fit, Xocc, Xobs = NULL, ModelSiteVars = NULL,
   draws <- do.call(rbind, fit$mcmc[chains])
   
   if ( (is.null(fit$data$nlv)) || (fit$data$nlv == 0)){ #LVs not in model, add dummy variables
-    ldet.b.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$n, ncol = 2), "ldet.b")
+    ldet.b.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$nspecies, ncol = 2), "ldet.b")
     ldet.b.draws <- Rfast::rep_row(ldet.b.bugs, nrow(draws))
     colnames(ldet.b.draws) <- names(ldet.b.bugs)
     draws <- cbind(draws, ldet.b.draws)
@@ -388,8 +388,8 @@ predsumspecies_newdata <- function(fit, Xocc, Xobs = NULL, ModelSiteVars = NULL,
     Xocc = datalist$Xocc,
     Xobs = datalist$Xobs,
     ModelSite = datalist$ModelSite,
-    numspeciesinmodel = fit$data$n,
-    desiredspecies = (1:fit$data$n)[fit$species %in% desiredspecies],
+    numspeciesinmodel = fit$data$nspecies,
+    desiredspecies = (1:fit$data$nspecies)[fit$species %in% desiredspecies],
     nlv = fit$data$nlv,
     draws = draws,
     useLVindraws = FALSE,
@@ -409,7 +409,7 @@ predsumspecies_newdata <- function(fit, Xocc, Xobs = NULL, ModelSiteVars = NULL,
       Xocc = datalist$Xocc,
       Xobs = datalist$Xobs,
       ModelSite = datalist$ModelSite,
-      numspecies = fit$data$n,
+      numspecies = fit$data$nspecies,
       nlv = fit$data$nlv,
       draws = thetamedian,
       useLVindraws = FALSE,

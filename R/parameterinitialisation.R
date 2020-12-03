@@ -14,7 +14,7 @@ paraminits <- function(modeltype, chain, indata, ...){
 #' @export
 paraminits.jsodm_lv <- function(chain, indata, ...){
   out <- paraminits.jsodm(chain, indata, ...)
-  # ldet.b<-matrix(1, indata$n, indata$nlv)
+  # ldet.b<-matrix(1, indata$nspecies, indata$nlv)
   # ldet.b[1:indata$nlv,1:indata$nlv]<-0
   # for(l in 1:indata$nlv-1){
   #   ldet.b[l,(l+1):indata$nlv]<-NA

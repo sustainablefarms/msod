@@ -110,7 +110,7 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2,
                          ...) 
   fit <- list()
   fit$data <- data.list
-  fit$data$n <- length(species)
+  fit$data$nspecies <- length(species)
   fit$species <- species
   fit$XoccProcess <- XoccProcess
   fit$XobsProcess <- XobsProcess
@@ -119,8 +119,8 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2,
   fit$sample <- 1
 
   # set parameters
-  occ.b <- matrix(runif( fit$data$n * fit$data$noccvar, min = occ.b.min, max = occ.b.max), nrow = fit$data$n, ncol = fit$data$noccvar, byrow = FALSE)
-  det.b <- matrix(runif(  fit$data$n * fit$data$nobsvar, min = det.b.min, max = det.b.max), nrow = fit$data$n, ncol = fit$data$nobsvar, byrow = FALSE)
+  occ.b <- matrix(runif( fit$data$nspecies * fit$data$noccvar, min = occ.b.min, max = occ.b.max), nrow = fit$data$nspecies, ncol = fit$data$noccvar, byrow = FALSE)
+  det.b <- matrix(runif(  fit$data$nspecies * fit$data$nobsvar, min = det.b.min, max = det.b.max), nrow = fit$data$nspecies, ncol = fit$data$nobsvar, byrow = FALSE)
   theta <- c(matrix2bugsvar(occ.b, name = "occ.b"),
              matrix2bugsvar(det.b, name = "det.b"))
   
@@ -134,7 +134,7 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2,
                       ((sites %/% 5) * 5 == sites ) | (sites %/% 3) * 3 == sites))
     if (nlv == 0) {LV <- NULL}
     else {LV <- LV[, 1:nlv, drop = FALSE]}
-    ldet.b <- matrix(runif(  fit$data$n * fit$data$nlv, min = ldet.b.min, max = ldet.b.max), nrow = fit$data$n, ncol = fit$data$nlv) #0.5 constraint makes sure rowSum(ldet.b^2) < 1
+    ldet.b <- matrix(runif(  fit$data$nspecies * fit$data$nlv, min = ldet.b.min, max = ldet.b.max), nrow = fit$data$nspecies, ncol = fit$data$nlv) #0.5 constraint makes sure rowSum(ldet.b^2) < 1
     theta <- c(theta, 
                matrix2bugsvar(ldet.b, name = "ldet.b"),
                matrix2bugsvar(LV, name = "LV"))

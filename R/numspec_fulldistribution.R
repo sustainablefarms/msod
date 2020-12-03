@@ -26,7 +26,7 @@ predsumspeciesRV <- function(fit, chains = NULL, UseFittedLV = TRUE, nLVsim = 10
     LVbugs.draws <- Rfast::rep_row(LVbugs, nrow(draws))
     colnames(LVbugs.draws) <- names(LVbugs)
     
-    ldet.b.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$n, ncol = 2), "ldet.b")
+    ldet.b.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$nspecies, ncol = 2), "ldet.b")
     ldet.b.draws <- Rfast::rep_row(ldet.b.bugs, nrow(draws))
     colnames(ldet.b.draws) <- names(ldet.b.bugs)
     draws <- cbind(draws, ldet.b.draws, LVbugs.draws)
@@ -40,7 +40,7 @@ predsumspeciesRV <- function(fit, chains = NULL, UseFittedLV = TRUE, nLVsim = 10
     Xocc = fit$data$Xocc,
     Xobs = fit$data$Xobs,
     ModelSite = fit$data$ModelSite,
-    numspecies = fit$data$n,
+    numspecies = fit$data$nspecies,
     nlv = fit$data$nlv,
     draws = draws,
     useLVindraws = UseFittedLV,
@@ -79,7 +79,7 @@ predsumspeciesRV_newdata <- function(fit, Xocc, Xobs = NULL, ModelSiteVars = NUL
   draws <- do.call(rbind, fit$mcmc[chains])
   
   if ( (is.null(fit$data$nlv)) || (fit$data$nlv == 0)){ #LVs not in model, add dummy variables
-    ldet.b.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$n, ncol = 2), "ldet.b")
+    ldet.b.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$nspecies, ncol = 2), "ldet.b")
     ldet.b.draws <- Rfast::rep_row(ldet.b.bugs, nrow(draws))
     colnames(ldet.b.draws) <- names(ldet.b.bugs)
     draws <- cbind(draws, ldet.b.draws)
@@ -91,7 +91,7 @@ predsumspeciesRV_newdata <- function(fit, Xocc, Xobs = NULL, ModelSiteVars = NUL
     Xocc = datalist$Xocc,
     Xobs = datalist$Xobs,
     ModelSite = datalist$ModelSite,
-    numspecies = fit$data$n,
+    numspecies = fit$data$nspecies,
     nlv = fit$data$nlv,
     draws = draws,
     useLVindraws = FALSE,

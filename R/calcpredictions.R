@@ -121,7 +121,7 @@ pdetect_condoccupied <- function(fit, type = "median"){
   }
   
   ## det.b (detection coefficients)
-  det.b_arr <- bugsvar2array(draws, "det.b", 1:fit$data$n, 1:fit$data$nobsvar) # rows are species, columns are observation (detection) covariates
+  det.b_arr <- bugsvar2array(draws, "det.b", 1:fit$data$nspecies, 1:fit$data$nobsvar) # rows are species, columns are observation (detection) covariates
   
   Detection.Pred <- pdetection_occupied_raw(fit$data$Xobs, det.b_arr)
   
@@ -156,7 +156,7 @@ poccupy_species <- function(fit, type = "median", conditionalLV = TRUE, numLVsim
   
   Xocc <- fit$data$Xocc
   nlv <- fit$data$nlv
-  nspecies <- fit$data$n
+  nspecies <- fit$data$nspecies
   occ.b_arr <- bugsvar2array(draws, "occ.b", 1:nspecies, 1:ncol(Xocc))
   
   if ((!is.null(nlv) && (nlv > 0))){
