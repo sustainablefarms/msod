@@ -21,11 +21,11 @@ poccupy.ModelSite.theta <- function(Xocc, occ.b, ldet.b = NULL, LVvals = NULL){
   ModelSite.Occ.eta_external <- as.matrix(Xocc) %*% t(occ.b) #columns are species
   
   if (!is.null(ldet.b)){# probability of occupancy given LV
-    sd_u_condlv <- sqrt(1 - rowSums(ldet.b^2)) #for each species the standard deviation of the indicator random variable 'u', conditional on values of LV
+    sd_u_condlv <- sqrt(1 - rowSums(ldet.b^2)) #for each species the standard deviation of the indicator random variable 'occ.indicator', conditional on values of LV
     ModelSite.Occ.eta_LV <- LVvals %*% t(ldet.b) #occupancy contribution from latent variables, performed all together
     ModelSite.Occ.eta <- Rfast::eachrow(ModelSite.Occ.eta_LV, ModelSite.Occ.eta_external, oper = "+") #add the external part to each simulation
-    # Make u standard deviations equal to 1 by dividing other values by sd
-    # P(u < -ModelSite.Occ.eta) = P(u / sd < -ModelSite.Occ.eta / sd) = P(z < -ModelSite.Occ.eta / sd)
+    # Make occ.indicator standard deviations equal to 1 by dividing other values by sd
+    # P(occ.indicator < -ModelSite.Occ.eta) = P(occ.indicator / sd < -ModelSite.Occ.eta / sd) = P(occ.v < -ModelSite.Occ.eta / sd)
     ModelSite.Occ.eta_standardised <- Rfast::eachrow(ModelSite.Occ.eta, sd_u_condlv, oper = "/")
   } else {
     ModelSite.Occ.eta_standardised <- ModelSite.Occ.eta_external

@@ -53,7 +53,7 @@ plotdf_LVvscovar.fit <- function(fit, esttype = "median", theta = NULL, covar, a
   
   fitdata <- as_list_format(fit$data)
   ## LV values
-  LV <- bugsvar2matrix(theta, "LV", 1:fitdata$J, 1:fitdata$nlv) # rows are model sites, columns are latent variables
+  LV <- bugsvar2matrix(theta, "LV", 1:fitdata$nmodelsites, 1:fitdata$nlv) # rows are model sites, columns are latent variables
   colnames(LV) <- paste0("LV", 1:ncol(LV))
   LV <- cbind(ModelSite = 1:nrow(LV), LV) %>% as_tibble() 
   df <- dplyr::left_join(LV, covar, by = "ModelSite", suffix = c(".LV", ".X"))

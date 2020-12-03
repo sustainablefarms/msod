@@ -1,7 +1,7 @@
 # library(runjags); library(dplyr); library(tidyr); library(tibble);
 
 #' @title Predicted Probabilities
-#' ** would be great to test these functions by monitoring z, p and mu.p in runjags (perhaps using hidden.monitor parameter)
+#' ** would be great to test these functions by monitoring occ.v, p and mu.p in runjags (perhaps using hidden.monitor parameter)
 
 #' @examples 
 #' fit <- readRDS("./tmpdata/deto_wind.rds")

@@ -19,7 +19,7 @@ paraminits.jsodm_lv <- function(chain, indata, ...){
   # for(l in 1:indata$nlv-1){
   #   ldet.b[l,(l+1):indata$nlv]<-NA
   # }
-  # LV <- matrix(rnorm(indata$nlv * indata$J), indata$J, indata$nlv)
+  # LV <- matrix(rnorm(indata$nlv * indata$nmodelsites), indata$nmodelsites, indata$nlv)
   # out <- c(out,
   #          ldet.b = ldet.b,
   #          LV = LV)
@@ -64,11 +64,11 @@ paraminits.jsodm <- function(chain, indata, ...) {
   out <- list(
     occ.b= occ.b,  #initial values guestimated from occ.b.proto are erroring! "u[14,1]: Node inconsistent with parents"
     det.b= det.b,
-    u=(y.occ.mock>0)-runif(1,0.1,0.8),  #this looks strange -> step(u) is an indicator of whether occupied or not
-    #mu.a = matrix(rbinom((n)*J, size=1, prob=1),
-    #              nrow=J, ncol=(n)),
-    #z = matrix(rbinom((n)*J, size=1, prob=1),
-    #           nrow=J, ncol=(n))
+    occ.indicator=(y.occ.mock>0)-runif(1,0.1,0.8),  #this looks strange -> step(occ.indicator) is an indicator of whether occupied or not
+    #mu.a = matrix(rbinom((nspecies)*nmodelsites, size=1, prob=1),
+    #              nrow=nmodelsites, ncol=(nspecies)),
+    #occ.v = matrix(rbinom((nspecies)*nmodelsites, size=1, prob=1),
+    #           nrow=nmodelsites, ncol=(nspecies))
     .RNG.seed = .RNG.seed,
     .RNG.name = .RNG.name
   )

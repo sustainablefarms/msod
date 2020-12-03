@@ -41,15 +41,15 @@ prepJAGSdata.jsodm <- function(Xocc, yXobs, ModelSite, species, XoccProcess, Xob
   XobsDesign <- apply.designmatprocess(XobsProcess, yXobs)
   # rownames(XobsDesign) <- visitedModelSite
   
-  n = length(species) #number of species
-  J <- nrow(XoccDesign)  #number of unique sites should also be max(occ_covariates$SiteID)
+  nspecies = length(species) #number of species
+  nmodelsites <- nrow(XoccDesign)  #number of unique sites should also be max(occ_covariates$SiteID)
   if (all(species %in% colnames(yXobs))) { #if this is true the y is part of yXobs
     y <- as.matrix(yXobs[, species])
   } else { #if not then situation of prepping data of new ModelSites
     y <- NULL
   }
   ModelSite <- visitedModelSite
-  data.list = list(n=n, J=J, y=y,
+  data.list = list(nspecies=nspecies, nmodelsites=nmodelsites, y=y,
                   ModelSite = ModelSite, #a list of the site visited at each visit
                   nvisits = nrow(XobsDesign), #number of visits in total - not sure what this is for
                   Xocc=XoccDesign,Xobs=XobsDesign,noccvar=ncol(XoccDesign),nobsvar=ncol(XobsDesign))
