@@ -4,6 +4,8 @@
 #' @examples 
 #' model2lv <- readRDS("../Experiments/7_4_modelrefinement/fittedmodels/7_4_13_model_2lv_e13.rds")
 #' model2lv_new <- translatefit(model2lv)
+#' bestmodel_nolv <- readRDS("../Experiments/7_4_modelrefinement/fittedmodels/7_4_13_allhyp_vif_logwoody500m_msnm_year_Time_Wind.rds")
+#' bestmodel_nolv_new <- translatefit(bestmodel_nolv)
 #' 
 # places to change in fitted model object: mcmc, summary, summaries, monitor, some in $data too, model
 # places to change in codebase: everywhere
@@ -70,7 +72,17 @@ translatefit <- function(fit){
   
   # burnin, sample, thin pure integers with out names
   # model - this is impossible to do automatically. Must use another place.
-  warning("fit$model not translated")
+  if (!is.null(fit$data$nlv) && (fit$data$nlv > 0)){
+    modelfile <- system.file("modeldescriptions", "jsodm_lv.txt", package = "msod")
+    class(fit) <- c("jsodm_lv", class(fit))
+  } else {
+    modelfile <- system.file("modeldescriptions", "jsodm.txt", package = "msod")
+    class(fit) <- c("jsodm", class(fit))
+  }
+  modellines <- readLines(modelfile)
+  model <- paste0(modellines, collapse = "\n")
+  class(model) <- "runjagsmodel"
+  fit$model <- model
   
   # data
   fit$data <- as_list_format(fit$data)
@@ -106,7 +118,7 @@ translatefit <- function(fit){
   names(fit$mcse$mcse) <- replacebeforebracket(rownames(fit$mcse$mcse))
   
   # psrf
-  if (length(fit$psrf) != 1){ rownames(fit$psrf) <- replacebeforebracket(rownames(fit$psrf))}
+  if (class(fit$psrf) == "gelmanwithtarget"){ rownames(fit$psrf$psrf) <- replacebeforebracket(rownames(fit$psrf$psrf))}
   
   # autocorr
   colnames(fit$autocorr) <- replacebeforebracket(colnames(fit$autocorr))
