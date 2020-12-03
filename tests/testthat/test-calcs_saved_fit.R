@@ -1,6 +1,7 @@
 context("Likelihoods and Predictions Historically Consistent")
 
 fit <- readRDS("../../../sflddata/private/data/testdata/cutfit_7_4_11_2LV.rds")
+fit <- translatefit(fit)
 
 test_that("Likelihood is historically consistent", {
   # lvsim <- matrix(rnorm(fit$data$nlv * numlvsims), ncol = fit$data$nlv, nrow = numlvsims)
@@ -12,7 +13,6 @@ test_that("Likelihood is historically consistent", {
   #                                                          lvsim = lvsim)
   # expect_known_output(lkl_site001, file = "./tests/testthat/lkl_site001.txt", print = TRUE)
   
-  fit <- translatefit(fit)
   set.seed(333)  #sets seed for simulated LV
   lkl_sites <- likelihoods.fit(fit, numlvsims = 10)
   expect_known_output(lkl_sites, file = "lkl_sites.txt", print = TRUE, update = FALSE)
