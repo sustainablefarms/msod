@@ -12,10 +12,10 @@ test_that("Opposite loadings of lv.v gives anticorrelated simulated detections f
                                 lv.coef.min = matrix(c(-0.6, 0.6), ncol = 1), lv.coef.max = matrix(c(-0.55, 0.65), ncol = 1),
                                 modeltype = "jsodm_lv",
                                 nlv = 1)
-  pocc_corr <- cor(poccupy_species(artfit1, type = 1, conditionallv.v = TRUE))
+  pocc_corr <- cor(poccupy_species(artfit1, type = 1, conditionalLV = TRUE))
   expect_equivalent(pocc_corr, matrix(c(1, -1, -1, 1), ncol = 2, nrow = 2, byrow = FALSE))
   
-  expect_equivalent(colMeans(artfit1$data$y), colMeans(poccupy_species(artfit1, type = 1, conditionallv.v = TRUE)), tolerance = 0.1)
+  expect_equivalent(colMeans(artfit1$data$y), colMeans(poccupy_species(artfit1, type = 1, conditionalLV = TRUE)), tolerance = 0.1)
   anticor_occ <- cor(artfit1$data$y)
   expect_lt(anticor_occ[1, 2], 0)
 })
@@ -30,8 +30,8 @@ test_that("High, equal loadings of lv.v gives correlated simulated detections fo
                                 modeltype = "jsodm_lv",
                                 nlv = 1)
 
-  expect_equivalent(cor(poccupy_species(artfit2, type = 1, conditionallv.v = TRUE)), matrix(1, ncol = 2, nrow = 2, byrow = FALSE))
-  expect_equivalent(colMeans(artfit2$data$y), colMeans(poccupy_species(artfit2, type = 1, conditionallv.v = TRUE)), tolerance = 0.1)
+  expect_equivalent(cor(poccupy_species(artfit2, type = 1, conditionalLV = TRUE)), matrix(1, ncol = 2, nrow = 2, byrow = FALSE))
+  expect_equivalent(colMeans(artfit2$data$y), colMeans(poccupy_species(artfit2, type = 1, conditionalLV = TRUE)), tolerance = 0.1)
   cor_occ <- cor(artfit2$data$y)
   expect_gt(cor_occ[1, 2], 0)
 })

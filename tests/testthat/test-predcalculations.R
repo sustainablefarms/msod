@@ -12,7 +12,7 @@ test_that("poccupy_species is correct without lv.v", {
                             occ.b.max = occ.b.max,
                             OccFmla = OccFmla,
                             modeltype = "jsodm")
-  pOccupy_sp <- poccupy_species(fit, type = 1, conditionallv.v = FALSE)
+  pOccupy_sp <- poccupy_species(fit, type = 1, conditionalLV = FALSE)
   diff <- Rfast::eachrow(pOccupy_sp, pOccupancyFresh, oper = "-")
   expect_true(max(abs(diff)) < 1E-3)
 })
@@ -33,7 +33,7 @@ test_that("poccupy_species is correct with lv.v", {
                             OccFmla = OccFmla,
                             modeltype = "jsodm_lv",
                             nlv = 1)
-  pOccupy_sp <- poccupy_species(fit, type = 1, conditionallv.v = TRUE)
+  pOccupy_sp <- poccupy_species(fit, type = 1, conditionalLV = TRUE)
   diffOdd <- Rfast::eachrow(pOccupy_sp[1:nrow(pOccupy_sp) %% 2, ], pOccupancyFreshOdd, oper = "-")
   expect_true(max(abs(diffOdd)) < 1E-3)
   diffEven <- Rfast::eachrow(pOccupy_sp[!(1:nrow(pOccupy_sp) %% 2), ], pOccupancyFreshEven, oper = "-")
@@ -109,7 +109,7 @@ test_that("pdetect_condoccupied and poccupy_species keeps ordering of sites / vi
   # should be a matrix that increase down the rows 
   # when scaled UpSite positive it should go up across the columns
   # when scaled UpSite negative it should go down the columns
-  pOccupancy <- poccupy_species(fit, type = 1, conditionallv.v = FALSE)
+  pOccupancy <- poccupy_species(fit, type = 1, conditionalLV = FALSE)
   expect_true(min(pOccupancy[-1, ] - pOccupancy[-nrow(pOccupancy), ]) > 0)
   expect_true(min(sign(fit$data$Xocc[, "UpSite"]) * (pOccupancy[, -1] - pOccupancy[, -ncol(pOccupancy)])) > 0)
   
@@ -121,7 +121,7 @@ test_that("pdetect_condoccupied and poccupy_species keeps ordering of sites / vi
   expect_true(min(sign(fit$data$Xobs[, "UpVisit"]) * (pDetCondOcc[, -1] - pDetCondOcc[, -ncol(pDetCondOcc)])) > 0)
   
   # I expect pdetect_indvisit to have the same rows as Xobs
-  pdetect <- pdetect_indvisit(fit, type = 1, conditionallv.v = FALSE)
+  pdetect <- pdetect_indvisit(fit, type = 1, conditionalLV = FALSE)
   # probability of occupancy and detection increases with Site and Visit, 
   # so full probability of detection increases except possibly whenever ModelSite returns back to 1,
   # which never happens in currently: simulated ModelSite is non-decreasing, all the ModelSite=1 visits occur in the first few rows
@@ -161,7 +161,7 @@ test_that("pdetect_condoccupied and poccupy_species ordering of sites / visits w
   # should be a matrix that increase down the rows 
   # when scaled UpSite positive it should go up across the columns
   # when scaled UpSite negative it should go down the columns
-  pOccupancy <- poccupy_species(fit, type = 1, conditionallv.v = TRUE)
+  pOccupancy <- poccupy_species(fit, type = 1, conditionalLV = TRUE)
   expect_equivalent(apply(pOccupancy[lv.v[, 1] > 0 & lv.v[, 2] > 0, ], 2, sd), rep(0, ncol(pOccupancy)))
   expect_equivalent(apply(pOccupancy[lv.v[, 1] > 0 & lv.v[, 2] < 0, ], 2, sd), rep(0, ncol(pOccupancy)))
   expect_equivalent(apply(pOccupancy[lv.v[, 1] < 0 & lv.v[, 2] < 0, ], 2, sd), rep(0, ncol(pOccupancy)))
@@ -172,7 +172,7 @@ test_that("pdetect_condoccupied and poccupy_species ordering of sites / visits w
   expect_true(min(pOccupancy[, -1] - pOccupancy[, -ncol(pOccupancy)]) > 0)
   
   # I expect pdetect_indvisit to have the same rows as Xobs
-  pdetect <- pdetect_indvisit(fit, type = 1, conditionallv.v = FALSE)
+  pdetect <- pdetect_indvisit(fit, type = 1, conditionalLV = FALSE)
   # Similar pattern of equal probabilities as pOccupancy
   expect_equivalent(apply(pdetect[lv.v[fit$data$ModelSite, 1] > 0 & lv.v[fit$data$ModelSite, 2] > 0, ], 2, sd), rep(0, ncol(pdetect)))
   expect_equivalent(apply(pdetect[lv.v[fit$data$ModelSite, 1] > 0 & lv.v[fit$data$ModelSite, 2] < 0, ], 2, sd), rep(0, ncol(pdetect)))

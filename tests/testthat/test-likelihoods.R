@@ -106,7 +106,7 @@ test_that("Likelihood computations match simulations without lv.v for nearly cer
   jointoutcomes <- apply(artfit$data$y, 1, paste0, collapse = ",")
   
   # theory likelihoods
-  poccupancy_all <- poccupy_species(artfit, type = 1, conditionallv.v = FALSE)[1, ]
+  poccupancy_all <- poccupy_species(artfit, type = 1, conditionalLV = FALSE)[1, ]
   rvA <- discreteRV::RV(c(1, 0), poccupancy_all["A"], fractions = FALSE)
   rvB <- discreteRV::RV(c(1, 0), poccupancy_all["B"], fractions = FALSE)
   jointRV <- discreteRV::joint(rvA, rvB)

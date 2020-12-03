@@ -33,7 +33,7 @@ cl <- parallel::makeCluster(10)
 lkl_runjags <- likelihoods.fit(fit_runjags, cl = cl)
 lkl_artmodel <- likelihoods.fit(artmodel, cl = cl)
 pbopt <- pbapply::pboptions(type = "none")
-Enumspec <- predsumspecies(fit_runjags, UseFittedlv.v = FALSE, type = "marginal", cl = cl)
+Enumspec <- predsumspecies(fit_runjags, UseFittedLV = FALSE, type = "marginal", cl = cl)
 pbapply::pboptions(pbopt)
 parallel::stopCluster(cl)
 

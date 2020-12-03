@@ -2,7 +2,7 @@ context("Compare standalone occupancy probability to other occupancy functions")
 
 test_that("standalone matches poccupy_species", {
   fit <- artificial_runjags(nspecies = 5, nsites = 100, nvisitspersite = 1, modeltype = "jsodm")
-  a <- poccupy_species(fit, type = 1, conditionallv.v = FALSE)
+  a <- poccupy_species(fit, type = 1, conditionalLV = FALSE)
   XoccOrig <- unstandardise.designmatprocess(fit$XoccProcess, fit$data$Xocc)
   theta <- get_theta(fit, type = 1)
   occ.b <- bugsvar2matrix(theta, "occ.b", 1:fit$data$n, 1:ncol(fit$data$Xocc))
@@ -14,7 +14,7 @@ test_that("standalone matches poccupy_species", {
 test_that("Multisite richness function matches others for single sites", {
   fit <- artificial_runjags(nspecies = 60, nsites = 100, nvisitspersite = 1, modeltype = "jsodm")
   pbopt <- pbapply::pboptions(type = "none")
-  Erichnesspersite <- predsumspecies(fit, UseFittedlv.v = FALSE, type = "marginal")
+  Erichnesspersite <- predsumspecies(fit, UseFittedLV = FALSE, type = "marginal")
   pbapply::pboptions(pbopt)
   
   XoccOrig <- unstandardise.designmatprocess(fit$XoccProcess, fit$data$Xocc)

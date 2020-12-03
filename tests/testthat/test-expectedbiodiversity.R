@@ -26,7 +26,7 @@ test_that("In sample data; fitted lv.v; different draws", {
   artfit$mcmc[[2]][1, grepl("^lv.v\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^lv.v\\[.*", bugvarnames)] * runif(4, min = 0.5, max = 1)
   
   # Predicted number of species detected and in occupation
-  numspec <- predsumspecies(artfit, UseFittedlv.v = TRUE)
+  numspec <- predsumspecies(artfit, UseFittedLV = TRUE)
   meanvar <- cumsum(numspec["Vsum_det_median", ])/((1:ncol(numspec))^2)
   sd_final <- sqrt(meanvar[ncol(numspec)])
   expect_equal(ncol(numspec), nsites)
@@ -45,7 +45,7 @@ test_that("In sample data; fitted lv.v; different draws", {
   expect_gt(abs(meandiff_1st[ncol(numspec)]), 3 * sd_final)
   
   # Anticipate the Enumspec is correct when using only first draw (chain), as simulated data in artfit is from the first draw
-  Enumspec_1stonly <- predsumspecies(artfit, chain = 1, UseFittedlv.v = TRUE)
+  Enumspec_1stonly <- predsumspecies(artfit, chain = 1, UseFittedLV = TRUE)
   meanvar_1stonly <- cumsum(Enumspec_1stonly["Vsum_det_median", ])/((1:ncol(Enumspec_1stonly))^2)
   sd_final_1st <- sqrt(meanvar[ncol(Enumspec_1stonly)])
   
@@ -63,7 +63,7 @@ test_that("In sample data; fitted lv.v; different draws", {
   # Anticipate that it is correct for 2nd draw separated from the 1st draw
   y_2nd <- simulate_detections(artfit, esttype = 2)
   NumSpecies_2nd <- detectednumspec(y = y_2nd, ModelSite = artfit$data$ModelSite)
-  Enumspec_2ndonly <- predsumspecies(artfit, chain = 2, UseFittedlv.v = TRUE)
+  Enumspec_2ndonly <- predsumspecies(artfit, chain = 2, UseFittedLV = TRUE)
   meanvar_2ndonly <- cumsum(Enumspec_2ndonly["Vsum_det_median", ])/((1:ncol(Enumspec_2ndonly))^2)
   sd_final_2nd <- sqrt(meanvar[ncol(Enumspec_2ndonly)])
   meandiff_2nd <- dplyr::cummean(NumSpecies_2nd - Enumspec_2ndonly["Esum_det_median", ])
@@ -113,7 +113,7 @@ test_that("In sample data; fitted lv.v", {
   artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, modeltype = "jsodm_lv", nlv = 4)
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
-  numspec <- predsumspecies(artfit, UseFittedlv.v = TRUE, type = "median")
+  numspec <- predsumspecies(artfit, UseFittedLV = TRUE, type = "median")
   expect_equal(ncol(numspec), nsites)
   
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
@@ -174,7 +174,7 @@ test_that("In sample data; marginal on lv.v", {
                                )
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
-  numspec <- predsumspecies(artfit, UseFittedlv.v = FALSE, nlv.vsim = 1000, type = "median")
+  numspec <- predsumspecies(artfit, UseFittedLV = FALSE, nlv.vsim = 1000, type = "median")
   expect_equal(ncol(numspec), nsites)
   
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
@@ -243,7 +243,7 @@ test_that("In sample data; no lv.v", {
   artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, modeltype = "jsodm")
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
-  Enumspecdet <- predsumspecies(artfit, UseFittedlv.v = FALSE, type = "marginal")
+  Enumspecdet <- predsumspecies(artfit, UseFittedLV = FALSE, type = "marginal")
   expect_equal(ncol(Enumspecdet), nsites)
   
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
@@ -397,13 +397,13 @@ test_that("Subset biodiversity matches simulations", {
   NumSpeciesObs <- detectednumspec(y_interleaved[, speciessubset], ModelSite = artfit$data$ModelSite)
   
   # Predict number within subset, in sample, using lv.v
-  numspec_insample_fitlv.v <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedlv.v = TRUE, type = "marginal")
+  numspec_insample_fitlv.v <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedLV = TRUE, type = "marginal")
   inci_insample_fitlv.v <- (NumSpeciesObs > numspec_insample_fitlv.v["Esum_det", ] - 2 * sqrt(numspec_insample_fitlv.v["Vsum_det", ])) & 
     (NumSpeciesObs < numspec_insample_fitlv.v["Esum_det", ] + 2 * sqrt(numspec_insample_fitlv.v["Vsum_det", ]))
   expect_equal(mean(inci_insample_fitlv.v), 0.95, tol = 0.05)
   
   # Predict number within subset, in sample, marginal lv.v
-  numspec_insample_marglv.v <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedlv.v = FALSE, type = "marginal")
+  numspec_insample_marglv.v <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedLV = FALSE, type = "marginal")
   inci_insample_marglv.v <- (NumSpeciesObs > numspec_insample_marglv.v["Esum_det", ] - 2 * sqrt(numspec_insample_marglv.v["Vsum_det", ])) & 
     (NumSpeciesObs < numspec_insample_marglv.v["Esum_det", ] + 2 * sqrt(numspec_insample_marglv.v["Vsum_det", ]))
   expect_equal(mean(inci_insample_marglv.v), 0.95, tol = 0.05)
@@ -450,7 +450,7 @@ test_that("Subset biodiversity to single species matches simulations", {
   NumSpeciesObs <- detectednumspec(y_interleaved[, speciessubset, drop = FALSE], ModelSite = artfit$data$ModelSite)
   
   # Predict number within subset, in sample, using lv.v
-  numspec_insample_fitlv.v <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedlv.v = TRUE, type = "marginal")
+  numspec_insample_fitlv.v <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedLV = TRUE, type = "marginal")
   Enum_compare_sum <- Enum_compare(NumSpeciesObs,
                                    data.frame(pred = numspec_insample_fitlv.v["Esum_det", ]),
                                    data.frame(pred = numspec_insample_fitlv.v["Vsum_det", ])
@@ -460,7 +460,7 @@ test_that("Subset biodiversity to single species matches simulations", {
   expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
 
   # Predict number within subset, in sample, marginal lv.v
-  numspec_insample_marglv.v <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedlv.v = FALSE, type = "marginal")
+  numspec_insample_marglv.v <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedLV = FALSE, type = "marginal")
   Enum_compare_sum <- Enum_compare(NumSpeciesObs,
                                    data.frame(pred = numspec_insample_marglv.v["Esum_det", ]),
                                    data.frame(pred = numspec_insample_marglv.v["Vsum_det", ])
@@ -496,9 +496,9 @@ test_that("Endetect_modelsite matches predsumspecies", {
   artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 1, modeltype = "jsodm_lv", nlv = 4)
   
   # using fitted lv.v
-  Edet1 <- Endetect_modelsite(artfit, type = "median", conditionallv.v = TRUE)
+  Edet1 <- Endetect_modelsite(artfit, type = "median", conditionalLV = TRUE)
   Edet2 <- lapply(artfit$species, function(sp) {
-                  Edet <- predsumspecies(artfit, desiredspecies = sp, UseFittedlv.v = TRUE, type = "marginal")
+                  Edet <- predsumspecies(artfit, desiredspecies = sp, UseFittedLV = TRUE, type = "marginal")
                   #marginal works here because artfit has only one draw
                   return(Edet)}
                   )
@@ -509,9 +509,9 @@ test_that("Endetect_modelsite matches predsumspecies", {
   expect_equivalent(Edet1[[2]], Edet2_V_t)
   
   # marginal to lv.v
-  Edet1 <- Endetect_modelsite(artfit, type = "median", conditionallv.v = FALSE)
+  Edet1 <- Endetect_modelsite(artfit, type = "median", conditionalLV = FALSE)
   Edet2 <- lapply(artfit$species, function(sp) {
-    Edet <- predsumspecies(artfit, desiredspecies = sp, UseFittedlv.v = FALSE, nlv.vsim = 5000, type = "marginal")
+    Edet <- predsumspecies(artfit, desiredspecies = sp, UseFittedLV = FALSE, nlv.vsim = 5000, type = "marginal")
     #marginal works here because artfit has only one draw
     return(Edet)}
   )
@@ -529,7 +529,7 @@ test_that("No lv.v and identical sites", {
                                ObsFmla = "~ 1",
                                OccFmla = "~ 1",
                                modeltype = "jsodm")
-  EVsum <- predsumspecies(artfit, UseFittedlv.v = FALSE, type = "marginal")
+  EVsum <- predsumspecies(artfit, UseFittedLV = FALSE, type = "marginal")
   
   # check that many other sites have the same expected number of species
   expect_equivalent(EVsum["Esum_det", ], rep(EVsum["Esum_det", 1], ncol(EVsum)))
@@ -558,7 +558,7 @@ test_that("No lv.v and identical sites", {
   expect_equivalent(sd(NumSpecies), sqrt(EVsum["Vsum_det", 1]), tol = 0.1 * sqrt(EVsum["Vsum_det", 1]))
   
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
-  Enumspecdet <- predsumspecies(artfit, type = "marginal", UseFittedlv.v = FALSE)
+  Enumspecdet <- predsumspecies(artfit, type = "marginal", UseFittedLV = FALSE)
   ininterval <- (NumSpecies > Enumspecdet["Esum_det", ] - 2 * sqrt(Enumspecdet["Vsum_det", ])) & 
     (NumSpecies < Enumspecdet["Esum_det", ] + 2 * sqrt(Enumspecdet["Vsum_det", ]))
   expect_equal(mean(ininterval), 0.95, tol = 0.05)
@@ -570,7 +570,7 @@ test_that("Expected occupied number for in sample data; fitted lv.v", {
                                det.b.min = 20, det.b.max = 20.1, modeltype = "jsodm_lv", nlv = 4) #detection is still not certain
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
-  Enumspecdet <- predsumspecies(artfit, UseFittedlv.v = TRUE, type = "marginal")
+  Enumspecdet <- predsumspecies(artfit, UseFittedLV = TRUE, type = "marginal")
   expect_equal(ncol(Enumspecdet), nsites)
   
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
