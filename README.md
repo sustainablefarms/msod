@@ -10,7 +10,7 @@ Models are closely related to a JSDM by Tobler and models seen in the Boral pack
    + linear combinations of environmental occupancy predictors for many parameter draws
    + linear combination of LV
    + apply a modelsite x theta --> likelihood function to get array of likelihood of sites and theta
-   + combine occupancy probability with conditional detection probability to get full detection likilihoods (full probability distribution has too many dimensions)
+   + combine occupancy probability with conditional detection probability to get full detection likilihoods (full probability distribution has too many dimensions) [doing this in multisite way - e.g. through large arrays]
    + computing a median, hpd, and expectation for occupancy from given occupancy probability per theta x LV x RE
    + computing a median, hpd, and expectation for expected species richness given occupancy probability per theta x LV x RE
    + processing of environmental data, and their saving to a fitted model
