@@ -26,10 +26,10 @@ predsumspeciesRV <- function(fit, chains = NULL, UseFittedLV = TRUE, nLVsim = 10
     LVbugs.draws <- Rfast::rep_row(LVbugs, nrow(draws))
     colnames(LVbugs.draws) <- names(LVbugs)
     
-    ldet.b.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$nspecies, ncol = 2), "ldet.b")
-    ldet.b.draws <- Rfast::rep_row(ldet.b.bugs, nrow(draws))
-    colnames(ldet.b.draws) <- names(ldet.b.bugs)
-    draws <- cbind(draws, ldet.b.draws, LVbugs.draws)
+    lv.b.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$nspecies, ncol = 2), "lv.b")
+    lv.b.draws <- Rfast::rep_row(lv.b.bugs, nrow(draws))
+    colnames(lv.b.draws) <- names(lv.b.bugs)
+    draws <- cbind(draws, lv.b.draws, LVbugs.draws)
     fit$data$nlv <- 2
     UseFittedLV <- TRUE #calculations faster when not simulating 1000s of LV values, especially since they are all ignored here.
   } 
@@ -79,10 +79,10 @@ predsumspeciesRV_newdata <- function(fit, Xocc, Xobs = NULL, ModelSiteVars = NUL
   draws <- do.call(rbind, fit$mcmc[chains])
   
   if ( (is.null(fit$data$nlv)) || (fit$data$nlv == 0)){ #LVs not in model, add dummy variables
-    ldet.b.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$nspecies, ncol = 2), "ldet.b")
-    ldet.b.draws <- Rfast::rep_row(ldet.b.bugs, nrow(draws))
-    colnames(ldet.b.draws) <- names(ldet.b.bugs)
-    draws <- cbind(draws, ldet.b.draws)
+    lv.b.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$nspecies, ncol = 2), "lv.b")
+    lv.b.draws <- Rfast::rep_row(lv.b.bugs, nrow(draws))
+    colnames(lv.b.draws) <- names(lv.b.bugs)
+    draws <- cbind(draws, lv.b.draws)
     fit$data$nlv <- 2
     nLVsim = 2 #calculations faster when not simulating 1000s of LV values, especially since they are all ignored here.
   }
@@ -135,7 +135,7 @@ sumspeciesRV_raw <- function(Xocc, Xobs = NULL, ModelSite = NULL, numspecies, nl
   }
   occ.b <- bugsvar2array(draws, "occ.b", 1:nspecall, 1:noccvar)
   if (!is.null(Xobs)) {det.b <- bugsvar2array(draws, "det.b", 1:nspecall, 1:nobsvar)}
-  ldet.b <- bugsvar2array(draws, "ldet.b", 1:nspecall, 1:nlv)
+  lv.b <- bugsvar2array(draws, "lv.b", 1:nspecall, 1:nlv)
   
   if (useLVindraws){stopifnot(is.null(nLVsim))}
   if (!useLVindraws){stopifnot(is.numeric(nLVsim))}
@@ -160,7 +160,7 @@ sumspeciesRV_raw <- function(Xocc, Xobs = NULL, ModelSite = NULL, numspecies, nl
                                  occ.b_theta <- matrix(occ.b[,, sitedrawidx[["drawidx"]] ], nrow = nspecall, ncol = noccvar)
                                  if (!is.null(Xobs)) {det.b_theta <- matrix(det.b[,, sitedrawidx[["drawidx"]] ], nrow = nspecall, ncol = nobsvar)}
                                  else {det.b_theta = NULL}
-                                 ldet.b_theta <- matrix(ldet.b[,, sitedrawidx[["drawidx"]] ], nrow = nspecall, ncol = nlv)
+                                 lv.b_theta <- matrix(lv.b[,, sitedrawidx[["drawidx"]] ], nrow = nspecall, ncol = nlv)
                                  if (useLVindraws){
                                    LVvals_thetasite <- matrix(LVvals[sitedrawidx[["siteidx"]], , sitedrawidx[["drawidx"]], drop = FALSE], nrow = 1, ncol = nlv)
                                  } else {
@@ -169,7 +169,7 @@ sumspeciesRV_raw <- function(Xocc, Xobs = NULL, ModelSite = NULL, numspecies, nl
                                  sumRV <- speciesnum.ModelSite.theta(Xocc = Xocc, Xobs = Xobs,
                                                                                           occ.b = occ.b_theta,
                                                                                           det.b = det.b_theta,
-                                                                                          ldet.b = ldet.b_theta,
+                                                                                          lv.b = lv.b_theta,
                                                                                           LVvals = LVvals_thetasite)
                                  return(sumRV)
                                },
@@ -181,12 +181,12 @@ sumspeciesRV_raw <- function(Xocc, Xobs = NULL, ModelSite = NULL, numspecies, nl
   ))
 }
 
-speciesnum.ModelSite.theta <- function(Xocc, Xobs = NULL, occ.b, det.b = NULL, ldet.b = NULL, LVvals = NULL){
+speciesnum.ModelSite.theta <- function(Xocc, Xobs = NULL, occ.b, det.b = NULL, lv.b = NULL, LVvals = NULL){
   ## Probability of Site Occupancy
   stopifnot(nrow(Xocc) == 1)
   if (is.null(Xobs)) {stopifnot(is.null(det.b))}
   Xocc <- as.matrix(Xocc)
-  ModelSite.Occ.Pred.CondLV <- poccupy.ModelSite.theta(Xocc, occ.b, ldet.b, LVvals)
+  ModelSite.Occ.Pred.CondLV <- poccupy.ModelSite.theta(Xocc, occ.b, lv.b, LVvals)
   
   if (is.null(Xobs)){
     sum_occ_margLV <- sumRV_margrow(ModelSite.Occ.Pred.CondLV)

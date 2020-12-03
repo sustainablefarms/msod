@@ -14,14 +14,14 @@ paraminits <- function(modeltype, chain, indata, ...){
 #' @export
 paraminits.jsodm_lv <- function(chain, indata, ...){
   out <- paraminits.jsodm(chain, indata, ...)
-  # ldet.b<-matrix(1, indata$nspecies, indata$nlv)
-  # ldet.b[1:indata$nlv,1:indata$nlv]<-0
+  # lv.b<-matrix(1, indata$nspecies, indata$nlv)
+  # lv.b[1:indata$nlv,1:indata$nlv]<-0
   # for(l in 1:indata$nlv-1){
-  #   ldet.b[l,(l+1):indata$nlv]<-NA
+  #   lv.b[l,(l+1):indata$nlv]<-NA
   # }
   # LV <- matrix(rnorm(indata$nlv * indata$nmodelsites), indata$nmodelsites, indata$nlv)
   # out <- c(out,
-  #          ldet.b = ldet.b,
+  #          lv.b = lv.b,
   #          LV = LV)
   return(out)
 }

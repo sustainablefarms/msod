@@ -161,47 +161,47 @@ poccupy_species <- function(fit, type = "median", conditionalLV = TRUE, numLVsim
   
   if ((!is.null(nlv) && (nlv > 0))){
     if (conditionalLV){
-      ldet.b_arr <- bugsvar2array(draws, "ldet.b", 1:nspecies, 1:nlv)
+      lv.b_arr <- bugsvar2array(draws, "lv.b", 1:nspecies, 1:nlv)
       LVvals <- bugsvar2array(draws, "lv.v", 1:nrow(Xocc), 1:nlv)
-    } else { #unknown LV values, with known ldet.b
+    } else { #unknown LV values, with known lv.b
       #however, as poccupy is looking at each species individually, 
-      #the ldet.bs can be ignored when not conditional on the LV
+      #the lv.bs can be ignored when not conditional on the LV
       #(the occupancy variable is a Gaussian with mean given by Xocc, and variance of 1)
-      ldet.b_arr <- NULL
+      lv.b_arr <- NULL
       LVvals <- NULL
     }
   } else { #model has no LV
     stopifnot(!conditionalLV)
-    ldet.b_arr <- NULL
+    lv.b_arr <- NULL
     LVvals <- NULL
   }
   
-  pocc <- poccupy_species_raw(fit$data$Xocc, occ.b_arr, ldet.b_arr, LVvals)
+  pocc <- poccupy_species_raw(fit$data$Xocc, occ.b_arr, lv.b_arr, LVvals)
   colnames(pocc) <- fit$species
   return(pocc)
 }
 
 poccupy_new_data <- function(fit, Xocc, numLVsims){
   Xocc <- apply.designmatprocess(fit$XoccProcess, Xocc)
-  #unknown LV values, with known ldet.b
+  #unknown LV values, with known lv.b
   #as poccupy is looking at each species individually, 
-  #the ldet.bs can be ignored when not conditional on the LV
+  #the lv.bs can be ignored when not conditional on the LV
   #(the occupancy variable is a Gaussian with mean given by Xocc, and variance of 1)
-  ldet.b_arr <- NULL
+  lv.b_arr <- NULL
   LVvals <- NULL
   
-  pocc <- poccupy_species_raw(Xocc, occ.b_arr, ldet.b_arr, LVvals)
+  pocc <- poccupy_species_raw(Xocc, occ.b_arr, lv.b_arr, LVvals)
   colnames(pocc) <- fit$species
   return(pocc)
 }
 
-poccupy_species_raw <- function(Xocc, occ.b_arr, ldet.b_arr = NULL, LVvals = NULL){
+poccupy_species_raw <- function(Xocc, occ.b_arr, lv.b_arr = NULL, LVvals = NULL){
   if (length(dim(LVvals)) == 3){
-    stopifnot(dim(ldet.b_arr)[[3]] == dim(LVvals)[[3]])
+    stopifnot(dim(lv.b_arr)[[3]] == dim(LVvals)[[3]])
     pocc_l <- lapply(1:nrow(Xocc), function(siteid){
       poccupy.ModelSite(Xocc[siteid, , drop = FALSE], 
                         occ.b_arr, 
-                        ldet.b_arr, 
+                        lv.b_arr, 
                         LVvals[siteid, , , drop = FALSE])
     })
   } else {

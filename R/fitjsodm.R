@@ -55,7 +55,7 @@ fitjsodm              <- function(Xocc, yXobs, species, ModelSite, modeltype,  #
                           "jsodm_lv.txt",
                           package = "msod")
     #Specify the parameters to be monitored
-    monitor.params = c(monitor.params, 'ldet.b', "LV")
+    monitor.params = c(monitor.params, 'lv.b', "LV")
   }
   if (modeltype == "jsodm_lv_sepexp"){
     ### Latent variable multi-species co-occurence model
@@ -63,7 +63,7 @@ fitjsodm              <- function(Xocc, yXobs, species, ModelSite, modeltype,  #
                           "jsodm_lv_sepexp.txt",
                           package = "msod")
     #Specify the parameters to be monitored
-    monitor.params = c(monitor.params, 'ldet.b', "LV", "lv.v.spatscale", "lv.v.timescale")
+    monitor.params = c(monitor.params, 'lv.b', "LV", "lv.v.spatscale", "lv.v.timescale")
   }
 
   # set up initial values

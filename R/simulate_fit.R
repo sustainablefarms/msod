@@ -68,14 +68,14 @@ simulate_detections_LV <- function(fit, esttype = "median"){
 #' @param ObsFmla Formula for detection. Available variables: Upvisit, Step
 #' @param occ.b.min, occ.b.max, det.b.min, det.b.max The upper and lower bouonds of the occ.b and det.b parameters.
 #'  May be a single number or an array with rows corresponding to species and columns to covariates.
-#' @param ldet.b.min, ldet.b.max Same as occ.b.min and occ.b.max for the latent variable loadings.
+#' @param lv.b.min, lv.b.max Same as occ.b.min and occ.b.max for the latent variable loadings.
 #' @examples 
 #' artfit <- artificial_runjags(nspecies = 2, nsites = 10, nvisitspersite = 4, modeltype = "jsodm_lv", nlv = 2)
 #' \# with high correlation between occupancy of species
 #' artfit <- artificial_runjags(nspecies = 2, nsites = 10, nvisitspersite = 4,
 #'                               OccFmla = "~ 1",
 #'                               occ.b.min = 0.8,
-#'                               ldet.b.min = 0.3,
+#'                               lv.b.min = 0.3,
 #'                               modeltype = "jsodm_lv",
 #'                               nlv = 2)
 #'  cor(artfit$data$y)
@@ -87,8 +87,8 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2,
                                occ.b.max = 1,
                                det.b.min = -1,
                                det.b.max = 1,
-                               ldet.b.min = -0.5,
-                               ldet.b.max = 0.5,
+                               lv.b.min = -0.5,
+                               lv.b.max = 0.5,
                                modeltype = "jsodm_lv",
                                ...
                                ){
@@ -134,9 +134,9 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2,
                       ((sites %/% 5) * 5 == sites ) | (sites %/% 3) * 3 == sites))
     if (nlv == 0) {LV <- NULL}
     else {LV <- LV[, 1:nlv, drop = FALSE]}
-    ldet.b <- matrix(runif(  fit$data$nspecies * fit$data$nlv, min = ldet.b.min, max = ldet.b.max), nrow = fit$data$nspecies, ncol = fit$data$nlv) #0.5 constraint makes sure rowSum(ldet.b^2) < 1
+    lv.b <- matrix(runif(  fit$data$nspecies * fit$data$nlv, min = lv.b.min, max = lv.b.max), nrow = fit$data$nspecies, ncol = fit$data$nlv) #0.5 constraint makes sure rowSum(lv.b^2) < 1
     theta <- c(theta, 
-               matrix2bugsvar(ldet.b, name = "ldet.b"),
+               matrix2bugsvar(lv.b, name = "lv.b"),
                matrix2bugsvar(LV, name = "LV"))
   }
   fit$mcmc <- list()

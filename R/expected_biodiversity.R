@@ -8,8 +8,8 @@
 #' Xobs <- fit$data$Xobs[fit$data$ModelSite == 2, , drop = FALSE]
 #' numspecies <- fit$data$nspecies
 #' lvsim <- matrix(rnorm(2 * 1), ncol = 2, nrow = 2) #dummy lvsim vars
-#' ldet.b.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$nspecies, ncol = 2), "ldet.b")
-#' theta <- c(theta, ldet.b.bugs)
+#' lv.b.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$nspecies, ncol = 2), "lv.b")
+#' theta <- c(theta, lv.b.bugs)
 #' 
 #' Enumspec <- predsumspecies(fit, UseFittedLV = TRUE, return = "median")
 #' 
@@ -36,12 +36,12 @@
 #' @return A named vector of the expectation and variance of the numbers of species occupying the ModelSite and given parameter set.
 #' If observational covariates are supplied then the expection and variance of numbers of species detected is also returned.
 #' @export
-expectedspeciesnum.ModelSite.theta <- function(Xocc, Xobs = NULL, occ.b, det.b = NULL, ldet.b = NULL, LVvals = NULL){
+expectedspeciesnum.ModelSite.theta <- function(Xocc, Xobs = NULL, occ.b, det.b = NULL, lv.b = NULL, LVvals = NULL){
   ## Probability of Site Occupancy
   stopifnot(nrow(Xocc) == 1)
   if (is.null(Xobs)) {stopifnot(is.null(det.b))}
   Xocc <- as.matrix(Xocc)
-  ModelSite.Occ.Pred.CondLV <- poccupy.ModelSite.theta(Xocc, occ.b, ldet.b, LVvals)
+  ModelSite.Occ.Pred.CondLV <- poccupy.ModelSite.theta(Xocc, occ.b, lv.b, LVvals)
   
   ## Expected number of species occupying modelsite, given model and theta, and marginal across LV
   EVnumspec_occ <- Erowsum_margrow(ModelSite.Occ.Pred.CondLV)
@@ -116,10 +116,10 @@ predsumspecies <- function(fit, desiredspecies = fit$species, chains = NULL, Use
     LVbugs.draws <- Rfast::rep_row(LVbugs, nrow(draws))
     colnames(LVbugs.draws) <- names(LVbugs)
     
-    ldet.b.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$nspecies, ncol = 2), "ldet.b")
-    ldet.b.draws <- Rfast::rep_row(ldet.b.bugs, nrow(draws))
-    colnames(ldet.b.draws) <- names(ldet.b.bugs)
-    draws <- cbind(draws, ldet.b.draws, LVbugs.draws)
+    lv.b.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$nspecies, ncol = 2), "lv.b")
+    lv.b.draws <- Rfast::rep_row(lv.b.bugs, nrow(draws))
+    colnames(lv.b.draws) <- names(lv.b.bugs)
+    draws <- cbind(draws, lv.b.draws, LVbugs.draws)
     fit$data$nlv <- 2
     UseFittedLV <- TRUE #calculations faster when not simulating 1000s of LV values, especially since they are all ignored here.
   } 
@@ -206,7 +206,7 @@ predsumspecies_raw <- function(Xocc, Xobs = NULL, ModelSite = NULL,
   }
   occ.b <- bugsvar2array(draws, "occ.b", 1:nspmodel, 1:noccvar)[desiredspecies, , , drop = FALSE]
   if (!is.null(Xobs)) {det.b <- bugsvar2array(draws, "det.b", 1:nspmodel, 1:nobsvar)[desiredspecies, , , drop = FALSE]}
-  ldet.b <- bugsvar2array(draws, "ldet.b", 1:nspmodel, 1:nlv)[desiredspecies, , , drop = FALSE]
+  lv.b <- bugsvar2array(draws, "lv.b", 1:nspmodel, 1:nlv)[desiredspecies, , , drop = FALSE]
   
   if (useLVindraws){stopifnot(is.null(nLVsim))}
   if (!useLVindraws){stopifnot(is.numeric(nLVsim))}
@@ -230,7 +230,7 @@ predsumspecies_raw <- function(Xocc, Xobs = NULL, ModelSite = NULL,
           occ.b_theta <- drop_to_matrix(occ.b[,, sitedrawidx[["drawidx"]], drop = FALSE])
           if (!is.null(Xobs)) {det.b_theta <- drop_to_matrix(det.b[,, sitedrawidx[["drawidx"]], drop = FALSE])}
           else {det.b_theta <- NULL}
-          ldet.b_theta <- drop_to_matrix(ldet.b[,, sitedrawidx[["drawidx"]] , drop = FALSE])
+          lv.b_theta <- drop_to_matrix(lv.b[,, sitedrawidx[["drawidx"]] , drop = FALSE])
           if (useLVindraws){
             LVvals_thetasite <- matrix(LVvals[sitedrawidx[["siteidx"]], , sitedrawidx[["drawidx"]], drop = FALSE], nrow = 1, ncol = nlv)
           } else {
@@ -239,7 +239,7 @@ predsumspecies_raw <- function(Xocc, Xobs = NULL, ModelSite = NULL,
           Enumspec_sitetheta <- expectedspeciesnum.ModelSite.theta(Xocc = Xocc, Xobs = Xobs,
                                                                    occ.b = occ.b_theta,
                                                                    det.b = det.b_theta,
-                                                                   ldet.b = ldet.b_theta,
+                                                                   lv.b = lv.b_theta,
                                                                    LVvals = LVvals_thetasite)
           return(Enumspec_sitetheta)
         },
@@ -376,10 +376,10 @@ predsumspecies_newdata <- function(fit, Xocc, Xobs = NULL, ModelSiteVars = NULL,
   draws <- do.call(rbind, fit$mcmc[chains])
   
   if ( (is.null(fit$data$nlv)) || (fit$data$nlv == 0)){ #LVs not in model, add dummy variables
-    ldet.b.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$nspecies, ncol = 2), "ldet.b")
-    ldet.b.draws <- Rfast::rep_row(ldet.b.bugs, nrow(draws))
-    colnames(ldet.b.draws) <- names(ldet.b.bugs)
-    draws <- cbind(draws, ldet.b.draws)
+    lv.b.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$nspecies, ncol = 2), "lv.b")
+    lv.b.draws <- Rfast::rep_row(lv.b.bugs, nrow(draws))
+    colnames(lv.b.draws) <- names(lv.b.bugs)
+    draws <- cbind(draws, lv.b.draws)
     fit$data$nlv <- 2
     nLVsim = 2 #calculations faster when not simulating 1000s of LV values, especially since they are all ignored here.
   }
