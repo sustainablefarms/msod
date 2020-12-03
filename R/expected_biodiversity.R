@@ -112,7 +112,7 @@ predsumspecies <- function(fit, desiredspecies = fit$species, chains = NULL, Use
   if (is.null(chains)){chains <- 1:length(fit$mcmc)}
   draws <- do.call(rbind, fit$mcmc[chains])
   if ( (is.null(fit$data$nlv)) || (fit$data$nlv == 0)){ #LVs not in model, add dummy variables
-    LVbugs <- matrix2bugsvar(matrix(0, nrow = nrow(fit$data$Xocc), ncol = 2), "LV")
+    LVbugs <- matrix2bugsvar(matrix(0, nrow = nrow(fit$data$Xocc), ncol = 2), "lv.v")
     LVbugs.draws <- Rfast::rep_row(LVbugs, nrow(draws))
     colnames(LVbugs.draws) <- names(LVbugs)
     

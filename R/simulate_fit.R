@@ -36,7 +36,7 @@ simulate_detections <- function(fit, esttype = "median"){
 
 simulate_LV <- function(fit, replaceinsitu = FALSE){
   simLV <- matrix(rnorm(fit$data$nlv * nrow(fit$data$Xocc)), ncol = fit$data$nlv)
-  simLVbugsname <- matrix2bugsvar(simLV, name = "LV")
+  simLVbugsname <- matrix2bugsvar(simLV, name = "lv.v")
   if (!replaceinsitu) {return(simLVbugsname)}
   
   fit$mcmc <- lapply(fit$mcmc, function(arr) {
@@ -137,7 +137,7 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2,
     lv.b <- matrix(runif(  fit$data$nspecies * fit$data$nlv, min = lv.b.min, max = lv.b.max), nrow = fit$data$nspecies, ncol = fit$data$nlv) #0.5 constraint makes sure rowSum(lv.b^2) < 1
     theta <- c(theta, 
                matrix2bugsvar(lv.b, name = "lv.b"),
-               matrix2bugsvar(LV, name = "LV"))
+               matrix2bugsvar(LV, name = "lv.v"))
   }
   fit$mcmc <- list()
   fit$mcmc[[1]] <- t(as.matrix(theta))
