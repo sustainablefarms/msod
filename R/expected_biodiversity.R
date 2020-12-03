@@ -32,16 +32,16 @@
 #' @param Xocc A matrix of occupancy covariates. Must have a single row. Columns correspond to covariates.
 #' @param Xobs A matrix of detection covariates, each row is a visit. If NULL then expected number of species in occupation is returned
 #' @param theta A vector of model parameters, labelled according to the BUGS labelling convention seen in runjags
-#' @param LVvals A matrix of LV values. Each column corresponds to a LV. To condition on specific LV values, provide a matrix of row 1.
+#' @param lv.v A matrix of LV values. Each column corresponds to a LV. To condition on specific LV values, provide a matrix of row 1.
 #' @return A named vector of the expectation and variance of the numbers of species occupying the ModelSite and given parameter set.
 #' If observational covariates are supplied then the expection and variance of numbers of species detected is also returned.
 #' @export
-expectedspeciesnum.ModelSite.theta <- function(Xocc, Xobs = NULL, occ.b, det.b = NULL, lv.b = NULL, LVvals = NULL){
+expectedspeciesnum.ModelSite.theta <- function(Xocc, Xobs = NULL, occ.b, det.b = NULL, lv.b = NULL, lv.v = NULL){
   ## Probability of Site Occupancy
   stopifnot(nrow(Xocc) == 1)
   if (is.null(Xobs)) {stopifnot(is.null(det.b))}
   Xocc <- as.matrix(Xocc)
-  ModelSite.Occ.Pred.CondLV <- poccupy.ModelSite.theta(Xocc, occ.b, lv.b, LVvals)
+  ModelSite.Occ.Pred.CondLV <- poccupy.ModelSite.theta(Xocc, occ.b, lv.b, lv.v)
   
   ## Expected number of species occupying modelsite, given model and theta, and marginal across LV
   EVnumspec_occ <- Erowsum_margrow(ModelSite.Occ.Pred.CondLV)
@@ -217,7 +217,7 @@ predsumspecies_raw <- function(Xocc, Xobs = NULL, ModelSite = NULL,
   if (!useLVindraws){ # predicting as if LVs not known, so simulate from their distribution
     lvsim <- matrix(rnorm(nlv * nLVsim), ncol = nlv, nrow = nLVsim)
   } else {
-    LVvals <- bugsvar2array(draws, "LV", 1:nsites, 1:nlv)
+    lv.v <- bugsvar2array(draws, "lv.v", 1:nsites, 1:nlv)
   }
   
 
@@ -232,15 +232,15 @@ predsumspecies_raw <- function(Xocc, Xobs = NULL, ModelSite = NULL,
           else {det.b_theta <- NULL}
           lv.b_theta <- drop_to_matrix(lv.b[,, sitedrawidx[["drawidx"]] , drop = FALSE])
           if (useLVindraws){
-            LVvals_thetasite <- matrix(LVvals[sitedrawidx[["siteidx"]], , sitedrawidx[["drawidx"]], drop = FALSE], nrow = 1, ncol = nlv)
+            lv.v_thetasite <- matrix(lv.v[sitedrawidx[["siteidx"]], , sitedrawidx[["drawidx"]], drop = FALSE], nrow = 1, ncol = nlv)
           } else {
-            LVvals_thetasite <- lvsim
+            lv.v_thetasite <- lvsim
           }
           Enumspec_sitetheta <- expectedspeciesnum.ModelSite.theta(Xocc = Xocc, Xobs = Xobs,
                                                                    occ.b = occ.b_theta,
                                                                    det.b = det.b_theta,
                                                                    lv.b = lv.b_theta,
-                                                                   LVvals = LVvals_thetasite)
+                                                                   lv.v = lv.v_thetasite)
           return(Enumspec_sitetheta)
         },
         cl = cl)

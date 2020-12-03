@@ -208,7 +208,7 @@ NoneDetected <- as.numeric(colSums(y) == 0)
 ModelSite.Occ.eta_external <- as.matrix(Xocc) %*% t(occ.b) #columns are species
 
 # probability of occupancy given LV
-ModelSite.Occ.Pred.CondLV <- poccupy.ModelSite.theta(Xocc, occ.b, lv.b, LVvals = lvsim)
+ModelSite.Occ.Pred.CondLV <- poccupy.ModelSite.theta(Xocc, occ.b, lv.b, lv.v = lvsim)
 
 # likelihood given LV
 Likl.JointVisit.condLV <- Rfast::eachrow(ModelSite.Occ.Pred.CondLV, Likl_condoccupied.JointVisit, oper = "*") #per species likelihood, occupied component. Works because species conditionally independent given LV

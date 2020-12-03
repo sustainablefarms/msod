@@ -162,21 +162,21 @@ poccupy_species <- function(fit, type = "median", conditionalLV = TRUE, numLVsim
   if ((!is.null(nlv) && (nlv > 0))){
     if (conditionalLV){
       lv.b_arr <- bugsvar2array(draws, "lv.b", 1:nspecies, 1:nlv)
-      LVvals <- bugsvar2array(draws, "lv.v", 1:nrow(Xocc), 1:nlv)
+      lv.v <- bugsvar2array(draws, "lv.v", 1:nrow(Xocc), 1:nlv)
     } else { #unknown LV values, with known lv.b
       #however, as poccupy is looking at each species individually, 
       #the lv.bs can be ignored when not conditional on the LV
       #(the occupancy variable is a Gaussian with mean given by Xocc, and variance of 1)
       lv.b_arr <- NULL
-      LVvals <- NULL
+      lv.v <- NULL
     }
   } else { #model has no LV
     stopifnot(!conditionalLV)
     lv.b_arr <- NULL
-    LVvals <- NULL
+    lv.v <- NULL
   }
   
-  pocc <- poccupy_species_raw(fit$data$Xocc, occ.b_arr, lv.b_arr, LVvals)
+  pocc <- poccupy_species_raw(fit$data$Xocc, occ.b_arr, lv.b_arr, lv.v)
   colnames(pocc) <- fit$species
   return(pocc)
 }
@@ -188,21 +188,21 @@ poccupy_new_data <- function(fit, Xocc, numLVsims){
   #the lv.bs can be ignored when not conditional on the LV
   #(the occupancy variable is a Gaussian with mean given by Xocc, and variance of 1)
   lv.b_arr <- NULL
-  LVvals <- NULL
+  lv.v <- NULL
   
-  pocc <- poccupy_species_raw(Xocc, occ.b_arr, lv.b_arr, LVvals)
+  pocc <- poccupy_species_raw(Xocc, occ.b_arr, lv.b_arr, lv.v)
   colnames(pocc) <- fit$species
   return(pocc)
 }
 
-poccupy_species_raw <- function(Xocc, occ.b_arr, lv.b_arr = NULL, LVvals = NULL){
-  if (length(dim(LVvals)) == 3){
-    stopifnot(dim(lv.b_arr)[[3]] == dim(LVvals)[[3]])
+poccupy_species_raw <- function(Xocc, occ.b_arr, lv.b_arr = NULL, lv.v = NULL){
+  if (length(dim(lv.v)) == 3){
+    stopifnot(dim(lv.b_arr)[[3]] == dim(lv.v)[[3]])
     pocc_l <- lapply(1:nrow(Xocc), function(siteid){
       poccupy.ModelSite(Xocc[siteid, , drop = FALSE], 
                         occ.b_arr, 
                         lv.b_arr, 
-                        LVvals[siteid, , , drop = FALSE])
+                        lv.v[siteid, , , drop = FALSE])
     })
   } else {
     pocc_l <- lapply(1:nrow(Xocc), function(siteid){
