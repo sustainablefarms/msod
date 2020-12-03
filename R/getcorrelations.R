@@ -38,7 +38,7 @@ get.enviro.cor <- function(fit, est = "median", prob = 0.95)
   
   for(k0 in 1:nrow(draws)) 
   { ## compute correlations per draw
-    cw_X_coefs <- bugsvar2matrix(draws[k0, ], "u.b", 1:nsp, 1:ncol(fit$data$Xocc))
+    cw_X_coefs <- bugsvar2matrix(draws[k0, ], "occ.b", 1:nsp, 1:ncol(fit$data$Xocc))
     enviro.linpreds <- tcrossprod(fit$data$Xocc,as.matrix(cw_X_coefs))
     #enviro.linpreds is the occupancy linear predictor without LV for posterior draw k0, for each species and ModelSite.
     #each row is a ModelSite, each column is a species

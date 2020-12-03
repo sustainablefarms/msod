@@ -7,7 +7,7 @@
 #' 
 #' On 1: New data will look like a new location or visit for a new season in our exisitng region, and observing only the species included in the model.
 #' This means we have zero knowledge of the latent variable value at the new ModelSite. This means likelihood:
-#'         *  conditional on the covariates u.b and v.b (not using the fitted values of mu.u.b, tau.u.b etc)
+#'         *  conditional on the covariates occ.b and v.b (not using the fitted values of mu.occ.b, tau.occ.b etc)
 #'         *  is conditional on the lv.coef values of each species
 #'         *  is conditional on the latent variable value for (each) new ModelSite being drawn from a standard Gaussian distribution.
 #'         
@@ -103,10 +103,10 @@ likelihoods.fit <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL, ch
   
   if ( (is.null(fit$data$nlv)) || (fit$data$nlv == 0)){ #make dummy lvsim and and 0 loadings to draws
     lvsim <- matrix(rnorm(2 * 1), ncol = 2, nrow = 2) #dummy lvsim vars
-    lv.coef.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$n, ncol = 2), "lv.coef")
-    lv.coef.draws <- Rfast::rep_row(lv.coef.bugs, nrow(draws))
-    colnames(lv.coef.draws) <- names(lv.coef.bugs)
-    draws <- cbind(draws, lv.coef.draws)
+    lv.b.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$nspecies, ncol = 2), "lv.b")
+    lv.b.draws <- Rfast::rep_row(lv.b.bugs, nrow(draws))
+    colnames(lv.b.draws) <- names(lv.b.bugs)
+    draws <- cbind(draws, lv.b.draws)
   } else {
     lvsim <- matrix(rnorm(fit$data$nlv * numlvsims), ncol = fit$data$nlv, nrow = numlvsims) #simulated lv values, should average over thousands
   }
@@ -118,9 +118,9 @@ likelihoods.fit <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL, ch
     sitedata <- prep_new_data(fit, Xocc, yXobs, ModelSite)
   }
   
-  u.b_arr <- bugsvar2array(draws, "u.b", 1:fit$data$n, 1:ncol(fit$data$Xocc))  # rows are species, columns are occupancy covariates
-  v.b_arr <- bugsvar2array(draws, "v.b", 1:fit$data$n, 1:ncol(fit$data$Xobs))  # rows are species, columns are observation covariates
-  lv.coef_arr <- bugsvar2array(draws, "lv.coef", 1:fit$data$n, 1:ncol(lvsim)) # rows are species, columns are lv
+  occ.b_arr <- bugsvar2array(draws, "occ.b", 1:fit$data$nspecies, 1:ncol(fit$data$Xocc))  # rows are species, columns are occupancy covariates
+  v.b_arr <- bugsvar2array(draws, "det.b", 1:fit$data$nspecies, 1:ncol(fit$data$Xobs))  # rows are species, columns are observation covariates
+  lv.coef_arr <- bugsvar2array(draws, "lv.b", 1:fit$data$nspecies, 1:ncol(lvsim)) # rows are species, columns are lv
   
   if (is.null(cl)) {
     likel.l <- lapply(1:nrow(sitedata$Xocc), function(modelsiteid) {
@@ -129,7 +129,7 @@ likelihoods.fit <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL, ch
       y <- sitedata$y[sitedata$ModelSite == modelsiteid, , drop = FALSE]
       lkl <- likelihood_joint_marginal.ModelSite(
                       Xocc,Xobs, y,
-                      u.b_arr, v.b_arr, lv.coef_arr, lvsim = lvsim)
+                      occ.b_arr, v.b_arr, lv.coef_arr, lvsim = lvsim)
       return(lkl)
     })
   }
@@ -140,7 +140,7 @@ likelihoods.fit <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL, ch
       y <- sitedata$y[sitedata$ModelSite == modelsiteid, , drop = FALSE]
       lkl <- likelihood_joint_marginal.ModelSite(
                       Xocc,Xobs, y,
-                      u.b_arr, v.b_arr, lv.coef_arr, lvsim = lvsim)
+                      occ.b_arr, v.b_arr, lv.coef_arr, lvsim = lvsim)
       return(lkl)
     })
   }
@@ -149,7 +149,7 @@ likelihoods.fit <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL, ch
 }
 
 #' @describeIn likelihoods.fit Compute the joint-species LV-marginal likelihood for a ModelSite
-#' @param u.b_arr Occupancy covariate loadings. Each row is a species, each column an occupancy covariate, each layer (dim = 3) is a draw
+#' @param occ.b_arr Occupancy covariate loadings. Each row is a species, each column an occupancy covariate, each layer (dim = 3) is a draw
 #' @param v.b_arr Detection covariate loadings. Each row is a species, each column an detection covariate, each layer (dim = 3) is a draw
 #' @param lv.coef_arr LV loadings. Each row is a species, each column a LV, each layer (dim = 3) is a draw
 #' @param data_i A row of a data frame created by \code{prep_data_by_modelsite}. Each row contains data for a single ModelSite. 
@@ -158,14 +158,14 @@ likelihoods.fit <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL, ch
 #' @param Xobs A matrix of processed detection covariate values for each visit to the model site. 
 #' @param y Matrix of species detections for each visit to the model site.
 #' @export
-likelihood_joint_marginal.ModelSite <- function(Xocc, Xobs, y, u.b_arr, v.b_arr, lv.coef_arr, lvsim){
-  stopifnot(length(dim(u.b_arr)) == 3)
-  drawid <- 1:dim(u.b_arr)[[3]]
+likelihood_joint_marginal.ModelSite <- function(Xocc, Xobs, y, occ.b_arr, v.b_arr, lv.coef_arr, lvsim){
+  stopifnot(length(dim(occ.b_arr)) == 3)
+  drawid <- 1:dim(occ.b_arr)[[3]]
 
   Likl_margLV <- vapply(drawid, 
                         function(thetaid) likelihood_joint_marginal.ModelSite.theta(
         Xocc, Xobs, y,
-        u.b = drop_to_matrix(u.b_arr[,, thetaid, drop = FALSE], dimdrop = 3),
+        occ.b = drop_to_matrix(occ.b_arr[,, thetaid, drop = FALSE], dimdrop = 3),
         v.b = drop_to_matrix(v.b_arr[,, thetaid, drop = FALSE], dimdrop = 3),
         lv.coef = drop_to_matrix(lv.coef_arr[,, thetaid, drop = FALSE], dimdrop = 3),
         lvsim),
@@ -179,11 +179,11 @@ likelihood_joint_marginal.ModelSite <- function(Xocc, Xobs, y, u.b_arr, v.b_arr,
 #' @param Xobs A matrix of detection covariates, each row is a visit.
 #' @param y A matrix of detection data for a given model site. 1 corresponds to detected. Each row is visit, each column is a species.
 #' @param v.b Covariate loadings. Each row is a species, each column a detection covariate
-#' @param u.b A vector of model parameters, labelled according to the BUGS labelling convention seen in runjags
+#' @param occ.b A vector of model parameters, labelled according to the BUGS labelling convention seen in runjags
 #' @param lv.coef Loadings for the latent variables. Each row is a species, each column corresponds to a LV.
 #' @param lvsim A matrix of simulated LV values. Columns correspond to latent variables, each row is a simulation
 #' @export
-likelihood_joint_marginal.ModelSite.theta <- function(Xocc, Xobs, y, u.b, v.b, lv.coef, lvsim){
+likelihood_joint_marginal.ModelSite.theta <- function(Xocc, Xobs, y, occ.b, v.b, lv.coef, lvsim){
 stopifnot(nrow(Xocc) == 1)
 stopifnot(nrow(Xobs) == nrow(y))
 y <- as.matrix(y)
@@ -205,10 +205,10 @@ Likl_condoccupied.JointVisit <- apply(Likl_condoccupied, 2, prod)
 NoneDetected <- as.numeric(colSums(y) == 0)
 
 ## Probability of Site Occupancy
-ModelSite.Occ.eta_external <- as.matrix(Xocc) %*% t(u.b) #columns are species
+ModelSite.Occ.eta_external <- as.matrix(Xocc) %*% t(occ.b) #columns are species
 
 # probability of occupancy given LV
-ModelSite.Occ.Pred.CondLV <- poccupy.ModelSite.theta(Xocc, u.b, lv.coef, LVvals = lvsim)
+ModelSite.Occ.Pred.CondLV <- poccupy.ModelSite.theta(Xocc, occ.b, lv.coef, LVvals = lvsim)
 
 # likelihood given LV
 Likl.JointVisit.condLV <- Rfast::eachrow(ModelSite.Occ.Pred.CondLV, Likl_condoccupied.JointVisit, oper = "*") #per species likelihood, occupied component. Works because species conditionally independent given LV

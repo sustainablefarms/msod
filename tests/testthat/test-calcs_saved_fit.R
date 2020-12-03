@@ -12,6 +12,7 @@ test_that("Likelihood is historically consistent", {
   #                                                          lvsim = lvsim)
   # expect_known_output(lkl_site001, file = "./tests/testthat/lkl_site001.txt", print = TRUE)
   
+  fit <- translatefit(fit)
   set.seed(333)  #sets seed for simulated LV
   lkl_sites <- likelihoods.fit(fit, numlvsims = 10)
   expect_known_output(lkl_sites, file = "lkl_sites.txt", print = TRUE, update = FALSE)

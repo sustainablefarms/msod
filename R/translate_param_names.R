@@ -102,35 +102,35 @@ translatefit <- function(fit){
   # not stored: stochastic, hist, dic, 
   
   # summaries
-  rownames(fit$summaries) <- replacebeforebracket(rownames(fit$summaries))
+  if (!is.null(fit$summaries)) {rownames(fit$summaries) <- replacebeforebracket(rownames(fit$summaries))}
   
   # summary
-  rownames(fit$summary$statistics) <- replacebeforebracket(rownames(fit$summary$statistics))
-  rownames(fit$summary$quantiles) <- replacebeforebracket(rownames(fit$summary$quantiles))
+  if (!is.null(fit$statistics)) {rownames(fit$summary$statistics) <- replacebeforebracket(rownames(fit$summary$statistics))}
+  if (!is.null(fit$quantiles)) {rownames(fit$summary$quantiles) <- replacebeforebracket(rownames(fit$summary$quantiles))}
   
   # HPD
-  rownames(fit$HPD) <- replacebeforebracket(rownames(fit$HPD))
-  rownames(fit$hpd) <- replacebeforebracket(rownames(fit$hpd))
+  if (!is.null(fit$HPD)) {rownames(fit$HPD) <- replacebeforebracket(rownames(fit$HPD))}
+  if (!is.null(fit$hpd)) {rownames(fit$hpd) <- replacebeforebracket(rownames(fit$hpd))}
   
   # msce
-  names(fit$mcse$sseff) <- replacebeforebracket(rownames(fit$mcse$sseff))
-  names(fit$mcse$ssd) <- replacebeforebracket(rownames(fit$mcse$ssd))
-  names(fit$mcse$mcse) <- replacebeforebracket(rownames(fit$mcse$mcse))
+  if (!is.null(fit$sseff)) {names(fit$mcse$sseff) <- replacebeforebracket(rownames(fit$mcse$sseff))}
+  if (!is.null(fit$ssd)) {names(fit$mcse$ssd) <- replacebeforebracket(rownames(fit$mcse$ssd))}
+  if (!is.null(fit$mcse)) {names(fit$mcse$mcse) <- replacebeforebracket(rownames(fit$mcse$mcse))}
   
   # psrf
   if (class(fit$psrf) == "gelmanwithtarget"){ rownames(fit$psrf$psrf) <- replacebeforebracket(rownames(fit$psrf$psrf))}
   
   # autocorr
-  colnames(fit$autocorr) <- replacebeforebracket(colnames(fit$autocorr))
+  if (!is.null(fit$autocorr)) {colnames(fit$autocorr) <- replacebeforebracket(colnames(fit$autocorr))}
   
   # crosscorr ignored
   
   # ___stochastic
-  names(fit$truestochastic) <- replacebeforebracket(names(fit$truestochastic))
-  names(fit$semistochastic) <- replacebeforebracket(names(fit$semistochastic))
-  names(fit$nonstochastic) <- replacebeforebracket(names(fit$nonstochastic))
+  if (!is.null(fit$truestochastic)) {names(fit$truestochastic) <- replacebeforebracket(names(fit$truestochastic))}
+  if (!is.null(fit$semistochastic)) {names(fit$semistochastic) <- replacebeforebracket(names(fit$semistochastic))}
+  if (!is.null(fit$nonstochastic)) {names(fit$nonstochastic) <- replacebeforebracket(names(fit$nonstochastic))}
   
-  names(fit$discrete) <- replacebeforebracket(names(fit$discrete))
+  if (!is.null(fit$discrete)) {names(fit$discrete) <- replacebeforebracket(names(fit$discrete))}
   
   # trace, density, histogram, ecdfplot, key, acplot, ccplot ignored
   # ignored: "summary.available" "summary.pars"      "XoccProcess"       "XobsProcess"       "ModelSite"        

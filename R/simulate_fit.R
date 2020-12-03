@@ -66,15 +66,15 @@ simulate_detections_LV <- function(fit, esttype = "median"){
 #' @param nlv Number of latent variables. Must be 4 or less
 #' @param OccFmla Formula for occupancy. Available variables: UpSite, Sine1 and Sine2
 #' @param ObsFmla Formula for detection. Available variables: Upvisit, Step
-#' @param u.b.min, u.b.max, v.b.min, v.b.max The upper and lower bouonds of the u.b and v.b parameters.
+#' @param occ.b.min, occ.b.max, v.b.min, v.b.max The upper and lower bouonds of the occ.b and v.b parameters.
 #'  May be a single number or an array with rows corresponding to species and columns to covariates.
-#' @param lv.coef.min, lv.coef.max Same as u.b.min and u.b.max for the latent variable loadings.
+#' @param lv.coef.min, lv.coef.max Same as occ.b.min and occ.b.max for the latent variable loadings.
 #' @examples 
 #' artfit <- artificial_runjags(nspecies = 2, nsites = 10, nvisitspersite = 4, modeltype = "jsodm_lv", nlv = 2)
 #' \# with high correlation between occupancy of species
 #' artfit <- artificial_runjags(nspecies = 2, nsites = 10, nvisitspersite = 4,
 #'                               OccFmla = "~ 1",
-#'                               u.b.min = 0.8,
+#'                               occ.b.min = 0.8,
 #'                               lv.coef.min = 0.3,
 #'                               modeltype = "jsodm_lv",
 #'                               nlv = 2)
@@ -83,8 +83,8 @@ simulate_detections_LV <- function(fit, esttype = "median"){
 artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2,
                                OccFmla = "~ UpSite + Sine1 + Sine2",
                                ObsFmla = "~ UpVisit + Step",
-                               u.b.min = -1,
-                               u.b.max = 1,
+                               occ.b.min = -1,
+                               occ.b.max = 1,
                                v.b.min = -1,
                                v.b.max = 1,
                                lv.coef.min = -0.5,
@@ -119,9 +119,9 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2,
   fit$sample <- 1
 
   # set parameters
-  u.b <- matrix(runif( fit$data$n * fit$data$Vocc, min = u.b.min, max = u.b.max), nrow = fit$data$n, ncol = fit$data$Vocc, byrow = FALSE)
+  occ.b <- matrix(runif( fit$data$n * fit$data$Vocc, min = occ.b.min, max = occ.b.max), nrow = fit$data$n, ncol = fit$data$Vocc, byrow = FALSE)
   v.b <- matrix(runif(  fit$data$n * fit$data$Vobs, min = v.b.min, max = v.b.max), nrow = fit$data$n, ncol = fit$data$Vobs, byrow = FALSE)
-  theta <- c(matrix2bugsvar(u.b, name = "u.b"),
+  theta <- c(matrix2bugsvar(occ.b, name = "occ.b"),
              matrix2bugsvar(v.b, name = "v.b"))
   
   if (modeltype == "jsodm_lv"){

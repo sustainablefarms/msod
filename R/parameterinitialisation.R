@@ -48,21 +48,21 @@ paraminits.jsodm <- function(chain, indata, ...) {
     dplyr::group_by(ModelSiteID) %>%
     dplyr::summarise_all(max) %>%
     dplyr::select(-ModelSiteID)
-  u.b.proto <- lapply(colnames(y.occ.mock),
+  occ.b.proto <- lapply(colnames(y.occ.mock),
                       function(x) {unname(coef(glm( ((y.occ.mock>0)*1)[, x] ~ . - 1, #intercept is built in
                                                     data = data.frame(indata$Xocc),
                                                     family=binomial(link=probit))))})
   
-  u.b <- t(do.call(cbind, u.b.proto))
-  u.b[u.b > 5] <- 5  #remove extremes as coefficients are assumed to be from a standard gaussian
-  u.b[u.b < -5] <- -5  #remove extremes as coefficients are assumed to be from a standard gaussian
+  occ.b <- t(do.call(cbind, occ.b.proto))
+  occ.b[occ.b > 5] <- 5  #remove extremes as coefficients are assumed to be from a standard gaussian
+  occ.b[occ.b < -5] <- -5  #remove extremes as coefficients are assumed to be from a standard gaussian
 
   .RNG.seed <- c(1, 2, 3, 4, 5)[chain] # run jags likes to have this and the following argument defined in the initlalization functions.
   .RNG.name <- c(rep(c("base::Super-Duper", "base::Wichmann-Hill"),3))[chain]
   
   
   out <- list(
-    u.b= u.b,  #initial values guestimated from u.b.proto are erroring! "u[14,1]: Node inconsistent with parents"
+    occ.b= occ.b,  #initial values guestimated from occ.b.proto are erroring! "u[14,1]: Node inconsistent with parents"
     v.b= v.b,
     u=(y.occ.mock>0)-runif(1,0.1,0.8),  #this looks strange -> step(u) is an indicator of whether occupied or not
     #mu.a = matrix(rbinom((n)*J, size=1, prob=1),

@@ -36,12 +36,12 @@
 #' @return A named vector of the expectation and variance of the numbers of species occupying the ModelSite and given parameter set.
 #' If observational covariates are supplied then the expection and variance of numbers of species detected is also returned.
 #' @export
-expectedspeciesnum.ModelSite.theta <- function(Xocc, Xobs = NULL, u.b, v.b = NULL, lv.coef = NULL, LVvals = NULL){
+expectedspeciesnum.ModelSite.theta <- function(Xocc, Xobs = NULL, occ.b, v.b = NULL, lv.coef = NULL, LVvals = NULL){
   ## Probability of Site Occupancy
   stopifnot(nrow(Xocc) == 1)
   if (is.null(Xobs)) {stopifnot(is.null(v.b))}
   Xocc <- as.matrix(Xocc)
-  ModelSite.Occ.Pred.CondLV <- poccupy.ModelSite.theta(Xocc, u.b, lv.coef, LVvals)
+  ModelSite.Occ.Pred.CondLV <- poccupy.ModelSite.theta(Xocc, occ.b, lv.coef, LVvals)
   
   ## Expected number of species occupying modelsite, given model and theta, and marginal across LV
   EVnumspec_occ <- Erowsum_margrow(ModelSite.Occ.Pred.CondLV)
@@ -204,7 +204,7 @@ predsumspecies_raw <- function(Xocc, Xobs = NULL, ModelSite = NULL,
     stopifnot(all(ModelSiteIdxs %in% 1:nsites))
     if (!all(1:nsites %in% ModelSiteIdxs)){warning("Some ModelSite do not have observation covariate information.")}
   }
-  u.b <- bugsvar2array(draws, "u.b", 1:nspmodel, 1:noccvar)[desiredspecies, , , drop = FALSE]
+  occ.b <- bugsvar2array(draws, "occ.b", 1:nspmodel, 1:noccvar)[desiredspecies, , , drop = FALSE]
   if (!is.null(Xobs)) {v.b <- bugsvar2array(draws, "v.b", 1:nspmodel, 1:nobsvar)[desiredspecies, , , drop = FALSE]}
   lv.coef <- bugsvar2array(draws, "lv.coef", 1:nspmodel, 1:nlv)[desiredspecies, , , drop = FALSE]
   
@@ -227,7 +227,7 @@ predsumspecies_raw <- function(Xocc, Xobs = NULL, ModelSite = NULL,
           sitedrawidx <- sitedrawidxs[rowidx, , drop = FALSE]
           Xocc <- Xocc[sitedrawidx[["siteidx"]], , drop = FALSE]
           if (!is.null(Xobs)) {Xobs <- Xobs[ModelSiteIdxs == sitedrawidx[["siteidx"]], , drop = FALSE]}
-          u.b_theta <- drop_to_matrix(u.b[,, sitedrawidx[["drawidx"]], drop = FALSE])
+          occ.b_theta <- drop_to_matrix(occ.b[,, sitedrawidx[["drawidx"]], drop = FALSE])
           if (!is.null(Xobs)) {v.b_theta <- drop_to_matrix(v.b[,, sitedrawidx[["drawidx"]], drop = FALSE])}
           else {v.b_theta <- NULL}
           lv.coef_theta <- drop_to_matrix(lv.coef[,, sitedrawidx[["drawidx"]] , drop = FALSE])
@@ -237,7 +237,7 @@ predsumspecies_raw <- function(Xocc, Xobs = NULL, ModelSite = NULL,
             LVvals_thetasite <- lvsim
           }
           Enumspec_sitetheta <- expectedspeciesnum.ModelSite.theta(Xocc = Xocc, Xobs = Xobs,
-                                                                   u.b = u.b_theta,
+                                                                   occ.b = occ.b_theta,
                                                                    v.b = v.b_theta,
                                                                    lv.coef = lv.coef_theta,
                                                                    LVvals = LVvals_thetasite)

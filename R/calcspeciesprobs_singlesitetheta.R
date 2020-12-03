@@ -12,13 +12,13 @@ pdetection_occupied.ModelSite.theta <- function(Xobs, v.b){
 }
 
 #' @describeIn pdetection_occupied.ModelSite.theta The probability of occupation for given LV values.
-#' @param u.b Covariate loadings for occupancy. Each row is a species, each column an occupancy covariate.
+#' @param occ.b Covariate loadings for occupancy. Each row is a species, each column an occupancy covariate.
 #' @param lv.coef Loadings for the latent variables. Each row is a species, each column corresponds to a LV.
 #' @param LVvals A matrix of LV values. Each column corresponds to a LV. To condition on specific LV values, provide a matrix of row 1.
 #' @return A matrix of occupancy probabilities. Each row corresponds to a row of LVvals, each column to a species.
-poccupy.ModelSite.theta <- function(Xocc, u.b, lv.coef = NULL, LVvals = NULL){
+poccupy.ModelSite.theta <- function(Xocc, occ.b, lv.coef = NULL, LVvals = NULL){
   # external
-  ModelSite.Occ.eta_external <- as.matrix(Xocc) %*% t(u.b) #columns are species
+  ModelSite.Occ.eta_external <- as.matrix(Xocc) %*% t(occ.b) #columns are species
   
   if (!is.null(lv.coef)){# probability of occupancy given LV
     sd_u_condlv <- sqrt(1 - rowSums(lv.coef^2)) #for each species the standard deviation of the indicator random variable 'u', conditional on values of LV
