@@ -25,7 +25,7 @@ poccupy.ModelSite.theta <- function(Xocc, occ.b, lv.b = NULL, lv.v = NULL){
     ModelSite.Occ.eta_LV <- lv.v %*% t(lv.b) #occupancy contribution from latent variables, performed all together
     ModelSite.Occ.eta <- Rfast::eachrow(ModelSite.Occ.eta_LV, ModelSite.Occ.eta_external, oper = "+") #add the external part to each simulation
     # Make occ.indicator standard deviations equal to 1 by dividing other values by sd
-    # P(occ.indicator < -ModelSite.Occ.eta) = P(occ.indicator / sd < -ModelSite.Occ.eta / sd) = P(occ.v < -ModelSite.Occ.eta / sd)
+    # P(occ.indicator < -ModelSite.Occ.eta) = P(occ.indicator / sd < -ModelSite.Occ.eta / sd) = P(stdnorm < -ModelSite.Occ.eta / sd)
     ModelSite.Occ.eta_standardised <- Rfast::eachrow(ModelSite.Occ.eta, sd_u_condlv, oper = "/")
   } else {
     ModelSite.Occ.eta_standardised <- ModelSite.Occ.eta_external
@@ -33,3 +33,25 @@ poccupy.ModelSite.theta <- function(Xocc, occ.b, lv.b = NULL, lv.v = NULL){
   ModelSite.Occ.Pred.CondLV <- 1 - pnorm(-ModelSite.Occ.eta_standardised, mean = 0, sd = 1)
   return(ModelSite.Occ.Pred.CondLV)
 }
+
+# stdnormal thresh is the threshold on a stdnorm that determins occ.v
+# This threshold takes into account the different means and variances of the occ.indicator variables and
+# coverts all of the probabilities into computations on a starndard normal
+stdnormthresh.jsodm <- function(Xocc, occ.b){
+  occ.indicator_mean <- as.matrix(Xocc) %*% t(occ.b)
+  return(occ.indicator_mean)
+}
+
+stdnormthresh.jsodm_lv <- function(Xocc, occ.b, lv.b = NULL, lv.v = NULL){
+  sd_occ.indicator_condlv <- sqrt(1 - rowSums(lv.b^2)) #for each species the standard deviation of the indicator random variable 'occ.indicator', conditional on values of LV
+  occ.indicator_mean <- lv.v %*% t(lv.b) #occupancy contribution from latent variables, performed all together
+  nolv_mean <- stdnormthresh.jsodm(Xocc, occ.b)
+  
+  occ.indicator_mean <- Rfast::eachrow(occ.indicator_mean, nolv_mean, oper = "+") #add the external part to each simulation
+  # Make occ.indicator standard deviations equal to 1 by dividing other values by sd
+  # P(occ.indicator < -occ.indicator.mean) = P(occ.indicator / sd < -occ.indicator.mean / sd) = P(stdnorm < -occ.indicator.mean / sd)
+  stdnormmean <- Rfast::eachrow(occ.indicator_mean, sd_occ.indicator_condlv, oper = "/")
+  return(stdnormmean)
+}
+
+stdnormthresh.jsodm_lv_sepexp <- stdnormthresh.jsodm_lv
