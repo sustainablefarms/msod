@@ -11,9 +11,9 @@
 # places to change in codebase: everywhere
 parnames <- matrix(c(
   "u.b", "occ.b",
-  "lv.coef", "lv.b",
-  "LV", "lv.v",
   "v.b", "det.b",
+  "LV", "lv.v",
+  "lv.coef", "lv.b",
   "mu.u.b",    "mu.occ.b",
   "tau.u.b",   "tau.occ.b",
   "sigma.u.b", "sigma.occ.b",
