@@ -125,6 +125,26 @@ fitjsodm              <- function(Xocc, yXobs, species, ModelSite, modeltype,  #
   invisible(fit.runjags)
 }
 
+
+#' @describeIn fitjsodm An obsolete alias to fitjsodm()
+#' @export
+run.detectionoccupancy <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~ 1", ObsFmla = "~ 1",
+                                  modeltype, ...,
+                                  initsfunction = get0(paste0("paraminits.", modeltype)),
+                                  MCMCparams = list(n.chains = 1, adapt = 2000, burnin = 25000, sample = 1000, thin = 30),
+                                  filename = NULL){
+  warning("This function is obsolete, consider using fitjsodm instead.")
+  fit <- fitjsodm(Xocc, yXobs, species, ModelSite, modeltype,
+                  ...,
+                  OccFmla = OccFmla, ObsFmla = ObsFmla,
+                  initsfunction = initsfunction,
+                  MCMCparams = MCMCparams,
+                  filename = filename)
+  return(fit)
+}
+
+
+
 # x is filename
 checkwritable <- function(x){
   if (!file.exists(x)){
