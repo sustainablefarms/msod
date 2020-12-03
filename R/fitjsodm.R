@@ -49,6 +49,11 @@ fitjsodm              <- function(Xocc, yXobs, species, ModelSite, modeltype,  #
   
   # parameters to monitor 
   monitor.params = c('occ.b','det.b','mu.occ.b', 'tau.occ.b','sigma.occ.b', 'mu.det.b','tau.det.b', 'sigma.det.b')
+  if (modeltype == "jsodm"){
+    modelFile=system.file("modeldescriptions",
+			  "jsodm.txt",
+			  package = "msod")
+  }
   if (modeltype == "jsodm_lv"){
     ### Latent variable multi-species co-occurence model
     modelFile=system.file("modeldescriptions",

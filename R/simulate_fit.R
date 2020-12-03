@@ -34,7 +34,7 @@ simulate_detections <- function(fit, esttype = "median"){
   return(detected)
 }
 
-simulate_LV <- function(fit, replaceinsitu = FALSE){
+simulate_lv.v <- function(fit, replaceinsitu = FALSE){
   simLV <- matrix(rnorm(fit$data$nlv * nrow(fit$data$Xocc)), ncol = fit$data$nlv)
   simLVbugsname <- matrix2bugsvar(simLV, name = "lv.v")
   if (!replaceinsitu) {return(simLVbugsname)}
@@ -47,8 +47,8 @@ simulate_LV <- function(fit, replaceinsitu = FALSE){
 }
 
 #' @describeIn simulate_detections Simulate LV values and use these for simulating detections (with [simulate_detections()]). For each site the simulated LV values are copied across all draws.
-simulate_detections_LV <- function(fit, esttype = "median"){
-  fit <- simulate_LV(fit, replaceinsitu = TRUE)
+simulate_detections_lv.v <- function(fit, esttype = "median"){
+  fit <- simulate_lv.v(fit, replaceinsitu = TRUE)
   detected <- simulate_detections(fit, esttype = esttype)
   return(detected)
 }

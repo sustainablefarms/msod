@@ -146,7 +146,7 @@ sumspeciesRV_raw <- function(Xocc, Xobs = NULL, ModelSite = NULL, numspecies, nl
   if (!useLVindraws){ # predicting as if LVs not known, so simulate from their distribution
     lvsim <- matrix(rnorm(nlv * nLVsim), ncol = nlv, nrow = nLVsim)
   } else {
-    lv.v <- bugsvar2array(draws, "LV", 1:nsites, 1:nlv)
+    lv.v <- bugsvar2array(draws, "lv.v", 1:nsites, 1:nlv)
   }
   
   
