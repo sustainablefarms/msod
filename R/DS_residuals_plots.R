@@ -151,7 +151,7 @@ plot_residuals_detection.fit <- function(fit, detectionresiduals = NULL, varidx 
   
   # get detection covariates
   detectioncovars <- fitdata$Xobs
-  colnames(detectioncovars)[1:fitdata$Vobs] <- paste0("Xobs", 1:fitdata$Vobs)
+  colnames(detectioncovars)[1:fitdata$nobsvar] <- paste0("Xobs", 1:fitdata$nobsvar)
   if (!is.null(varidx)){detectioncovars <- detectioncovars[, varidx, drop = FALSE]} 
   if ("ObservedSite" %in% names(fitdata)){ModelSite <- fitdata$ObservedSite} #to enable calculation on the early fitted objects with different name
   if ("ModelSite" %in% names(fitdata)){ModelSite <- fitdata$ModelSite}
@@ -190,7 +190,7 @@ plot_residuals_occupancy.fit <- function(fit, occupancyresidual = NULL, varidx =
   
   # get occupancy covariates
   occupancycovars <- fitdata$Xocc
-  colnames(occupancycovars)[1:fitdata$Vocc] <- paste0("Xocc", 1:fitdata$Vocc)
+  colnames(occupancycovars)[1:fitdata$noccvar] <- paste0("Xocc", 1:fitdata$noccvar)
   if (!is.null(varidx)){occupancycovars <- occupancycovars[, varidx, drop = FALSE]}  
   occupancycovars <- occupancycovars %>% as_tibble() %>% tibble::rowid_to_column(var = "ModelSite")
   

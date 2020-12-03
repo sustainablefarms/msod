@@ -66,16 +66,16 @@ simulate_detections_LV <- function(fit, esttype = "median"){
 #' @param nlv Number of latent variables. Must be 4 or less
 #' @param OccFmla Formula for occupancy. Available variables: UpSite, Sine1 and Sine2
 #' @param ObsFmla Formula for detection. Available variables: Upvisit, Step
-#' @param occ.b.min, occ.b.max, v.b.min, v.b.max The upper and lower bouonds of the occ.b and v.b parameters.
+#' @param occ.b.min, occ.b.max, det.b.min, det.b.max The upper and lower bouonds of the occ.b and det.b parameters.
 #'  May be a single number or an array with rows corresponding to species and columns to covariates.
-#' @param lv.coef.min, lv.coef.max Same as occ.b.min and occ.b.max for the latent variable loadings.
+#' @param ldet.b.min, ldet.b.max Same as occ.b.min and occ.b.max for the latent variable loadings.
 #' @examples 
 #' artfit <- artificial_runjags(nspecies = 2, nsites = 10, nvisitspersite = 4, modeltype = "jsodm_lv", nlv = 2)
 #' \# with high correlation between occupancy of species
 #' artfit <- artificial_runjags(nspecies = 2, nsites = 10, nvisitspersite = 4,
 #'                               OccFmla = "~ 1",
 #'                               occ.b.min = 0.8,
-#'                               lv.coef.min = 0.3,
+#'                               ldet.b.min = 0.3,
 #'                               modeltype = "jsodm_lv",
 #'                               nlv = 2)
 #'  cor(artfit$data$y)
@@ -85,10 +85,10 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2,
                                ObsFmla = "~ UpVisit + Step",
                                occ.b.min = -1,
                                occ.b.max = 1,
-                               v.b.min = -1,
-                               v.b.max = 1,
-                               lv.coef.min = -0.5,
-                               lv.coef.max = 0.5,
+                               det.b.min = -1,
+                               det.b.max = 1,
+                               ldet.b.min = -0.5,
+                               ldet.b.max = 0.5,
                                modeltype = "jsodm_lv",
                                ...
                                ){
@@ -119,10 +119,10 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2,
   fit$sample <- 1
 
   # set parameters
-  occ.b <- matrix(runif( fit$data$n * fit$data$Vocc, min = occ.b.min, max = occ.b.max), nrow = fit$data$n, ncol = fit$data$Vocc, byrow = FALSE)
-  v.b <- matrix(runif(  fit$data$n * fit$data$Vobs, min = v.b.min, max = v.b.max), nrow = fit$data$n, ncol = fit$data$Vobs, byrow = FALSE)
+  occ.b <- matrix(runif( fit$data$n * fit$data$noccvar, min = occ.b.min, max = occ.b.max), nrow = fit$data$n, ncol = fit$data$noccvar, byrow = FALSE)
+  det.b <- matrix(runif(  fit$data$n * fit$data$nobsvar, min = det.b.min, max = det.b.max), nrow = fit$data$n, ncol = fit$data$nobsvar, byrow = FALSE)
   theta <- c(matrix2bugsvar(occ.b, name = "occ.b"),
-             matrix2bugsvar(v.b, name = "v.b"))
+             matrix2bugsvar(det.b, name = "det.b"))
   
   if (modeltype == "jsodm_lv"){
     nlv <- list(...)$nlv
@@ -134,9 +134,9 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2,
                       ((sites %/% 5) * 5 == sites ) | (sites %/% 3) * 3 == sites))
     if (nlv == 0) {LV <- NULL}
     else {LV <- LV[, 1:nlv, drop = FALSE]}
-    lv.coef <- matrix(runif(  fit$data$n * fit$data$nlv, min = lv.coef.min, max = lv.coef.max), nrow = fit$data$n, ncol = fit$data$nlv) #0.5 constraint makes sure rowSum(lv.coef^2) < 1
+    ldet.b <- matrix(runif(  fit$data$n * fit$data$nlv, min = ldet.b.min, max = ldet.b.max), nrow = fit$data$n, ncol = fit$data$nlv) #0.5 constraint makes sure rowSum(ldet.b^2) < 1
     theta <- c(theta, 
-               matrix2bugsvar(lv.coef, name = "lv.coef"),
+               matrix2bugsvar(ldet.b, name = "ldet.b"),
                matrix2bugsvar(LV, name = "LV"))
   }
   fit$mcmc <- list()

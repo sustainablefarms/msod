@@ -99,9 +99,9 @@ get.residual.cor <- function(object, est = "median", prob = 0.95)
   
   for(k0 in 1:nrow(draws)) 
   {
-    lv.coefs <- bugsvar2matrix(draws[k0, ], "lv.coef", 1:nsp, 1:num.lv)
+    ldet.bs <- bugsvar2matrix(draws[k0, ], "ldet.b", 1:nsp, 1:num.lv)
     
-    lambdalambdaT <- tcrossprod(as.matrix(lv.coefs)) 
+    lambdalambdaT <- tcrossprod(as.matrix(ldet.bs)) 
     # The loadings are multiplied and then summed. 
     # This gives the covariance because the latent variable values are Gaussian in distribution
     all.rescov_mat[k0,,] <- (lambdalambdaT) 

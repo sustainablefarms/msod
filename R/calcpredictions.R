@@ -120,10 +120,10 @@ pdetect_condoccupied <- function(fit, type = "median"){
     colnames(draws) <- names(theta)
   }
   
-  ## v.b (detection coefficients)
-  v.b_arr <- bugsvar2array(draws, "det.b", 1:fit$data$n, 1:fit$data$Vobs) # rows are species, columns are observation (detection) covariates
+  ## det.b (detection coefficients)
+  det.b_arr <- bugsvar2array(draws, "det.b", 1:fit$data$n, 1:fit$data$nobsvar) # rows are species, columns are observation (detection) covariates
   
-  Detection.Pred <- pdetection_occupied_raw(fit$data$Xobs, v.b_arr)
+  Detection.Pred <- pdetection_occupied_raw(fit$data$Xobs, det.b_arr)
   
   if (!is.null(fit$species)){colnames(Detection.Pred) <- fit$species} # a special modification of runjags with occupation detection meta info
   return(Detection.Pred)
@@ -161,47 +161,47 @@ poccupy_species <- function(fit, type = "median", conditionalLV = TRUE, numLVsim
   
   if ((!is.null(nlv) && (nlv > 0))){
     if (conditionalLV){
-      lv.coef_arr <- bugsvar2array(draws, "lv.b", 1:nspecies, 1:nlv)
+      ldet.b_arr <- bugsvar2array(draws, "ldet.b", 1:nspecies, 1:nlv)
       LVvals <- bugsvar2array(draws, "lv.v", 1:nrow(Xocc), 1:nlv)
-    } else { #unknown LV values, with known lv.coef
+    } else { #unknown LV values, with known ldet.b
       #however, as poccupy is looking at each species individually, 
-      #the lv.coefs can be ignored when not conditional on the LV
+      #the ldet.bs can be ignored when not conditional on the LV
       #(the occupancy variable is a Gaussian with mean given by Xocc, and variance of 1)
-      lv.coef_arr <- NULL
+      ldet.b_arr <- NULL
       LVvals <- NULL
     }
   } else { #model has no LV
     stopifnot(!conditionalLV)
-    lv.coef_arr <- NULL
+    ldet.b_arr <- NULL
     LVvals <- NULL
   }
   
-  pocc <- poccupy_species_raw(fit$data$Xocc, occ.b_arr, lv.coef_arr, LVvals)
+  pocc <- poccupy_species_raw(fit$data$Xocc, occ.b_arr, ldet.b_arr, LVvals)
   colnames(pocc) <- fit$species
   return(pocc)
 }
 
 poccupy_new_data <- function(fit, Xocc, numLVsims){
   Xocc <- apply.designmatprocess(fit$XoccProcess, Xocc)
-  #unknown LV values, with known lv.coef
+  #unknown LV values, with known ldet.b
   #as poccupy is looking at each species individually, 
-  #the lv.coefs can be ignored when not conditional on the LV
+  #the ldet.bs can be ignored when not conditional on the LV
   #(the occupancy variable is a Gaussian with mean given by Xocc, and variance of 1)
-  lv.coef_arr <- NULL
+  ldet.b_arr <- NULL
   LVvals <- NULL
   
-  pocc <- poccupy_species_raw(Xocc, occ.b_arr, lv.coef_arr, LVvals)
+  pocc <- poccupy_species_raw(Xocc, occ.b_arr, ldet.b_arr, LVvals)
   colnames(pocc) <- fit$species
   return(pocc)
 }
 
-poccupy_species_raw <- function(Xocc, occ.b_arr, lv.coef_arr = NULL, LVvals = NULL){
+poccupy_species_raw <- function(Xocc, occ.b_arr, ldet.b_arr = NULL, LVvals = NULL){
   if (length(dim(LVvals)) == 3){
-    stopifnot(dim(lv.coef_arr)[[3]] == dim(LVvals)[[3]])
+    stopifnot(dim(ldet.b_arr)[[3]] == dim(LVvals)[[3]])
     pocc_l <- lapply(1:nrow(Xocc), function(siteid){
       poccupy.ModelSite(Xocc[siteid, , drop = FALSE], 
                         occ.b_arr, 
-                        lv.coef_arr, 
+                        ldet.b_arr, 
                         LVvals[siteid, , , drop = FALSE])
     })
   } else {

@@ -48,14 +48,14 @@ fitjsodm              <- function(Xocc, yXobs, species, ModelSite, modeltype,  #
             ...)
   
   # parameters to monitor 
-  monitor.params = c('occ.b','v.b','mu.occ.b', 'tau.occ.b','sigma.occ.b', 'mu.v.b','tau.v.b', 'sigma.v.b')
+  monitor.params = c('occ.b','det.b','mu.occ.b', 'tau.occ.b','sigma.occ.b', 'mu.det.b','tau.det.b', 'sigma.det.b')
   if (modeltype == "jsodm_lv"){
     ### Latent variable multi-species co-occurence model
     modelFile=system.file("modeldescriptions",
                           "jsodm_lv.txt",
                           package = "msod")
     #Specify the parameters to be monitored
-    monitor.params = c(monitor.params, 'lv.coef', "LV")
+    monitor.params = c(monitor.params, 'ldet.b', "LV")
   }
   if (modeltype == "jsodm_lv_sepexp"){
     ### Latent variable multi-species co-occurence model
@@ -63,7 +63,7 @@ fitjsodm              <- function(Xocc, yXobs, species, ModelSite, modeltype,  #
                           "jsodm_lv_sepexp.txt",
                           package = "msod")
     #Specify the parameters to be monitored
-    monitor.params = c(monitor.params, 'lv.coef', "LV", "lv.covspatscale", "lv.covtimescale")
+    monitor.params = c(monitor.params, 'ldet.b', "LV", "lv.v.spatscale", "lv.v.timescale")
   }
 
   # set up initial values

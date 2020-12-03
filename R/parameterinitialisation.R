@@ -14,14 +14,14 @@ paraminits <- function(modeltype, chain, indata, ...){
 #' @export
 paraminits.jsodm_lv <- function(chain, indata, ...){
   out <- paraminits.jsodm(chain, indata, ...)
-  # lv.coef<-matrix(1, indata$n, indata$nlv)
-  # lv.coef[1:indata$nlv,1:indata$nlv]<-0
+  # ldet.b<-matrix(1, indata$n, indata$nlv)
+  # ldet.b[1:indata$nlv,1:indata$nlv]<-0
   # for(l in 1:indata$nlv-1){
-  #   lv.coef[l,(l+1):indata$nlv]<-NA
+  #   ldet.b[l,(l+1):indata$nlv]<-NA
   # }
   # LV <- matrix(rnorm(indata$nlv * indata$J), indata$J, indata$nlv)
   # out <- c(out,
-  #          lv.coef = lv.coef,
+  #          ldet.b = ldet.b,
   #          LV = LV)
   return(out)
 }
@@ -34,13 +34,13 @@ paraminits.jsodm_lv_sepexp <- function(chain, indata, ...){
 #' @describeIn paraminits Initialise parameters for the plain jsodm model
 #' @export
 paraminits.jsodm <- function(chain, indata, ...) {
-  v.b.proto <- lapply(colnames(indata$y),
+  det.b.proto <- lapply(colnames(indata$y),
                       function(x) {unname(coef(glm(((indata$y>0)*1)[, x] ~ . - 1, #intercept is built in
                                                    data = data.frame(indata$Xobs),
                                                    family=binomial(link=logit))))})
-  v.b <- t(do.call(cbind, v.b.proto))
-  v.b[v.b > 5] <- 5  #remove extremes as coefficients are assumed to be from a standard gaussian
-  v.b[v.b < -5] <- -5  #remove extremes as coefficients are assumed to be from a standard gaussian
+  det.b <- t(do.call(cbind, det.b.proto))
+  det.b[det.b > 5] <- 5  #remove extremes as coefficients are assumed to be from a standard gaussian
+  det.b[det.b < -5] <- -5  #remove extremes as coefficients are assumed to be from a standard gaussian
 
   ## this is calculated just to get initial values for occupancy covariates and occupancy estimates
   y.occ.mock <- cbind(ModelSiteID = indata$ModelSite, indata$y) %>%
@@ -63,7 +63,7 @@ paraminits.jsodm <- function(chain, indata, ...) {
   
   out <- list(
     occ.b= occ.b,  #initial values guestimated from occ.b.proto are erroring! "u[14,1]: Node inconsistent with parents"
-    v.b= v.b,
+    det.b= det.b,
     u=(y.occ.mock>0)-runif(1,0.1,0.8),  #this looks strange -> step(u) is an indicator of whether occupied or not
     #mu.a = matrix(rbinom((n)*J, size=1, prob=1),
     #              nrow=J, ncol=(n)),
