@@ -10,7 +10,6 @@ artificial_runjags(
   nspecies = 4,
   nsites = 100,
   nvisitspersite = 2,
-  nlv = 2,
   OccFmla = "~ UpSite + Sine1 + Sine2",
   ObsFmla = "~ UpVisit + Step",
   u.b.min = -1,
@@ -18,7 +17,9 @@ artificial_runjags(
   v.b.min = -1,
   v.b.max = 1,
   lv.coef.min = -0.5,
-  lv.coef.max = 0.5
+  lv.coef.max = 0.5,
+  modeltype = "jsodm_lv",
+  ...
 )
 
 simulate_covar_data(nsites, nvisitspersite)
@@ -32,8 +33,6 @@ simulate_iid_detections(nspecies, nvisits, p = 0.5)
 
 \item{nvisitspersite}{Number of visits per site (the same number for each site)}
 
-\item{nlv}{Number of latent variables. Must be 4 or less}
-
 \item{OccFmla}{Formula for occupancy. Available variables: UpSite, Sine1 and Sine2}
 
 \item{ObsFmla}{Formula for detection. Available variables: Upvisit, Step}
@@ -46,6 +45,8 @@ May be a single number or an array with rows corresponding to species and column
 \item{nvisits}{Number of visits in total to simulate}
 
 \item{p}{The probability of detection, constant for all species and visits.}
+
+\item{nlv}{Number of latent variables. Must be 4 or less}
 }
 \value{
 A list that has enough similarities to runjags objects that residual calculations are possible.
@@ -74,11 +75,13 @@ Every species is equally likely to be detected at every visit.
 }}
 
 \examples{
-artfit <- artificial_runjags(nspecies = 2, nsites = 10, nvisitspersite = 4, nlv = 2)
+artfit <- artificial_runjags(nspecies = 2, nsites = 10, nvisitspersite = 4, modeltype = "jsodm_lv", nlv = 2)
 \# with high correlation between occupancy of species
-artfit <- artificial_runjags(nspecies = 2, nsites = 10, nvisitspersite = 4, nlv = 2,
+artfit <- artificial_runjags(nspecies = 2, nsites = 10, nvisitspersite = 4,
                               OccFmla = "~ 1",
                               u.b.min = 0.8,
-                              lv.coef.min = 0.3)
+                              lv.coef.min = 0.3,
+                              modeltype = "jsodm_lv",
+                              nlv = 2)
  cor(artfit$data$y)
 }

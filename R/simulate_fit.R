@@ -10,7 +10,7 @@
 
 
 #' @title Simulate observations from parameters of a fitted object.
-#' @describe Simulate detections from all given parameters (including LV and random effects)
+#' @details Simulate detections from all given parameters (including LV and random effects)
 #' @param fit A runjags fitted object created by [run.detectionoccupancy()]
 #' @param esttype Specifies parameter set to extract from fit, see [get_theta()]
 #' @param UseFittedLV Logical. If TRUE, the simulation uses fitted latent variable values.
@@ -46,7 +46,7 @@ simulate_LV <- function(fit, replaceinsitu = FALSE){
   return(fit)
 }
 
-#' @describeIn simulate_detections Simulate detections using simulated LV values, for each site the simulated LV values are copied across all draws.
+#' @describeIn simulate_detections Simulate LV values and use these for simulating detections (with [simulate_detections()]). For each site the simulated LV values are copied across all draws.
 simulate_detections_LV <- function(fit, esttype = "median"){
   fit <- simulate_LV(fit, replaceinsitu = TRUE)
   detected <- simulate_detections(fit, esttype = esttype)

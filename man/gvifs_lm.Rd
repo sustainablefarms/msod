@@ -33,7 +33,7 @@ ObsFmla <- "~ 1 + MeanWind + MeanTime + MeanClouds + MeanTemp"
 vifs <- gvifs_lm(inputdata$insample$Xocc,
          inputdata$insample$yXobs,
          species = inputdata$species,
-         ModelSite = "ModelSiteID",
+         ModelSite = "ModelSiteID", 
          OccFmla = OccFmla,
          ObsFmla = ObsFmla
          )

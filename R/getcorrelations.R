@@ -9,7 +9,7 @@
 #' computes the correlation and covariance between the species-specific occupancy linear predictions without latent variables across all sites.
 #' The `est`, for each species, is returned.
 #' Significantly non-zero covariance or correlation is computed by [coda::HPDinterval()] according to the signficance level `prob`.
-#' @value
+#' @return
 #' A list of matrices. Column and row names are species names.
 #' `cor` is the correlation estimate computed according to `est`
 #' `cor.lower` is the lower bound of the highest posterior density interval for correlation
@@ -76,8 +76,7 @@ get.enviro.cor <- function(fit, est = "median", prob = 0.95)
 #' @param fit An object created by [run.detectionoccupancy()]
 #' @param est Stastical summary of draws to return.
 #' @param prob The target probability coverage of highest probability density intervals.
-#' @details 
-#' @value
+#' @details This is modelled after the function [boral::get.residual.cor()].
 #' @examples 
 #' fit <- readRDS("../sflddata/private/data/testdata/cutfit_7_4_11_2LV.rds")
 #' cor_res <- get.residual.cor(fit, est = "median", prob = 0.95)

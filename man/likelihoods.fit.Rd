@@ -78,10 +78,11 @@ likelihood_joint_marginal.ModelSite.theta(
 }
 \value{
 \code{lppd.newdata} returns a list with components
-lpds: a list of the log likelihood of the observations for each ModelSite in the supplied data
+lpds: a list of the log predictive density for each ModelSite in the supplied data (for each model site this is the average of the predictive density conditioned on each draw from the posterior).
 lppd: the computed log pointwise predictive density (sum of the lpds). This is equation (5) in Gelman et al 2014
 
-\code{likelihoods.fit} returns a matrix. Each row corresponds to a draw of the parameters from the posterior. Each column to a ModelSite
+\code{likelihoods.fit} returns a matrix. Each row corresponds to a draw of the parameters from the posterior. Each column to a ModelSite.
+The value in each cell is the probability density, given the parameters from the draw, evaluated at the observations for the model site.
 Compute the likelihoods of each ModelSite's observations given each draw of parameters in the posterior.
 }
 \description{
@@ -110,7 +111,7 @@ The output of \code{\link[=likelihoods.fit]{likelihoods.fit()}} can be easily pa
 \itemize{
 \item \code{lppd.newdata}: Compute the log pointwise posterior density of new (out-of-sample) data
 
-\item \code{likelihoods.fit}: Compute the likelihood of observations at each ModelSites. At data in the fitted model, or on new data supplied.
+\item \code{likelihoods.fit}: Compute the likelihood of observations at each ModelSite. At data in the fitted model, or on new data supplied.
 
 \item \code{likelihood_joint_marginal.ModelSite}: Compute the joint-species LV-marginal likelihood for a ModelSite
 

@@ -1,5 +1,5 @@
 #' @title Prepare JAGS-like Data for JSODM
-#' @describe Given the input data parameters of run.detectionoccupancy prepare the data list for JAGS
+#' @details Given the input data parameters of run.detectionoccupancy prepare the data list for JAGS
 #' @param Xocc A dataframe of covariates related to occupancy. One row per ModelSite.
 #' Must also include the ModelSiteVars columns to uniquely specify ModelSite.
 #' @param yXobs A dataframe of species observations (1 or 0) and covariates related to observations. One row per visit.
@@ -21,7 +21,7 @@ prepJAGSdata <- function(modeltype, Xocc, yXobs, ModelSite, species, XoccProcess
   return(data.list)
 }
 
-#' @describeIn prepJAGSdata
+#' @describeIn prepJAGSdata Data preparation for the jsodm model.
 prepJAGSdata.jsodm <- function(Xocc, yXobs, ModelSite, species, XoccProcess, XobsProcess, ...){
   # check data inputs
   stopifnot(all(ModelSite %in% colnames(Xocc)))
@@ -56,14 +56,14 @@ prepJAGSdata.jsodm <- function(Xocc, yXobs, ModelSite, species, XoccProcess, Xob
   return(data.list)
 }
 
-#' @describeIn prepJAGSdata
+#' @describeIn prepJAGSdata Data preparation for the jsodm_lv model
 prepJAGSdata.jsodm_lv <- function(Xocc, yXobs, ModelSite, species, XoccProcess, XobsProcess, nlv){
   data.list <- prepJAGSdata.jsodm(Xocc, yXobs, ModelSite, species, XoccProcess, XobsProcess)
   data.list <- c(data.list, nlv = nlv)
   return(data.list)
 }
 
-#' @describeIn prepJAGSdata
+#' @describeIn prepJAGSdata Data preparation for the jsodm_lv_sepexp model (latent variables with separable covariance that is an exponential function)
 prepJAGSdata.jsodm_lv_sepexp <- function(Xocc, yXobs, ModelSite, species, XoccProcess, XobsProcess, nlv, SpatDist, TimeDist, ...){
   data.list <- prepJAGSdata.jsodm_lv(Xocc, yXobs, ModelSite, species, XoccProcess, XobsProcess, nlv)
   spatdistmat <- SpatDist(Xocc)

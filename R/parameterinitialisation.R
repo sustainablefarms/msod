@@ -1,5 +1,5 @@
 #' @title Initial condition functions
-#' @describe Specifies the initial conditions for the MCMC chains.
+#' @details Specifies the initial conditions for the MCMC chains.
 #' @param chain Integer. Index of the chain.
 #' @param indata A list of data that is typically passed to [runjags::run.jags()]
 #' @export

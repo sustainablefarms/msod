@@ -2,7 +2,7 @@
 % Please edit documentation in R/elpd_compare.R
 \name{elpd_compare}
 \alias{elpd_compare}
-\title{Compare Sitewise Differences in Expected Log Posterior Density}
+\title{Compare Sitewise Differences in Log Predictive Density; Expected Difference with Standard Errors}
 \usage{
 elpd_compare(elpds, refname = NULL)
 }
@@ -16,7 +16,7 @@ A matrix with a column for the aggregate (summed) difference of model sites betw
 and the standard error of this difference (computed as the sample standard deviation of difference, multiplied by the square root of the number of ModelSites)
 }
 \description{
-Compare Sitewise Differences in Expected Log Posterior Density
+Compare Sitewise Differences in Log Predictive Density; Expected Difference with Standard Errors
 }
 \details{
 Very similar to loo::loo_compare(), but with fewer checks
