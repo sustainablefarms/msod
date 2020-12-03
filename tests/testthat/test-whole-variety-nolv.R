@@ -1,4 +1,4 @@
-context("Wholistic tests on model with different ModelSites and no LVs")
+context("Wholistic tests on model with different ModelSites and no lv.vs")
 skip_if(parallel::detectCores() < 10)
 
 rjo <- runjags::runjags.options("silent.jags" = TRUE)
@@ -29,14 +29,14 @@ qqnorm(gwk$value)
 qqline(gwk$value)
 varname2type <- function(varnames){
   types <- dplyr::case_when(
-    grepl("lv.coef", varnames) ~ "LV Load",
-    grepl("LV.*,1\\]", varnames) ~ "LV1",
-    grepl("LV.*,2\\]", varnames) ~ "LV2",
-    grepl("LV.*,3\\]", varnames) ~ "LV3",
-    grepl("LV.*,4\\]", varnames) ~ "LV4",
+    grepl("lv.coef", varnames) ~ "lv.v Load",
+    grepl("lv.v.*,1\\]", varnames) ~ "lv.v1",
+    grepl("lv.v.*,2\\]", varnames) ~ "lv.v2",
+    grepl("lv.v.*,3\\]", varnames) ~ "lv.v3",
+    grepl("lv.v.*,4\\]", varnames) ~ "lv.v4",
     grepl("^(mu|tau)", varnames) ~ "Comm Param", #parameters of community distributions
-    grepl("^u.b", varnames) ~ "Occu Coef",
-    grepl("^v.b", varnames) ~ "Detn Coef",
+    grepl("^occ.b", varnames) ~ "Occu Coef",
+    grepl("^det.b", varnames) ~ "Detn Coef",
     TRUE ~ "other"
   )
   return(types)
@@ -60,7 +60,7 @@ test_that("Posterior credible distribution overlaps true parameters", {
   var2compare <- colnames(artmodel$mcmc[[1]])
   inCI <- (fit_runjags$summaries[var2compare, "Lower95"] <= artmodel$mcmc[[1]][1, var2compare]) &
     (fit_runjags$summaries[var2compare, "Upper95"] >= artmodel$mcmc[[1]][1, var2compare])
-  inCI[!grepl("^LV", names(inCI))]
+  inCI[!grepl("^lv.v", names(inCI))]
   expect_equal(mean(inCI), 0.95, tol = 0.05)
 })
 
@@ -68,10 +68,10 @@ test_that("Median of Posterior is close to true", {
   var2compare <- colnames(artmodel$mcmc[[1]])
   res <- artmodel$mcmc[[1]][1, var2compare] - fit_runjags$summaries[var2compare, "Median"] 
   relres <- res / artmodel$mcmc[[1]][1, var2compare]
-  plot(res[!grepl("^LV", names(res))])
-  plot(relres[!grepl("^LV", names(relres))])
-  expect_equivalent(relres[!grepl("^LV", names(res))],
-                    rep(0, sum(!grepl("^LV", names(res)))),
+  plot(res[!grepl("^lv.v", names(res))])
+  plot(relres[!grepl("^lv.v", names(relres))])
+  expect_equivalent(relres[!grepl("^lv.v", names(res))],
+                    rep(0, sum(!grepl("^lv.v", names(res)))),
                     tol = 0.1)
 })
 
@@ -92,8 +92,8 @@ test_that("Fitted likelihood matches true likelihood", {
 test_that("Expected Number of Detected Species", {
   cl <- parallel::makeCluster(10)
   pbopt <- pbapply::pboptions(type = "none")
-  Enumspec <- predsumspecies(fit_runjags, UseFittedLV = FALSE, type = "marginal", cl = cl)
-  Enumspec_art <- predsumspecies(artmodel, UseFittedLV = FALSE, type = "marginal", cl = cl)
+  Enumspec <- predsumspecies(fit_runjags, UseFittedlv.v = FALSE, type = "marginal", cl = cl)
+  Enumspec_art <- predsumspecies(artmodel, UseFittedlv.v = FALSE, type = "marginal", cl = cl)
   pbapply::pboptions(pbopt)
   parallel::stopCluster(cl)
   cbind(rj = t(Enumspec), art = t(Enumspec_art)) %>%

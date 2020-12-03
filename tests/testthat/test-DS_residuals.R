@@ -76,19 +76,19 @@ test_that("Conditioning on Greater Than Zero Correct", {
   expect_equal(condition_nonzero.pdf(cdf[[length(pDetected)]], pdf[[1 + length(pDetected)]]), 1)
 })
 
-test_that("Occupancy and Detection Residuals Gaussian for fresh conversion from fit to raw, with LV", {
+test_that("Occupancy and Detection Residuals Gaussian for fresh conversion from fit to raw, with lv.v", {
   ObsFmla = "~ 1"
   OccFmla = "~ 1"
-  u.b.min <- matrix(runif(5) , ncol = 1)
-  u.b.max <- u.b.min + 1E-5
-  v.b.min <- matrix(runif(5) , ncol = 1)
-  v.b.max <- v.b.min + 1E-5
+  occ.b.min <- matrix(runif(5) , ncol = 1)
+  occ.b.max <- occ.b.min + 1E-5
+  det.b.min <- matrix(runif(5) , ncol = 1)
+  det.b.max <- det.b.min + 1E-5
   
   fit <- artificial_runjags(nspecies = 5, nsites = 100, nvisitspersite = 6, 
-                            u.b.min = u.b.min,
-                            u.b.max = u.b.max,
-                            v.b.min = v.b.min,
-                            v.b.max = v.b.max,
+                            occ.b.min = occ.b.min,
+                            occ.b.max = occ.b.max,
+                            det.b.min = det.b.min,
+                            det.b.max = det.b.max,
                             lv.coef.min = 0.6,
                             lv.coef.max = 0.6,
                             OccFmla = OccFmla,
@@ -199,7 +199,7 @@ test_that("Detection residuals sensible and gaussian for very raw simulated data
 test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made of Common Species", {
   # simulate a fitted object
   fit <- artificial_runjags(nspecies = 5, nsites = 500, nvisitspersite = 5,
-                            u.b.min = 0.95,
+                            occ.b.min = 0.95,
                             modeltype = "jsodm_lv",
                             nlv = 2)
   
@@ -217,7 +217,7 @@ test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made
 test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made of Rare Species", {
   # simulate a fitted object
   fit <- artificial_runjags(nspecies = 5, nsites = 500, nvisitspersite = 5,
-                            u.b.max = -0.9,
+                            occ.b.max = -0.9,
                             modeltype = "jsodm_lv",
                             nlv = 2)
   
@@ -235,7 +235,7 @@ test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made
 test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made of Hard to Detect Species", {
   # simulate a fitted object
   fit <- artificial_runjags(nspecies = 5, nsites = 500, nvisitspersite = 2,
-                            v.b.max = -1,
+                            det.b.max = -1,
                             ObsFmla = "~ 1",
                             modeltype = "jsodm_lv",
                             nlv = 2)
@@ -263,8 +263,8 @@ test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made
   
   # resid_det %>% dplyr::select(-ModelSite) %>% as.matrix() %>% as.vector() %>% qqnorm()
   # abline(a = 0, b = 1)
-  # u.b <- bugsvar2matrix(fit$mcmc[[1]][1,  ], "u.b", 1:fit$data$n, 1:fit$data$Vocc)
-  # v.b <- bugsvar2matrix(fit$mcmc[[1]][1,  ], "v.b", 1:fit$data$n, 1:fit$data$Vobs)
+  # occ.b <- bugsvar2matrix(fit$mcmc[[1]][1,  ], "occ.b", 1:fit$data$n, 1:fit$data$Vocc)
+  # det.b <- bugsvar2matrix(fit$mcmc[[1]][1,  ], "det.b", 1:fit$data$n, 1:fit$data$Vobs)
   # lv.coef <- bugsvar2matrix(fit$mcmc[[1]][1,  ], "lv.coef", 1:fit$data$n, 1:fit$data$nlv)
 })
 # failed 0 out of 20 times

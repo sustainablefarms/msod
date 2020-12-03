@@ -2,38 +2,38 @@ library(testthat);
 
 context("Calculations of Predicted Probabilities")
 
-test_that("poccupy_species is correct without LV", {
+test_that("poccupy_species is correct without lv.v", {
   OccFmla = "~ 1"
-  u.b.min <- matrix(runif(5) , ncol = 1)
-  u.b.max <- u.b.min + 1E-5
-  pOccupancyFresh <- 1 - pnorm(0, mean = u.b.min)
+  occ.b.min <- matrix(runif(5) , ncol = 1)
+  occ.b.max <- occ.b.min + 1E-5
+  pOccupancyFresh <- 1 - pnorm(0, mean = occ.b.min)
   fit <- artificial_runjags(nspecies = 5, nsites = 100, nvisitspersite = 6, 
-                            u.b.min = u.b.min,
-                            u.b.max = u.b.max,
+                            occ.b.min = occ.b.min,
+                            occ.b.max = occ.b.max,
                             OccFmla = OccFmla,
                             modeltype = "jsodm")
-  pOccupy_sp <- poccupy_species(fit, type = 1, conditionalLV = FALSE)
+  pOccupy_sp <- poccupy_species(fit, type = 1, conditionallv.v = FALSE)
   diff <- Rfast::eachrow(pOccupy_sp, pOccupancyFresh, oper = "-")
   expect_true(max(abs(diff)) < 1E-3)
 })
 
-test_that("poccupy_species is correct with LV", {
+test_that("poccupy_species is correct with lv.v", {
   OccFmla = "~ 1"
-  u.b.min <- matrix(runif(5) , ncol = 1)
-  u.b.max <- u.b.min + 1E-5
-  pOccupancyFreshOdd <- 1 - pnorm(0, mean = u.b.min + 0.6*0.995, sd = sqrt(1 - 0.6^2)) #occupancy probability for odd site indexes
-                       #the 0.995 value is the standarised value of the odd-even LV values (which is the first and only LV used here)
-  pOccupancyFreshEven <- 1 - pnorm(0, mean = u.b.min - 0.6*0.995, sd = sqrt(1 - 0.6^2)) #occupancy probability for odd site indexes
-  # 1 - pnorm((-u.b.min - 0.6) / (1 - 0.36), mean = 0, sd = 1) #occupancy probability for even site indexes
+  occ.b.min <- matrix(runif(5) , ncol = 1)
+  occ.b.max <- occ.b.min + 1E-5
+  pOccupancyFreshOdd <- 1 - pnorm(0, mean = occ.b.min + 0.6*0.995, sd = sqrt(1 - 0.6^2)) #occupancy probability for odd site indexes
+                       #the 0.995 value is the standarised value of the odd-even lv.v (which is the first and only lv.v used here)
+  pOccupancyFreshEven <- 1 - pnorm(0, mean = occ.b.min - 0.6*0.995, sd = sqrt(1 - 0.6^2)) #occupancy probability for odd site indexes
+  # 1 - pnorm((-occ.b.min - 0.6) / (1 - 0.36), mean = 0, sd = 1) #occupancy probability for even site indexes
   fit <- artificial_runjags(nspecies = 5, nsites = 100, nvisitspersite = 6, 
-                            u.b.min = u.b.min,
-                            u.b.max = u.b.max,
+                            occ.b.min = occ.b.min,
+                            occ.b.max = occ.b.max,
                             lv.coef.min = 0.6,
                             lv.coef.max = 0.6,
                             OccFmla = OccFmla,
                             modeltype = "jsodm_lv",
                             nlv = 1)
-  pOccupy_sp <- poccupy_species(fit, type = 1, conditionalLV = TRUE)
+  pOccupy_sp <- poccupy_species(fit, type = 1, conditionallv.v = TRUE)
   diffOdd <- Rfast::eachrow(pOccupy_sp[1:nrow(pOccupy_sp) %% 2, ], pOccupancyFreshOdd, oper = "-")
   expect_true(max(abs(diffOdd)) < 1E-3)
   diffEven <- Rfast::eachrow(pOccupy_sp[!(1:nrow(pOccupy_sp) %% 2), ], pOccupancyFreshEven, oper = "-")
@@ -42,12 +42,12 @@ test_that("poccupy_species is correct with LV", {
 
 test_that("pdetect_condoccupied is correct", {
   ObsFmla = "~ 1"
-  v.b.min <- matrix(runif(5) , ncol = 1)
-  v.b.max <- v.b.min + 1E-5
-  pDetCondOccFresh <- boot::inv.logit(v.b.min) #detection ease is constant across sites
+  det.b.min <- matrix(runif(5) , ncol = 1)
+  det.b.max <- det.b.min + 1E-5
+  pDetCondOccFresh <- boot::inv.logit(det.b.min) #detection ease is constant across sites
   fit <- artificial_runjags(nspecies = 5, nsites = 100, nvisitspersite = 6, 
-                            v.b.min = v.b.min,
-                            v.b.max = v.b.max,
+                            det.b.min = det.b.min,
+                            det.b.max = det.b.max,
                             ObsFmla = ObsFmla,
                             modeltype = "jsodm_lv",
                             nlv = 2 )
@@ -56,26 +56,26 @@ test_that("pdetect_condoccupied is correct", {
   expect_true(max(abs(diff)) < 1E-3)
 })
 
-test_that("pdetect_indvisit is correct with LV", {
+test_that("pdetect_indvisit is correct with lv.v", {
   ObsFmla = "~ 1"
   OccFmla = "~ 1"
-  u.b.min <- matrix(runif(5) , ncol = 1)
-  u.b.max <- u.b.min + 1E-5
-  v.b.min <- matrix(runif(5) , ncol = 1)
-  v.b.max <- v.b.min + 1E-5
-  pOccupancyFreshOdd <- 1 - pnorm(0, mean = u.b.min + 0.6*0.995, sd = sqrt(1 - 0.6^2)) #occupancy probability for odd site indexes
-  #the 0.995 value is the standarised value of the odd-even LV values (which is the first and only LV used here)
-  pOccupancyFreshEven <- 1 - pnorm(0, mean = u.b.min - 0.6*0.995, sd = sqrt(1 - 0.6^2)) #occupancy probability for odd site indexes
-  # 1 - pnorm((-u.b.min - 0.6) / (1 - 0.36), mean = 0, sd = 1) #occupancy probability for even site indexes
-  pDetCondOccFresh <- boot::inv.logit(v.b.min) #detection ease is constant across sites
+  occ.b.min <- matrix(runif(5) , ncol = 1)
+  occ.b.max <- occ.b.min + 1E-5
+  det.b.min <- matrix(runif(5) , ncol = 1)
+  det.b.max <- det.b.min + 1E-5
+  pOccupancyFreshOdd <- 1 - pnorm(0, mean = occ.b.min + 0.6*0.995, sd = sqrt(1 - 0.6^2)) #occupancy probability for odd site indexes
+  #the 0.995 value is the standarised value of the odd-even lv.v (which is the first and only lv.v used here)
+  pOccupancyFreshEven <- 1 - pnorm(0, mean = occ.b.min - 0.6*0.995, sd = sqrt(1 - 0.6^2)) #occupancy probability for odd site indexes
+  # 1 - pnorm((-occ.b.min - 0.6) / (1 - 0.36), mean = 0, sd = 1) #occupancy probability for even site indexes
+  pDetCondOccFresh <- boot::inv.logit(det.b.min) #detection ease is constant across sites
   pDetFreshOdd <- pOccupancyFreshOdd * pDetCondOccFresh
   pDetFreshEven <- pOccupancyFreshEven * pDetCondOccFresh
   
   fit <- artificial_runjags(nspecies = 5, nsites = 100, nvisitspersite = 6,
-                            u.b.min = u.b.min,
-                            u.b.max = u.b.max,
-                            v.b.min = v.b.min,
-                            v.b.max = v.b.max,
+                            occ.b.min = occ.b.min,
+                            occ.b.max = occ.b.max,
+                            det.b.min = det.b.min,
+                            det.b.max = det.b.max,
                             lv.coef.min = 0.6,
                             lv.coef.max = 0.6,
                             OccFmla = OccFmla,
@@ -93,23 +93,23 @@ test_that("pdetect_indvisit is correct with LV", {
 test_that("pdetect_condoccupied and poccupy_species keeps ordering of sites / visits", {
   ObsFmla = "~ UpVisit - 1"
   OccFmla = "~ UpSite - 1"
-  u.b.min <- matrix((1:5)/3 , ncol = 1)
-  u.b.max <- u.b.min + 1E-5
-  v.b.min <- matrix((1:5)/8 , ncol = 1)
-  v.b.max <- v.b.min + 1E-5
+  occ.b.min <- matrix((1:5)/3 , ncol = 1)
+  occ.b.max <- occ.b.min + 1E-5
+  det.b.min <- matrix((1:5)/8 , ncol = 1)
+  det.b.max <- det.b.min + 1E-5
   
   fit <- artificial_runjags(nspecies = 5, nsites = 100, nvisitspersite = 6,
-                            u.b.min = u.b.min,
-                            u.b.max = u.b.max,
-                            v.b.min = v.b.min,
-                            v.b.max = v.b.max,
+                            occ.b.min = occ.b.min,
+                            occ.b.max = occ.b.max,
+                            det.b.min = det.b.min,
+                            det.b.max = det.b.max,
                             OccFmla = OccFmla,
                             ObsFmla = ObsFmla,
                             modeltype = "jsodm")
   # should be a matrix that increase down the rows 
   # when scaled UpSite positive it should go up across the columns
   # when scaled UpSite negative it should go down the columns
-  pOccupancy <- poccupy_species(fit, type = 1, conditionalLV = FALSE)
+  pOccupancy <- poccupy_species(fit, type = 1, conditionallv.v = FALSE)
   expect_true(min(pOccupancy[-1, ] - pOccupancy[-nrow(pOccupancy), ]) > 0)
   expect_true(min(sign(fit$data$Xocc[, "UpSite"]) * (pOccupancy[, -1] - pOccupancy[, -ncol(pOccupancy)])) > 0)
   
@@ -121,7 +121,7 @@ test_that("pdetect_condoccupied and poccupy_species keeps ordering of sites / vi
   expect_true(min(sign(fit$data$Xobs[, "UpVisit"]) * (pDetCondOcc[, -1] - pDetCondOcc[, -ncol(pDetCondOcc)])) > 0)
   
   # I expect pdetect_indvisit to have the same rows as Xobs
-  pdetect <- pdetect_indvisit(fit, type = 1, conditionalLV = FALSE)
+  pdetect <- pdetect_indvisit(fit, type = 1, conditionallv.v = FALSE)
   # probability of occupancy and detection increases with Site and Visit, 
   # so full probability of detection increases except possibly whenever ModelSite returns back to 1,
   # which never happens in currently: simulated ModelSite is non-decreasing, all the ModelSite=1 visits occur in the first few rows
@@ -136,48 +136,48 @@ test_that("pdetect_condoccupied and poccupy_species keeps ordering of sites / vi
   # in other rows I expect there to be a strong pattern, it is probably predictable
 })
 
-test_that("pdetect_condoccupied and poccupy_species ordering of sites / visits with LV", {
+test_that("pdetect_condoccupied and poccupy_species ordering of sites / visits with lv.v", {
   ObsFmla = "~ 1"
   OccFmla = "~ 1"
-  u.b.min <- matrix((1:5)/3 , ncol = 1)
-  u.b.max <- u.b.min + 1E-5
-  v.b.min <- matrix((1:5)/8 , ncol = 1)
-  v.b.max <- v.b.min + 1E-5
+  occ.b.min <- matrix((1:5)/3 , ncol = 1)
+  occ.b.max <- occ.b.min + 1E-5
+  det.b.min <- matrix((1:5)/8 , ncol = 1)
+  det.b.max <- det.b.min + 1E-5
   lv.coef.min <- matrix((1:5)/8, ncol = 2, nrow = 5, byrow = FALSE)
   lv.coef.max <- lv.coef.min + 1E-5
   
   fit <- artificial_runjags(nspecies = 5, nsites = 100, nvisitspersite = 6,
-                            u.b.min = u.b.min,
-                            u.b.max = u.b.max,
-                            v.b.min = v.b.min,
-                            v.b.max = v.b.max,
+                            occ.b.min = occ.b.min,
+                            occ.b.max = occ.b.max,
+                            det.b.min = det.b.min,
+                            det.b.max = det.b.max,
                             lv.coef.min = lv.coef.min,
                             lv.coef.max = lv.coef.max,
                             OccFmla = OccFmla,
                             ObsFmla = ObsFmla,
                             modeltype = "jsodm_lv",
                             nlv = 2)
-  LV <- bugsvar2matrix(get_theta(fit, type = 1), "LV", 1:100, 1:2)
+  lv.v <- bugsvar2matrix(get_theta(fit, type = 1), "lv.v", 1:100, 1:2)
   # should be a matrix that increase down the rows 
   # when scaled UpSite positive it should go up across the columns
   # when scaled UpSite negative it should go down the columns
-  pOccupancy <- poccupy_species(fit, type = 1, conditionalLV = TRUE)
-  expect_equivalent(apply(pOccupancy[LV[, 1] > 0 & LV[, 2] > 0, ], 2, sd), rep(0, ncol(pOccupancy)))
-  expect_equivalent(apply(pOccupancy[LV[, 1] > 0 & LV[, 2] < 0, ], 2, sd), rep(0, ncol(pOccupancy)))
-  expect_equivalent(apply(pOccupancy[LV[, 1] < 0 & LV[, 2] < 0, ], 2, sd), rep(0, ncol(pOccupancy)))
-  expect_equivalent(apply(pOccupancy[LV[, 1] < 0 & LV[, 2] > 0, ], 2, sd), rep(0, ncol(pOccupancy)))
-  expect_gt(min(apply(pOccupancy[LV[, 2] > 0, ], 2, sd)), 0)
+  pOccupancy <- poccupy_species(fit, type = 1, conditionallv.v = TRUE)
+  expect_equivalent(apply(pOccupancy[lv.v[, 1] > 0 & lv.v[, 2] > 0, ], 2, sd), rep(0, ncol(pOccupancy)))
+  expect_equivalent(apply(pOccupancy[lv.v[, 1] > 0 & lv.v[, 2] < 0, ], 2, sd), rep(0, ncol(pOccupancy)))
+  expect_equivalent(apply(pOccupancy[lv.v[, 1] < 0 & lv.v[, 2] < 0, ], 2, sd), rep(0, ncol(pOccupancy)))
+  expect_equivalent(apply(pOccupancy[lv.v[, 1] < 0 & lv.v[, 2] > 0, ], 2, sd), rep(0, ncol(pOccupancy)))
+  expect_gt(min(apply(pOccupancy[lv.v[, 2] > 0, ], 2, sd)), 0)
   
   # expect occupancy to go up with species
   expect_true(min(pOccupancy[, -1] - pOccupancy[, -ncol(pOccupancy)]) > 0)
   
   # I expect pdetect_indvisit to have the same rows as Xobs
-  pdetect <- pdetect_indvisit(fit, type = 1, conditionalLV = FALSE)
+  pdetect <- pdetect_indvisit(fit, type = 1, conditionallv.v = FALSE)
   # Similar pattern of equal probabilities as pOccupancy
-  expect_equivalent(apply(pdetect[LV[fit$data$ModelSite, 1] > 0 & LV[fit$data$ModelSite, 2] > 0, ], 2, sd), rep(0, ncol(pdetect)))
-  expect_equivalent(apply(pdetect[LV[fit$data$ModelSite, 1] > 0 & LV[fit$data$ModelSite, 2] < 0, ], 2, sd), rep(0, ncol(pdetect)))
-  expect_equivalent(apply(pdetect[LV[fit$data$ModelSite, 1] < 0 & LV[fit$data$ModelSite, 2] < 0, ], 2, sd), rep(0, ncol(pdetect)))
-  expect_equivalent(apply(pdetect[LV[fit$data$ModelSite, 1] < 0 & LV[fit$data$ModelSite, 2] > 0, ], 2, sd), rep(0, ncol(pdetect)))
+  expect_equivalent(apply(pdetect[lv.v[fit$data$ModelSite, 1] > 0 & lv.v[fit$data$ModelSite, 2] > 0, ], 2, sd), rep(0, ncol(pdetect)))
+  expect_equivalent(apply(pdetect[lv.v[fit$data$ModelSite, 1] > 0 & lv.v[fit$data$ModelSite, 2] < 0, ], 2, sd), rep(0, ncol(pdetect)))
+  expect_equivalent(apply(pdetect[lv.v[fit$data$ModelSite, 1] < 0 & lv.v[fit$data$ModelSite, 2] < 0, ], 2, sd), rep(0, ncol(pdetect)))
+  expect_equivalent(apply(pdetect[lv.v[fit$data$ModelSite, 1] < 0 & lv.v[fit$data$ModelSite, 2] > 0, ], 2, sd), rep(0, ncol(pdetect)))
 })
 
 test_that("Expected number of detections for each model site matches the simulated mean number of observations", {
