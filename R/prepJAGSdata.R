@@ -15,7 +15,6 @@
 #' @export
 prepJAGSdata <- function(modeltype, Xocc, yXobs, ModelSite, species, XoccProcess, XobsProcess, ...){ # nlv){
   stopifnot(modeltype %in% availmodeltypes)
-  
   data.list <- do.call(paste0("prepJAGSdata.", modeltype),
                        c( list(Xocc, yXobs, ModelSite, species, XoccProcess, XobsProcess), ...))
   return(data.list)
@@ -57,7 +56,7 @@ prepJAGSdata.jsodm <- function(Xocc, yXobs, ModelSite, species, XoccProcess, Xob
 }
 
 #' @describeIn prepJAGSdata Data preparation for the jsodm_lv model
-prepJAGSdata.jsodm_lv <- function(Xocc, yXobs, ModelSite, species, XoccProcess, XobsProcess, nlv){
+prepJAGSdata.jsodm_lv <- function(Xocc, yXobs, ModelSite, species, XoccProcess, XobsProcess, nlv, ...){
   data.list <- prepJAGSdata.jsodm(Xocc, yXobs, ModelSite, species, XoccProcess, XobsProcess)
   data.list <- c(data.list, nlv = nlv)
   return(data.list)
@@ -83,8 +82,15 @@ prepJAGSdata.jsodm_lv_sepexp <- function(Xocc, yXobs, ModelSite, species, XoccPr
 #' Xocc, yXobs, ModelSite must follow some rules as for run.detectionoccupancy, except yXobs may omit the species detections
 #' @export
 prep_new_data <- function(fit, Xocc, yXobs, ModelSite, ...){
-  data.list <- do.call(prepJAGSdata, 
-          c(list(class(fit)[[1]], Xocc, yXobs, ModelSite, fit$species, fit$XoccProcess, fit$XobsProcess), fit))
-  # data.list <- prepJAGSdata(class(fit)[[1]], Xocc, yXobs, ModelSite, fit$species, fit$XoccProcess, fit$XobsProcess, fit$nlv)
+  data.list <- switch(class(fit)[[1]],
+         "jsodm" = do.call(prepJAGSdata, 
+                           list(class(fit)[[1]], Xocc, yXobs, ModelSite, species = fit$species, XoccProcess = fit$XoccProcess, XobsProcess =  fit$XobsProcess)),
+         "jsodm_lv" = do.call(prepJAGSdata, 
+                              list(class(fit)[[1]], Xocc, yXobs, ModelSite, species = fit$species, XoccProcess = fit$XoccProcess, XobsProcess =  fit$XobsProcess, nlv = fit$data$nlv)),
+         "jsodm_lv_sepexp" = do.call(prepJAGSdata, 
+                              list(class(fit)[[1]], Xocc, yXobs, ModelSite, species = fit$species, XoccProcess = fit$XoccProcess, XobsProcess =  fit$XobsProcess, nlv = fit$data$nlv,
+                                   SpatDist = fit$SpatDist, TimeDist = fit$TimeDist)),
+         
+         )
   return(data.list)
 }
