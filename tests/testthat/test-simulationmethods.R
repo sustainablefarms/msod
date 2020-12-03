@@ -9,7 +9,7 @@ test_that("Opposite loadings of lv.v gives anticorrelated simulated detections f
                                 OccFmla = "~ 1",
                                 occ.b.min = -1,  occ.b.max = -0.9, 
                                 det.b.min = 20, det.b.max = 20.1, #makes detection almost certain
-                                lv.coef.min = matrix(c(-0.6, 0.6), ncol = 1), lv.coef.max = matrix(c(-0.55, 0.65), ncol = 1),
+                                lv.b.min = matrix(c(-0.6, 0.6), ncol = 1), lv.b.max = matrix(c(-0.55, 0.65), ncol = 1),
                                 modeltype = "jsodm_lv",
                                 nlv = 1)
   pocc_corr <- cor(poccupy_species(artfit1, type = 1, conditionalLV = TRUE))
@@ -26,7 +26,7 @@ test_that("High, equal loadings of lv.v gives correlated simulated detections fo
                                 OccFmla = "~ 1",
                                 occ.b.min = -1,  occ.b.max = -0.9,
                                 det.b.min = 20, det.b.max = 20.1,
-                                lv.coef.min = matrix(c(0.6, 0.6), ncol = 1), lv.coef.max = matrix(c(0.65, 0.65), ncol = 1),
+                                lv.b.min = matrix(c(0.6, 0.6), ncol = 1), lv.b.max = matrix(c(0.65, 0.65), ncol = 1),
                                 modeltype = "jsodm_lv",
                                 nlv = 1)
 
@@ -44,8 +44,8 @@ test_that("Distributions of Model Site Values differ when using lv.vs that aren'
                                OccFmla = "~ 1",
                                occ.b.min = 0,  occ.b.max = 0.001, 
                                det.b.min = 1, det.b.max = 1.001,
-                               lv.coef.min = matrix(c(0, 0, 0.45), nrow = 2, ncol = 3, byrow = TRUE),
-                               lv.coef.max = matrix(c(0, 0, 0.65), nrow = 2, ncol = 3, byrow = TRUE),
+                               lv.b.min = matrix(c(0, 0, 0.45), nrow = 2, ncol = 3, byrow = TRUE),
+                               lv.b.max = matrix(c(0, 0, 0.65), nrow = 2, ncol = 3, byrow = TRUE),
                                modeltype = "jsodm_lv",
                                nlv = 3)
   

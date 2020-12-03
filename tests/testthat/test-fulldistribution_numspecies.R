@@ -39,8 +39,8 @@ test_that("Uncertainty dominated by latent variables.", {
                                occ.b.max = 0.01,
                                det.b.min = -0.01,
                                det.b.max = 0.01,
-                               lv.coef.min = 0.4,
-                               lv.coef.max = 0.5, #hopefully lv.vs have a much bigger effect than occupancy etc
+                               lv.b.min = 0.4,
+                               lv.b.max = 0.5, #hopefully lv.vs have a much bigger effect than occupancy etc
                                modeltype = "jsodm_lv", nlv = 4
   )
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
@@ -61,7 +61,7 @@ test_that("Uncertainty dominated by latent variables.", {
   # as draws are true representation of distribution expect the 95% credible interval to cover observation 95% of the time
   expect_equal(mean(inci_fittedlv.v), 0.95, tol = 0.05)
 
-  sumRVs_margpost_marglv.v <- predsumspeciesRV(artfit, UseFittedLV = FALSE, nlv.vsim = 100, type = "marginal")
+  sumRVs_margpost_marglv.v <- predsumspeciesRV(artfit, UseFittedLV = FALSE, nLVsim = 100, type = "marginal")
   # par(mfrow = c(4, 5))
   # lapply(sumRVs_margpost_marglv.v, plot)
   ci_marglv.v <- lapply(sumRVs_margpost_marglv.v, ci95generous)
@@ -101,7 +101,7 @@ test_that("Credible intervals accurate for model without restrictions.", {
   expect_equal(mean(inci_fittedlv.v), 0.95, tol = 0.05)
   
   
-  sumRVs_margpost_marglv.v <- predsumspeciesRV(artfit, UseFittedLV = FALSE, nlv.vsim = 100, type = "marginal")
+  sumRVs_margpost_marglv.v <- predsumspeciesRV(artfit, UseFittedLV = FALSE, nLVsim = 100, type = "marginal")
   # par(mfrow = c(4, 5))
   # lapply(sumRVs_margpost_marglv.v, plot)
   ci_marglv.v <- lapply(sumRVs_margpost_marglv.v, ci95generous)

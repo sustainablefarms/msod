@@ -22,7 +22,7 @@ test_that("In sample data; fitted lv.v; different draws", {
   bugvarnames <- names(artfit$mcmc[[1]][1, ])
   artfit$mcmc[[2]][1, grepl("^occ.b\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^occ.b\\[.*", bugvarnames)] * runif(3, min = 5, max = 10)
   artfit$mcmc[[2]][1, grepl("^det.b\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^det.b\\[.*", bugvarnames)] * runif(3, min = 5, max = 10)
-  artfit$mcmc[[2]][1, grepl("^lv.coef\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^lv.coef\\[.*", bugvarnames)] * runif(3, min = 0.1, max = 0.2)
+  artfit$mcmc[[2]][1, grepl("^lv.b\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^lv.b\\[.*", bugvarnames)] * runif(3, min = 0.1, max = 0.2)
   artfit$mcmc[[2]][1, grepl("^lv.v\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^lv.v\\[.*", bugvarnames)] * runif(4, min = 0.5, max = 1)
   
   # Predicted number of species detected and in occupation
@@ -167,14 +167,14 @@ test_that("In sample data; marginal on lv.v", {
                                occ.b.max = 0.01,
                                det.b.min = -0.01,
                                det.b.max = 0.01,
-                               lv.coef.min = 0.4,
-                               lv.coef.max = 0.5, #hopefully lv.vs have a much bigger effect than occupancy etc,
+                               lv.b.min = 0.4,
+                               lv.b.max = 0.5, #hopefully lv.vs have a much bigger effect than occupancy etc,
 			       modeltype = "jsodm_lv",
 			       nlv = 4
                                )
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
-  numspec <- predsumspecies(artfit, UseFittedLV = FALSE, nlv.vsim = 1000, type = "median")
+  numspec <- predsumspecies(artfit, UseFittedLV = FALSE, nLVsim = 1000, type = "median")
   expect_equal(ncol(numspec), nsites)
   
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
@@ -283,7 +283,7 @@ test_that("Holdout data; has lv.vs", {
   originalXobs <- cbind(ModelSite = artfit$data$ModelSite, originalXobs)
   outofsample_y <- simulate_detections_lv.v(artfit, esttype = 1)
   
-  Enumspec <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite", chains = NULL, nlv.vsim = 1000, type = "median", cl = NULL)
+  Enumspec <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite", chains = NULL, nLVsim = 1000, type = "median", cl = NULL)
   
   expect_equal(ncol(Enumspec), nsites)
   
@@ -333,7 +333,7 @@ test_that("Holdout data; no lv.vs", {
   originalXobs <- cbind(ModelSite = artfit$data$ModelSite, originalXobs)
   outofsample_y <- simulate_detections(artfit, esttype = 1)
   
-  Enumspec <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite", chains = NULL, nlv.vsim = 1000, type = "marginal", cl = NULL)
+  Enumspec <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite", chains = NULL, nLVsim = 1000, type = "marginal", cl = NULL)
   
   expect_equal(ncol(Enumspec), nsites)
   
@@ -365,7 +365,7 @@ test_that("Holdout data; no lv.vs", {
   expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
   
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
-  Enumspecdet <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite", chains = NULL, nlv.vsim = 1000, type = "marginal")
+  Enumspecdet <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite", chains = NULL, nLVsim = 1000, type = "marginal")
   ininterval <- (NumSpecies > Enumspecdet["Esum_det", ] - 2 * sqrt(Enumspecdet["Vsum_det", ])) & 
     (NumSpecies < Enumspecdet["Esum_det", ] + 2 * sqrt(Enumspecdet["Vsum_det", ]))
   expect_equal(mean(ininterval), 0.95, tol = 0.05)
@@ -382,7 +382,7 @@ test_that("Subset biodiversity matches simulations", {
   bugvarnames <- names(artfit$mcmc[[1]][1, ])
   artfit$mcmc[[2]][1, grepl("^occ.b\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^occ.b\\[.*", bugvarnames)] * runif(3, min = 5, max = 10)
   artfit$mcmc[[2]][1, grepl("^det.b\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^det.b\\[.*", bugvarnames)] * runif(3, min = 5, max = 10)
-  artfit$mcmc[[2]][1, grepl("^lv.coef\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^lv.coef\\[.*", bugvarnames)] * runif(3, min = 0.1, max = 0.2)
+  artfit$mcmc[[2]][1, grepl("^lv.b\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^lv.b\\[.*", bugvarnames)] * runif(3, min = 0.1, max = 0.2)
   artfit$mcmc[[2]][1, grepl("^lv.v\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^lv.v\\[.*", bugvarnames)] * runif(4, min = 0.5, max = 1)
    
   # Simulate equally from each draw
@@ -417,7 +417,7 @@ test_that("Subset biodiversity matches simulations", {
   
   numspec_holdout_marglv.v <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite",
                                      desiredspecies = speciessubset,
-                                     chains = NULL, nlv.vsim = 1000, type = "marginal", cl = NULL)
+                                     chains = NULL, nLVsim = 1000, type = "marginal", cl = NULL)
   
   inci_holdout_marglv.v <- (NumSpeciesObs > numspec_holdout_marglv.v["Esum_det", ] - 2 * sqrt(numspec_holdout_marglv.v["Vsum_det", ])) & 
     (NumSpeciesObs < numspec_holdout_marglv.v["Esum_det", ] + 2 * sqrt(numspec_holdout_marglv.v["Vsum_det", ]))
@@ -435,7 +435,7 @@ test_that("Subset biodiversity to single species matches simulations", {
   bugvarnames <- names(artfit$mcmc[[1]][1, ])
   artfit$mcmc[[2]][1, grepl("^occ.b\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^occ.b\\[.*", bugvarnames)] * runif(3, min = 5, max = 10)
   artfit$mcmc[[2]][1, grepl("^det.b\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^det.b\\[.*", bugvarnames)] * runif(3, min = 5, max = 10)
-  artfit$mcmc[[2]][1, grepl("^lv.coef\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^lv.coef\\[.*", bugvarnames)] * runif(3, min = 0.1, max = 0.2)
+  artfit$mcmc[[2]][1, grepl("^lv.b\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^lv.b\\[.*", bugvarnames)] * runif(3, min = 0.1, max = 0.2)
   artfit$mcmc[[2]][1, grepl("^lv.v\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^lv.v\\[.*", bugvarnames)] * runif(4, min = 0.5, max = 1)
   
   # Simulate equally from each draw
@@ -479,7 +479,7 @@ test_that("Subset biodiversity to single species matches simulations", {
   
   numspec_holdout_marglv.v <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite",
                                                    desiredspecies = speciessubset,
-                                                   chains = NULL, nlv.vsim = 1000, type = "marginal", cl = NULL)
+                                                   chains = NULL, nLVsim = 1000, type = "marginal", cl = NULL)
   Enum_compare_sum <- Enum_compare(NumSpeciesObs,
                                    data.frame(pred = numspec_holdout_marglv.v["Esum_det", ]),
                                    data.frame(pred = numspec_holdout_marglv.v["Vsum_det", ])
@@ -511,7 +511,7 @@ test_that("Endetect_modelsite matches predsumspecies", {
   # marginal to lv.v
   Edet1 <- Endetect_modelsite(artfit, type = "median", conditionalLV = FALSE)
   Edet2 <- lapply(artfit$species, function(sp) {
-    Edet <- predsumspecies(artfit, desiredspecies = sp, UseFittedLV = FALSE, nlv.vsim = 5000, type = "marginal")
+    Edet <- predsumspecies(artfit, desiredspecies = sp, UseFittedLV = FALSE, nLVsim = 5000, type = "marginal")
     #marginal works here because artfit has only one draw
     return(Edet)}
   )

@@ -153,8 +153,8 @@ test_that("Likelihood computations match simulations with lv.v, single visits", 
                                OccFmla = "~ 1",
                                occ.b.min = 0,  occ.b.max = 0.001, 
                                det.b.min = 1, det.b.max = 1.001,
-                               lv.coef.min = matrix(c(0, 0, 0.45), nrow = 2, ncol = 3, byrow = TRUE),
-                               lv.coef.max = matrix(c(0, 0, 0.65), nrow = 2, ncol = 3, byrow = TRUE),
+                               lv.b.min = matrix(c(0, 0, 0.45), nrow = 2, ncol = 3, byrow = TRUE),
+                               lv.b.max = matrix(c(0, 0, 0.65), nrow = 2, ncol = 3, byrow = TRUE),
                                modeltype = "jsodm_lv",
                                nlv = 3)
                                

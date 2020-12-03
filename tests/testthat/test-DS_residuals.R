@@ -89,8 +89,8 @@ test_that("Occupancy and Detection Residuals Gaussian for fresh conversion from 
                             occ.b.max = occ.b.max,
                             det.b.min = det.b.min,
                             det.b.max = det.b.max,
-                            lv.coef.min = 0.6,
-                            lv.coef.max = 0.6,
+                            lv.b.min = 0.6,
+                            lv.b.max = 0.6,
                             OccFmla = OccFmla,
                             ObsFmla = ObsFmla,
                             modeltype = "jsodm_lv",
@@ -265,7 +265,7 @@ test_that("DS Detection Residuals are Gaussian for Artificial Fitted Object made
   # abline(a = 0, b = 1)
   # occ.b <- bugsvar2matrix(fit$mcmc[[1]][1,  ], "occ.b", 1:fit$data$n, 1:fit$data$Vocc)
   # det.b <- bugsvar2matrix(fit$mcmc[[1]][1,  ], "det.b", 1:fit$data$n, 1:fit$data$Vobs)
-  # lv.coef <- bugsvar2matrix(fit$mcmc[[1]][1,  ], "lv.coef", 1:fit$data$n, 1:fit$data$nlv)
+  # lv.b <- bugsvar2matrix(fit$mcmc[[1]][1,  ], "lv.b", 1:fit$data$n, 1:fit$data$nlv)
 })
 # failed 0 out of 20 times
 

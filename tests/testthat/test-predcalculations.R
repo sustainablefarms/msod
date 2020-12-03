@@ -28,8 +28,8 @@ test_that("poccupy_species is correct with lv.v", {
   fit <- artificial_runjags(nspecies = 5, nsites = 100, nvisitspersite = 6, 
                             occ.b.min = occ.b.min,
                             occ.b.max = occ.b.max,
-                            lv.coef.min = 0.6,
-                            lv.coef.max = 0.6,
+                            lv.b.min = 0.6,
+                            lv.b.max = 0.6,
                             OccFmla = OccFmla,
                             modeltype = "jsodm_lv",
                             nlv = 1)
@@ -76,8 +76,8 @@ test_that("pdetect_indvisit is correct with lv.v", {
                             occ.b.max = occ.b.max,
                             det.b.min = det.b.min,
                             det.b.max = det.b.max,
-                            lv.coef.min = 0.6,
-                            lv.coef.max = 0.6,
+                            lv.b.min = 0.6,
+                            lv.b.max = 0.6,
                             OccFmla = OccFmla,
                             ObsFmla = ObsFmla,
                             modeltype = "jsodm_lv",
@@ -143,16 +143,16 @@ test_that("pdetect_condoccupied and poccupy_species ordering of sites / visits w
   occ.b.max <- occ.b.min + 1E-5
   det.b.min <- matrix((1:5)/8 , ncol = 1)
   det.b.max <- det.b.min + 1E-5
-  lv.coef.min <- matrix((1:5)/8, ncol = 2, nrow = 5, byrow = FALSE)
-  lv.coef.max <- lv.coef.min + 1E-5
+  lv.b.min <- matrix((1:5)/8, ncol = 2, nrow = 5, byrow = FALSE)
+  lv.b.max <- lv.b.min + 1E-5
   
   fit <- artificial_runjags(nspecies = 5, nsites = 100, nvisitspersite = 6,
                             occ.b.min = occ.b.min,
                             occ.b.max = occ.b.max,
                             det.b.min = det.b.min,
                             det.b.max = det.b.max,
-                            lv.coef.min = lv.coef.min,
-                            lv.coef.max = lv.coef.max,
+                            lv.b.min = lv.b.min,
+                            lv.b.max = lv.b.max,
                             OccFmla = OccFmla,
                             ObsFmla = ObsFmla,
                             modeltype = "jsodm_lv",

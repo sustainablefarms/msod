@@ -29,7 +29,7 @@ qqnorm(gwk$value)
 qqline(gwk$value)
 varname2type <- function(varnames){
   types <- dplyr::case_when(
-    grepl("lv.coef", varnames) ~ "lv.v Load",
+    grepl("lv.b", varnames) ~ "lv.v Load",
     grepl("lv.v.*,1\\]", varnames) ~ "lv.v1",
     grepl("lv.v.*,2\\]", varnames) ~ "lv.v2",
     grepl("lv.v.*,3\\]", varnames) ~ "lv.v3",
