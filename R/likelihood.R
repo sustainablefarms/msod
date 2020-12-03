@@ -72,7 +72,7 @@
 
 #' @describeIn likelihoods.fit Compute the log pointwise posterior density of new (out-of-sample) data
 #' @return `lppd.newdata` returns a list with components
-#' lpds: a list of the log likelihood of the observations for each ModelSite in the supplied data
+#' lpds: a list of the log predictive density for each ModelSite in the supplied data (for each model site this is the average of the predictive density conditioned on each draw from the posterior).
 #' lppd: the computed log pointwise predictive density (sum of the lpds). This is equation (5) in Gelman et al 2014
 #' @export
 lppd.newdata <- function(fit, Xocc, yXobs, ModelSite, chains = 1, numlvsims = 1000, cl = NULL){
@@ -87,11 +87,12 @@ lppd.newdata <- function(fit, Xocc, yXobs, ModelSite, chains = 1, numlvsims = 10
   )
 }
 
-#' @describeIn likelihoods.fit Compute the likelihood of observations at each ModelSites. At data in the fitted model, or on new data supplied.
+#' @describeIn likelihoods.fit Compute the likelihood of observations at each ModelSite. At data in the fitted model, or on new data supplied.
 #' @param chains is a vector indicator which mcmc chains to extract draws from. If NULL then all chains used.
 #' @param numlvsims the number of simulated latent variable values to use for computing likelihoods
 #' @param cl a cluster created by parallel::makeCluster()
-#' @return `likelihoods.fit` returns a matrix. Each row corresponds to a draw of the parameters from the posterior. Each column to a ModelSite
+#' @return `likelihoods.fit` returns a matrix. Each row corresponds to a draw of the parameters from the posterior. Each column to a ModelSite.
+#' The value in each cell is the probability density, given the parameters from the draw, evaluated at the observations for the model site.
 #' Compute the likelihoods of each ModelSite's observations given each draw of parameters in the posterior.
 #' @export
 likelihoods.fit <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL, chains = NULL, numlvsims = 1000, cl = NULL){

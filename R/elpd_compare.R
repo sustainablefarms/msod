@@ -1,4 +1,4 @@
-#' @title Compare Sitewise Differences in Expected Log Posterior Density
+#' @title Compare Sitewise Differences in Log Predictive Density; Expected Difference with Standard Errors
 #' @details Very similar to loo::loo_compare(), but with fewer checks
 #' @param elpds A data.frame or matrix of expected log posterior densities. Each row is ModelSite, each column is a Model. Typically the columns will have names.
 #' @param refname The column name (i.e. Model) to compare all other models to. If NULL then uses the model with the highest sum of elpd.
