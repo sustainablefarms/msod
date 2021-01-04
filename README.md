@@ -10,10 +10,15 @@ Models are closely related to a JSDM by Tobler and models seen in the Boral pack
    + linear combinations of environmental occupancy predictors for many parameter draws
    + linear combination of LV
    + apply a modelsite x theta --> likelihood function to get array of likelihood of sites and theta
+      + probably modelsite x theta x species arrays, with each value a probability of occupancy (detection), conditional on certain parameters, marginal on others.
    + combine occupancy probability with conditional detection probability to get full detection likilihoods (full probability distribution has too many dimensions) [doing this in multisite way - e.g. through large arrays]
    + computing a median, hpd, and expectation for occupancy from given occupancy probability per theta x LV x RE
    + computing a median, hpd, and expectation for expected species richness given occupancy probability per theta x LV x RE
    + processing of environmental data, and their saving to a fitted model
+   + common arrays:
+     + value: prob occupancy conditional on some, marginal on others dim: draw x modelsite x species x marginal param draw
+     + value: prob detection conditional on occupancy, marginal on others. dim: draw x modelsite x species x marginal param draw
+     + value: stdnormthresh for occupancy with marginal param sets. dim: draw x modelsite x species x marginal param draw
 
 + Computations that will differ between models
    + occupancy RV mean and standard deviation (it will always be normal though)
@@ -48,6 +53,8 @@ Models are closely related to a JSDM by Tobler and models seen in the Boral pack
 + predicting for multiple species and multiple sites
 
 + simulating from given models (core because very important for code testing)
+
++ remove the standardising of data to 1 with mean 0
 
 ### Small Helping Functionality
 + standardising and preparing data
