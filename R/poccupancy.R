@@ -18,6 +18,17 @@
 #' fitold <- readRDS("../Experiments/7_4_modelrefinement/fittedmodels/7_4_13_allhyp_vif_logwoody500m_msnm_year_Time_Wind.rds")
 #' fit <- translatefit(fitold)
 #' poccupy.jsodm(fit)
+#' 
+#' 
+#' randomcovar <- array(rnorm(10 * 2), dim = c(10, 2, 30),
+#'                       dimnames = list(paste0("Site", LETTERS[1:10]), paste0("C", letters[1:2]), paste0("D", 1:30)))
+#' loadrandom <- array(unlist(lapply(seq(0, 0.3, by = 0.01), function(x) rnorm(7 * 2, x, sd = 0.01))), dim = c(7, 2, 30), #each layer has a larger mean
+#'                     dimnames = list(paste0("Species", LETTERS[1:7]), paste0("C", letters[1:2]), paste0("D", 1:30)))
+#' pocc <- poccupy_raw.jsodm_lv(fixedcovar, loadfixed, randomcovar, loadrandom)
+#' model2lv <- readRDS("../Experiments/7_4_modelrefinement/fittedmodels/7_4_13_model_2lv_e13.rds")
+#' model2lv_new <- translatefit(model2lv)
+#' pocc <- poccupy_raw.jsodm_lv(fixedcovar, loadfixed, randomcovar, loadrandom)
+#' 
 #' @export
 poccupy_raw.jsodm <- function(fixedcovar, loadfixed, randomcovar = NULL, loadrandom = NULL){
   stopifnot(is.null(randomcovar))
@@ -54,14 +65,19 @@ poccupy.jsodm <- function(fit){
   return(pocc)
 }
 
-randomcovar <- array(rnorm(10 * 5), dim = c(10, 5, 30),
-                      dimnames = list(paste0("Site", LETTERS[1:10]), paste0("C", letters[1:5]), paste0("D", 1:30)))
-loadrandom <- array(unlist(lapply(seq(0, 12, by = 1), function(x) rnorm(7 * 5, x))), dim = c(7, 5, 30), #each layer has a larger mean
-                    dimnames = list(paste0("Species", LETTERS[1:7]), paste0("C", letters[1:5]), paste0("D", 1:30)))
 
-poccupy_raw.jsodm_lv <- function(fixedcovar, loadfixed, randomcovar = NULL, loadrandom = NULL, sd_occ_indicator = NULL){
+
+# if no randomness included then it is assumed no information about the LV values or loadings is known and the prediction becomes a plain jsodm prediction
+# MISTAKE: loadings of fixed and lv.v must come from the same draw, that means fixedcovar and loadrandom must be of the same final dimension
+poccupy_raw.jsodm_lv <- function(fixedcovar, loadfixed, randomcovar = NULL, loadrandom = NULL){
+  if (is.null(randomcovar) && is.null(loadrandom)){
+    return(poccupy_raw.jsodm(fixedcovar, loadfixed))
+  }
+  
   eta_f <- eta_fixed(fixedcovar, loadfixed)
   
+  sd_occ_indicator <- apply(loadrandom, MARGIN = c(1, 3), function(x) sqrt(1- sum(x^2)))
+
   ndraw <- dim(randomcovar)[[3]]
   eta_rand_l <- lapply(1:ndraw, function(d)
          randomcovar[,,d] %*% t(loadrandom[,,d]))
@@ -76,7 +92,8 @@ poccupy_raw.jsodm_lv <- function(fixedcovar, loadfixed, randomcovar = NULL, load
         function(indices){
           vals <- outer(eta_f[indices[[1]], indices[[2]], ],
                 eta_rand[indices[[1]], indices[[2]], ], FUN = "+")
-          return(list(vals))
+          vals_std <- vals / sd_occ_indicator[indices[[2]], ]
+          return(list(vals_std))
         })
   for (indexrow in 1:nrow(sitespecindex)){
     eta[sitespecindex[indexrow, 1], sitespecindex[indexrow, 2], , ] <-
@@ -89,8 +106,6 @@ poccupy_raw.jsodm_lv <- function(fixedcovar, loadfixed, randomcovar = NULL, load
   # }
   stopifnot(all(eta != 0))
   
-
-  
   pocc <- 1 - pnorm(-eta, mean = 0, sd = 1)
   
   stopifnot(all.equal(dim(pocc), c( #test that final dimensions are correct
@@ -99,5 +114,16 @@ poccupy_raw.jsodm_lv <- function(fixedcovar, loadfixed, randomcovar = NULL, load
     dim(loadfixed)[[3]],
     dim(loadrandom)[[3]]
   )))
+  return(pocc)
+}
+
+poccupy.jsodm_lv <- function(fit){
+  fixedcovar <- fit$data$Xocc
+  dimnames(fixedcovar) <- list(ModelSite = rownames(fixedcovar), Covariate = colnames(fixedcovar))
+  
+  loadfixed <- get_occ_b(fit)
+  lv.v <- get_lv_v(fit)
+  lv.b <- get_lv_b(fit)
+  pocc <- poccupy_raw.jsodm_lv(fixedcovar, loadfixed, lv.v, lv.b)
   return(pocc)
 }
