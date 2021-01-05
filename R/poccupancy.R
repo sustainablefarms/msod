@@ -75,7 +75,7 @@ poccupy_raw.jsodm_lv <- function(fixedcovar, loadfixed, randomcovar = NULL, load
   a <- apply(sitespecindex, MARGIN = 1,
         function(indices){
           vals <- outer(eta_f[indices[[1]], indices[[2]], ],
-                eta_rand[indices[[1]], indices[[2]], ])
+                eta_rand[indices[[1]], indices[[2]], ], FUN = "+")
           return(list(vals))
         })
   for (indexrow in 1:nrow(sitespecindex)){
