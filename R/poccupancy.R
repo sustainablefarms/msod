@@ -69,18 +69,29 @@ poccupy.jsodm <- function(fit){
 
 # if no randomness included then it is assumed no information about the LV values or loadings is known and the prediction becomes a plain jsodm prediction
 # MISTAKE: loadings of fixed and lv.v must come from the same draw, that means fixedcovar and loadrandom must be of the same final dimension
-poccupy_raw.jsodm_lv <- function(fixedcovar, loadfixed, randomcovar = NULL, loadrandom = NULL){
-  if (is.null(randomcovar) && is.null(loadrandom)){
-    return(poccupy_raw.jsodm(fixedcovar, loadfixed))
+# basically want to marginalise randomcovar without marginalising loadrandom
+# the situation where lv.b and lv.v are tied together is fixedcovar, and loadfixed, but with a changed sd of occ_indicator
+#sd_occ_indicator must be a matrix with rows that are species and columns that are draws
+poccupy_posterior_lvv.jsodm_lv <- function(fixedcovar, loadfixed, sd_occ_indicator){
+  eta_f <- eta_fixed(fixedcovar, loadfixed)
+  #for each column and each drow, scale eta_f by sd_occ_indicator
+  for (modelsite in 1:nrow(eta_f)){
+    eta_f[modelsite, , ] <- eta_f[modelsite, , ] / sd_occ_indicator
   }
-  
+  pocc <- 1 - pnorm(-eta_f, mean = 0, sd = 1)
+  return(pocc)
+}
+
+poccupy_marg_lvv.jsodm_lv <- function(fixedcovar, loadfixed, randomcovar, loadrandom){
   eta_f <- eta_fixed(fixedcovar, loadfixed)
   
   sd_occ_indicator <- apply(loadrandom, MARGIN = c(1, 3), function(x) sqrt(1- sum(x^2)))
 
-  ndraw <- dim(randomcovar)[[3]]
-  eta_rand_l <- lapply(1:ndraw, function(d)
-         randomcovar[,,d] %*% t(loadrandom[,,d]))
+  ndraw_lvv <- dim(randomcovar)[[3]]
+  ndraw_lvb <- dim(loadrandom)[[3]]
+  ##E# stop if ndraw of loadrandom differs from loadfixed
+  eta_rand_l <- lapply(1:ndraw_lvv, function(d)
+         randomcovar[,,d] %*% t(loadrandom[,,d])) ##E# need to do the outer thing here. For each draw of lvb, do all draws of lvv.
   eta_rand <- abind::abind(eta_rand_l, along = 3, force.array = TRUE, use.dnns = TRUE)
   dimnames(eta_rand) <- list(dimnames(randomcovar)[[1]], dimnames(loadrandom)[[1]], dimnames(loadrandom)[[3]])
   
