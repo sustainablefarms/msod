@@ -21,11 +21,11 @@ test_that("Likelihood computations run in sample data with lv.v", {
     ObsFmla = "~ UpVisit + Step",
     modeltype = "jsodm_lv",
     nlv = 2,
-    MCMCparams = list(n.chains = 1, adapt = 0, burnin = 0, sample = 2, thin = 1)
+    MCMCparams = list(n.chains = 1, adapt = 0, burnin = 0, sample = 3, thin = 1)
   ))
   
-  lkl <- likelihoods.fit(fittedmodel)
-  expect_equal(dim(lkl), c(2, 50))
+  lkl <- likelihood(fittedmodel)
+  expect_equal(dim(lkl), c(3, 50))
 })
 
 test_that("Likelihood computations run in sample data with out lv.v", {
@@ -43,14 +43,14 @@ test_that("Likelihood computations run in sample data with out lv.v", {
     MCMCparams = list(n.chains = 1, adapt = 0, burnin = 0, sample = 2, thin = 1)
   ))
   
-  lkl <- likelihoods.fit(fittedmodel)
+  lkl <- likelihood(fittedmodel)
   expect_equal(dim(lkl), c(2, 20))
 })
 
 test_that("lppds insample and outsample data identical when observations identical", {
   artmodel <- artificial_runjags(modeltype = "jsodm")
   
-  lkl <- likelihoods.fit(artmodel)
+  lkl <- likelihood(artmodel)
   lkl <- Rfast::rep_row(lkl, 50)
   waic <- loo::waic(log(lkl))
   
@@ -60,7 +60,7 @@ test_that("lppds insample and outsample data identical when observations identic
   originalXobs <- cbind(ModelSite = artmodel$data$ModelSite, originalXobs)
   
   outofsample_y <- artmodel$data$y
-  outofsample_lppd <- lppd.newdata(artmodel,
+  outofsample_lppd <- lppd_newdata(artmodel,
                                    Xocc = originalXocc,
                                    yXobs = cbind(originalXobs, outofsample_y),
                                    ModelSite = "ModelSite")
@@ -74,7 +74,7 @@ test_that("lppds insample and outsample data identical when observations identic
 test_that("lppds insample and outsample data similar on very artifical simple situation", {
   artmodel <- artificial_runjags(modeltype = "jsodm")
   
-  lkl <- likelihoods.fit(artmodel)
+  lkl <- likelihood(artmodel)
   lkl <- Rfast::rep_row(lkl, 50)
   waic <- loo::waic(log(lkl))
   
@@ -84,7 +84,7 @@ test_that("lppds insample and outsample data similar on very artifical simple si
   originalXobs <- cbind(ModelSite = artmodel$data$ModelSite, originalXobs)
   
   outofsample_y <- simulate_detections(artmodel, esttype = 1)
-  outofsample_lppd <- lppd.newdata(artmodel,
+  outofsample_lppd <- lppd_newdata(artmodel,
                Xocc = originalXocc,
                yXobs = cbind(originalXobs, outofsample_y),
                ModelSite = "ModelSite")
@@ -117,7 +117,7 @@ test_that("Likelihood computations match simulations without lv.v for nearly cer
   lkl_sim <- sim_distr[jointoutcomes]
   
   # from this package
-  lkl <- likelihoods.fit(artfit)
+  lkl <- likelihood(artfit)
   
   # compare all
   expect_equivalent(lkl_th, lkl)
@@ -140,7 +140,7 @@ test_that("Likelihood computations match simulations without lv.v for multiple v
   lkl_sim <- sim_distr[jointoutcomes]
   
   # from this package
-  lkl <- likelihoods.fit(artfit)
+  lkl <- likelihood(artfit)
   
   # compare 
   expect_equivalent(lkl, lkl_sim, tolerance = 0.05)
@@ -171,7 +171,7 @@ test_that("Likelihood computations match simulations with lv.v, single visits", 
   lkl_sim <- sim_distr[jointoutcomes]
   
   # from this package
-  lkl <- likelihoods.fit(artfit)
+  lkl <- drop(likelihood(artfit))
   
   # compare 
   expect_equivalent(lkl, lkl_sim, tolerance = 0.01)
@@ -198,7 +198,7 @@ test_that("Likelihood computations match simulations with lv.v, multiple visits"
   lkl_sim <- sim_distr[jointoutcomes]
   
   # from this package
-  lkl <- likelihoods.fit(artfit)
+  lkl <- likelihood(artfit)
   
   # compare 
   expect_equivalent(lkl, lkl_sim, tolerance = 0.01)
