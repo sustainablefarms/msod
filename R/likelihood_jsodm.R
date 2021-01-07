@@ -75,7 +75,7 @@ likelihood_draw.jsodm <- function(Xocc, Xobs, y, ModelSite, occ.b, det.b){
   NoneDetected <- t(a)
   
   ## Probability of Site Occupancy, for each simulated LV, for the given draw. #this seems to be the SLOWEST part
-  Occ.Pred  <- poccupy_raw.jsodm(Xocc, occ.b)
+  Occ.Pred  <- poccupy_raw.jsodm(Xocc, occ.b)[,,1]
 
   # combine with likelihoods of detections
   Likl.JointVisit <- Occ.Pred * Likl_condoccupied.JointVisit
