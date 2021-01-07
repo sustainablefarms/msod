@@ -75,10 +75,16 @@
 #' lpds: a list of the log predictive density for each ModelSite in the supplied data (for each model site this is the average of the predictive density conditioned on each draw from the posterior).
 #' lppd: the computed log pointwise predictive density (sum of the lpds). This is equation (5) in Gelman et al 2014
 #' @export
-lppd.newdata <- function(fit, Xocc, yXobs, ModelSite, chains = 1, numlvsims = 1000, cl = NULL){
-  likel.mat <- likelihood(fit, Xocc = Xocc, yXobs = yXobs, ModelSite = ModelSite,
-                               chains = chains, numlvsims = numlvsims, cl = cl)
-  likel.marg <- Rfast::colmeans(likel.mat) # the loglikelihood marginalised over theta (poseterior distribution)
+lppd_newdata <- function(fit, Xocc, yXobs, ModelSite, chains = 1, ...){
+  likel.mat <- likelihood(fit, Xocc = Xocc, yXobs = yXobs, ModelSite = ModelSite, ...)
+  elpd_out <- elpd(likel.mat)
+  return(elpd_out)
+}
+
+#' Expected log predictive density: the probability density for each model site, average across posterior draws
+#' @param likelmat A matrix of draw (row) x modelsite (column)
+elpd <- function(likelmat){
+  likel.marg <- Rfast::colmeans(likelmat) # the loglikelihood marginalised over theta (poseterior distribution)
   return(
     list(
       lppd = sum(log(likel.marg)),
