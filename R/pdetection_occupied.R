@@ -15,3 +15,21 @@ pdetection_occupied_raw <- function(Xobs, det.b_arr){
   pdet_post <- apply(pdet, MARGIN = c(1, 2), mean)
   return(pdet_post)
 }
+
+
+#' @title Probability of Detection, Given Occupied
+#' @param fixedcovar An array of detection covariate values. Each row is a visit, each column is a covariate.
+#' @param loadfixed An array of loadings for the covariates in 'fixedcovar'. Each row is a species,
+#'  each columns is a covariate (in same order as in fixedcovar), and each layer is a draw from the distribution of loadings.
+#' @return An array of detection probability values given species occupies the visited site. Each row is a visit, each column a species, 
+#' each layer a draw corresponding to the loadings.
+#' @export
+pdet_occ_raw.jsodm <- function(fixedcovar, loadfixed){
+  stopifnot(length(dim(fixedcovar)) == 2)
+  stopifnot(length(dim(loadfixed)) <= 3)
+  
+  det_linpred <-  tensor::tensor(fixedcovar, loadfixed, alongA = 2, alongB = 2)
+  
+  pdet <- exp(det_linpred) / (exp(det_linpred) + 1)   #this is the inverse logit function
+  return(pdet)
+}

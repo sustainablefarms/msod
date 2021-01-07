@@ -8,6 +8,13 @@ get_occ_b <- function(fit){
   return(occ.b)
 }
 
+get_det_b <- function(fit){
+  draws <- do.call(rbind, fit$mcmc)
+  det.b <- bugsvar2array(draws, "det.b", 1:fit$data$nspecies, 1:fit$data$nobsvar)
+  dimnames(det.b) <- list(Species = fit$species, Covariate = colnames(fit$data$Xobs), Draw = 1:nrow(draws))
+  return(det.b)
+}
+
 get_lv_v <- function(fit){
   draws <- do.call(rbind, fit$mcmc)
   lv.v <- bugsvar2array(draws, "lv.v", 1:fit$data$nmodelsites, 1:fit$data$nlv)

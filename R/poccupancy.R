@@ -6,10 +6,10 @@
 #' @param loadfixed An array of loadings for the covariates in 'fixedcovar'. Each row is a species,
 #'  each columns is a covariate (in same order as in fixedcovar), and each layer is a draw from the distribution of loadings.
 #' @param randomcovar An array of occupancy covariate values that samples the distribution of the covariate.
-#' Each row is a model site, each column a covariate, and each layer is an iid draw from the (usually posterior) distribution for the covariate value.
+#' Each row is a model site, each column a covariate, and each layer is a draw.
 #' @param loadrandom An array of loadings for 'randomcovar'. Each row is a species, each column a covariate, each layer a draw from the covariate distribution, and must be the same draw as loadfixed.
 #' @return An array of occupancy probability values. Each row is a modelsite, each column a species, 
-#' each layer a draw corresponding to the loadings, and each layer of the 4th dimension is a draw corresponding to 'randomcovar'.
+#' each layer a draw corresponding to the loadings.
 
 #' @examples
 #' fixedcovar <- matrix(rnorm(10 * 5), nrow = 10, ncol = 5,
@@ -30,7 +30,8 @@
 #' pocc <- poccupy_raw.jsodm_lv(fixedcovar, loadfixed, randomcovar, loadrandom)
 #' model2lv <- readRDS("../Experiments/7_4_modelrefinement/fittedmodels/7_4_13_model_2lv_e13.rds")
 #' model2lv_new <- translatefit(model2lv)
-#' pocc <- poccupy.jsodm_lv(fixedcovar, loadfixed, randomcovar, loadrandom)
+#' pocc <- poccupy_raw.jsodm_lv(fixedcovar, loadfixed, randomcovar, loadrandom)
+#' pocc <- poccupy.jsodm_lv(model2lv_new, fullposterior = FALSE)
 #' 
 #' @export
 poccupy_raw.jsodm <- function(fixedcovar, loadfixed, randomcovar = NULL, loadrandom = NULL){
@@ -68,6 +69,7 @@ poccupy.jsodm <- function(fit){
   return(pocc)
 }
 
+#' @export
 poccupy_raw.jsodm_lv <- function(fixedcovar, loadfixed, randomcovar, loadrandom){
   stopifnot(dim(loadfixed)[[3]] == dim(loadrandom)[[3]]) # stop if ndraw of loadrandom differs from loadfixed, this means the draws of each can't be tied together
   stopifnot(dim(loadfixed)[[3]] == dim(randomcovar)[[3]]) # all are draws are from the same joint distribution of fitted parameter x latent variable value.
@@ -106,6 +108,7 @@ poccupy_raw.jsodm_lv <- function(fixedcovar, loadfixed, randomcovar, loadrandom)
 }
 
 # default treats lv.v and loadings as independent, simulating the former. Fullposterior = TRUE draws lv.v from the posterior with all other loadings.
+#' @export
 poccupy.jsodm_lv <- function(fit, fullposterior){
   occ.v <- fit$data$Xocc
   dimnames(occ.v) <- list(ModelSite = rownames(occ.v), Covariate = colnames(occ.v))
