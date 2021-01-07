@@ -81,45 +81,51 @@ likelihood_LVvmarg_draw.jsodm_lv <- function(Xocc, Xobs, y, ModelSite, occ.b, de
   ModSiteVisits <- plyr::split_indices(ModelSite) #10 times faster than split(1:nrow(Likl_condoccupied), ModelSite). Gives a list of visit id (row) for each model site
   
   ## Joint likelihood (probability) of detections of each species for all visits to each model site, CONDITIONAL on occupied
-  a <- vapply(ModSiteVisits,
+  # many of the following arrays are transposed to work with Rfast::eachrow, with each row being an LVv sim
+  Likl_condoccupied.JointVisit <- vapply(ModSiteVisits,
          function(visits){
            Likl_condoccupied.JointVisit.ModelSite <- apply(Likl_condoccupied[visits, , drop = FALSE], MARGIN = 2, prod)
            return(Likl_condoccupied.JointVisit.ModelSite)
          },
          FUN.VALUE = (1:nrow(occ.b)) * 1.001)
-  Likl_condoccupied.JointVisit <- t(a)
+  Likl_condoccupied.JointVisit <- t(Likl_condoccupied.JointVisit)
+  # Likl_condoccupied.JointVisit is now a matrix of site x species
   
   ## Likelihood (probability) of y given unoccupied is either 1 or 0 for detections. Won't include that here yet.
-  a <- vapply(ModSiteVisits,
+  NoneDetected <- vapply(ModSiteVisits,
               function(visits){
                 NoneDetected_modelsite <- as.numeric(colSums(y[visits, , drop = FALSE]) == 0)
                 return(NoneDetected_modelsite)
               },
               FUN.VALUE = (1:nrow(occ.b)) * 1.001)
-  NoneDetected <- t(a)
+  NoneDetected <- t(NoneDetected)
   
   ## Probability of Site Occupancy, for each simulated LV, for the given draw. #this seems to be the SLOWEST part
   Occ.Pred.CondLV <- vapply(1:numlvsims,
          function(i){
            if (!is.null(simseed)){set.seed(simseed)}
-           lv.v <- array(rnorm(nrow(Xocc) * dim(lv.b)[[2]]), dim = c(nrow(Xocc), dim(lv.b)[[2]], 1))
+           lv.v_site <- rnorm(dim(lv.b)[[2]])
+           lv.v <- matrix(lv.v_site, nrow = nrow(Xocc), ncol = dim(lv.b)[[2]], byrow = TRUE)
+           dim(lv.v) <- c(dim(lv.v), 1)
            pocc <- poccupy_raw.jsodm_lv(Xocc, occ.b, lv.v, lv.b)
            return(pocc)
          },
          FUN.VALUE = array(0, dim = c(nrow(Xocc), dim(occ.b)[[1]], 1))
   )
+  # Occ.Pred.CondLV is array sites x species x draw x LV sim
   
   # combine with likelihoods of detections, use Rfast::eachrow after reshaping the arrays
-  dim(Occ.Pred.CondLV) <- c(nrow(Xocc) * nrow(occ.b), numlvsims)
-  dim(Likl_condoccupied.JointVisit) <- c(nrow(Xocc) * nrow(occ.b), 1)
-  Likl.JointVisit.condLV <- Rfast::eachrow(Occ.Pred.CondLV, Likl_condoccupied.JointVisit, oper = "*") #per species likelihood, occupied component. Works because species conditionally independent given LV
+  dim(Occ.Pred.CondLV) <- c(nrow(Xocc) * nrow(occ.b), numlvsims) #Occ.Pred.CondLV is now rows that are (site, species; site moving first), with columns of lv sim
+  dim(Likl_condoccupied.JointVisit) <- c(nrow(Xocc) * nrow(occ.b), 1) # Likl_condoccupied.JointVisit is now rows that are (site, species; site moving first), with column of 1
+  Likl.JointVisit.condLV <- Rfast::eachrow(t(Occ.Pred.CondLV), t(Likl_condoccupied.JointVisit), oper = "*") #per species likelihood, occupied component. Works because species conditionally independent given LV
   
-  dim(NoneDetected) <- c(nrow(Xocc) * nrow(occ.b), 1)
+  dim(NoneDetected) <- c(nrow(Xocc) * nrow(occ.b), 1) #vector, first through sites, then through species
   Likl.JointVisit.condLV <- Likl.JointVisit.condLV + 
-    Rfast::eachrow((1 - Occ.Pred.CondLV), NoneDetected, oper = "*") #add probability of unoccupied for zero detections
+    Rfast::eachrow((1 - t(Occ.Pred.CondLV)), t(NoneDetected), oper = "*") #add probability of unoccupied for zero detections
   
   
   # combine likelihoods of detections between species
+  Likl.JointVisit.condLV <- t(Likl.JointVisit.condLV)
   dim(Likl.JointVisit.condLV) <- c(nrow(Xocc), dim(occ.b)[[1]], numlvsims)
   Likl.JointVisitSp.condLV <- apply(Likl.JointVisit.condLV, MARGIN = c(1, 3), prod) # multiply probabilities of each species together because species are conditionally independent
   
