@@ -1,7 +1,7 @@
 #' @title Likelihood for Plain JSODM
 
-
-likelihood.jsodm <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL, nlvsim = 1000, cl = NULL){
+#' @export
+likelihood.jsodm <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL, cl = NULL){
   stopifnot(class(fit)[[1]] %in% c("jsodm"))
   
   if (is.null(Xocc)){ #Extract the Xocc, yXobs etc from the fitted object, no preprocessing required

@@ -1,16 +1,14 @@
-#' @describeIn likelihoods.fit Compute the joint-species LV-marginal likelihood for all ModelSites
-#' @param occ.b_arr Occupancy covariate loadings. Each row is a species, each column an occupancy covariate, each layer (dim = 3) is a draw
-#' @param det.b_arr Detection covariate loadings. Each row is a species, each column an detection covariate, each layer (dim = 3) is a draw
-#' @param lv.b_arr LV loadings. Each row is a species, each column a LV, each layer (dim = 3) is a draw
-#' @param data_i A row of a data frame created by \code{prep_data_by_modelsite}. Each row contains data for a single ModelSite. 
-#' @param lvsim A matrix of simulated LV values. Columns correspond to latent variables, each row is a simulation
-#' @param Xocc A matrix of processed occupancy covariate values for the model site. Must have 1 row.
-#' @param Xobs A matrix of processed detection covariate values for each visit to the model site. 
-#' @param y Matrix of species detections for each visit to the model site.
-#' @return `likelihoods.fit` returns a matrix. Each row corresponds to a draw of the parameters from the posterior. Each column to a ModelSite.
+#' @title Likelihood Computation for JSODM_LV Model
+
+#' @description  Computes the likelihood of observations at each ModelSite. At data in the fitted model, or on new data supplied.
+#' It uses [likelihood_joint_LVvmarg_draw.jsodm_lv].
+#' @param chains is a vector indicator which mcmc chains to extract draws from. If NULL then all chains used.
+#' @param numlvsims the number of simulated latent variable values to use for computing likelihoods
+#' @param cl a cluster created by parallel::makeCluster()
+#' @return Returns a matrix. Each row corresponds to a draw of the parameters from the posterior. Each column to a ModelSite.
 #' The value in each cell is the probability density, given the parameters from the draw, evaluated at the observations for the model site.
 #' @export
-likelihoods.jsodm_lv <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL, nlvsim = 1000, cl = NULL){
+likelihood.jsodm_lv <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL, numlvsims = 1000, cl = NULL, simseed = NULL){
   stopifnot(class(fit)[[1]] %in% c("jsodm_lv"))
 
   if (is.null(Xocc)){ #Extract the Xocc, yXobs etc from the fitted object, no preprocessing required
@@ -30,24 +28,26 @@ likelihoods.jsodm_lv <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NUL
   
   if (is.null(cl)) {
     likel.l <- lapply(1:dim(occ.b_arr)[[3]], function(drawid) {
-      lkl <- likelihood_joint_LVvmarg_draw.jsodm_lv(
+      lkl <- likelihood_LVvmarg_draw.jsodm_lv(
         Xocc, Xobs, y, ModelSite,
         occ.b_arr[,,drawid, drop = FALSE],
         det.b_arr[,,drawid, drop = FALSE],
         lv.b_arr[,,drawid, drop = FALSE],
-        nlvsim
+        numlvsims,
+        simseed
       )
       return(lkl)
     })
   }
   else {
     likel.l <- parallel::parLapply(cl = cl, 1:dim(occ.b_arr)[[3]], function(drawid) {
-      lkl <- likelihood_joint_LVvmarg_draw.jsodm_lv(
+      lkl <- likelihood_LVvmarg_draw.jsodm_lv(
         Xocc, Xobs, y, ModelSite,
         occ.b_arr[,,drawid, drop = FALSE],
         det.b_arr[,,drawid, drop = FALSE],
         lv.b_arr[,,drawid, drop = FALSE],
-        nlvsim
+        numlvsims,
+        simseed
       )
       return(lkl)
     }, FUN.VALUE = 1:nrow(Xocc) * 1.0001)
@@ -57,8 +57,17 @@ likelihoods.jsodm_lv <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NUL
   return(likel.mat)
 }
 
-
-likelihood_joint_LVvmarg_draw.jsodm_lv <- function(Xocc, Xobs, y, ModelSite, occ.b, det.b, lv.b, nlvsim){
+#' @title Likelihood Computation for JSODM_LV Model for a Given Draw
+#' @description Computes the joint-species LV-marginal likelihood for all ModelSites, for a given draw.
+#' @param occ.b_arr Occupancy covariate loadings. Each row is a species, each column an occupancy covariate, each layer (dim = 3) is a draw
+#' @param det.b_arr Detection covariate loadings. Each row is a species, each column an detection covariate, each layer (dim = 3) is a draw
+#' @param lv.b_arr LV loadings. Each row is a species, each column a LV, each layer (dim = 3) is a draw
+#' @param data_i A row of a data frame created by \code{prep_data_by_modelsite}. Each row contains data for a single ModelSite. 
+#' @param lvsim A matrix of simulated LV values. Columns correspond to latent variables, each row is a simulation
+#' @param Xocc A matrix of processed occupancy covariate values for the model site. Must have 1 row.
+#' @param Xobs A matrix of processed detection covariate values for each visit to the model site. 
+#' @param y Matrix of species detections for each visit to the model site.
+likelihood_LVvmarg_draw.jsodm_lv <- function(Xocc, Xobs, y, ModelSite, occ.b, det.b, lv.b, numlvsims, simseed = NULL){
   stopifnot( dim(occ.b)[[3]] == 1 )
   stopifnot( dim(det.b)[[3]] == 1 )
   stopifnot( dim(lv.b)[[3]] == 1 )
@@ -90,8 +99,9 @@ likelihood_joint_LVvmarg_draw.jsodm_lv <- function(Xocc, Xobs, y, ModelSite, occ
   NoneDetected <- t(a)
   
   ## Probability of Site Occupancy, for each simulated LV, for the given draw. #this seems to be the SLOWEST part
-  Occ.Pred.CondLV <- vapply(1:nlvsim,
+  Occ.Pred.CondLV <- vapply(1:numlvsims,
          function(i){
+           if (!is.null(simseed)){set.seed(simseed)}
            lv.v <- array(rnorm(nrow(Xocc) * dim(lv.b)[[2]]), dim = c(nrow(Xocc), dim(lv.b)[[2]], 1))
            pocc <- poccupy_raw.jsodm_lv(Xocc, occ.b, lv.v, lv.b)
            return(pocc)
@@ -100,7 +110,7 @@ likelihood_joint_LVvmarg_draw.jsodm_lv <- function(Xocc, Xobs, y, ModelSite, occ
   )
   
   # combine with likelihoods of detections, use Rfast::eachrow after reshaping the arrays
-  dim(Occ.Pred.CondLV) <- c(nrow(Xocc) * nrow(occ.b), nlvsim)
+  dim(Occ.Pred.CondLV) <- c(nrow(Xocc) * nrow(occ.b), numlvsims)
   dim(Likl_condoccupied.JointVisit) <- c(nrow(Xocc) * nrow(occ.b), 1)
   Likl.JointVisit.condLV <- Rfast::eachrow(Occ.Pred.CondLV, Likl_condoccupied.JointVisit, oper = "*") #per species likelihood, occupied component. Works because species conditionally independent given LV
   
@@ -110,11 +120,11 @@ likelihood_joint_LVvmarg_draw.jsodm_lv <- function(Xocc, Xobs, y, ModelSite, occ
   
   
   # combine likelihoods of detections between species
-  dim(Likl.JointVisit.condLV) <- c(nrow(Xocc), dim(occ.b)[[1]], nlvsim)
+  dim(Likl.JointVisit.condLV) <- c(nrow(Xocc), dim(occ.b)[[1]], numlvsims)
   Likl.JointVisitSp.condLV <- apply(Likl.JointVisit.condLV, MARGIN = c(1, 3), prod) # multiply probabilities of each species together because species are conditionally independent
   
   # take mean of all LV sims to get likelihood marginalised across LV values, given the single draw
-  Likl_margLV <- rowMeans(Likl.JointVisitSp.condLV)
+  Likl_margLV <- Rfast::rowmeans(Likl.JointVisitSp.condLV)
   
   return(Likl_margLV)
 }
