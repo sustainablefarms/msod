@@ -1,4 +1,7 @@
 #' @title Occupancy Probability Calculations
+#' @description Predicts occupancy probability given a draw of loadings and (random) covariate loadings.
+#' The draw would typically be either (a) from the full posterior of a fitted model, which includes fitted values for the random covariate loadings
+#' or (b) drawn from the posterior of the loadings with random covariates simulated.
 #' @param fixedcovar An array of occupancy covariate values. Each row is a model site, each column is a covariate.
 #' @param loadfixed An array of loadings for the covariates in 'fixedcovar'. Each row is a species,
 #'  each columns is a covariate (in same order as in fixedcovar), and each layer is a draw from the distribution of loadings.
@@ -20,14 +23,14 @@
 #' poccupy.jsodm(fit)
 #' 
 #' 
-#' randomcovar <- array(rnorm(10 * 2), dim = c(10, 2, 30),
-#'                       dimnames = list(paste0("Site", LETTERS[1:10]), paste0("C", letters[1:2]), paste0("RcD", 1:30)))
+#' randomcovar <- array(rnorm(10 * 2), dim = c(10, 2, 12),
+#'                       dimnames = list(paste0("Site", LETTERS[1:10]), paste0("C", letters[1:2]), paste0("RcD", 1:12)))
 #' loadrandom <- array(unlist(lapply(seq(0, 0.3, by = 0.01), function(x) rnorm(7 * 2, x, sd = 0.01))), dim = c(7, 2, 12), #each layer has a larger mean
 #'                     dimnames = list(paste0("Species", LETTERS[1:7]), paste0("C", letters[1:2]), paste0("LrD", 1:12)))
 #' pocc <- poccupy_raw.jsodm_lv(fixedcovar, loadfixed, randomcovar, loadrandom)
 #' model2lv <- readRDS("../Experiments/7_4_modelrefinement/fittedmodels/7_4_13_model_2lv_e13.rds")
 #' model2lv_new <- translatefit(model2lv)
-#' pocc <- poccupy_indlvv.jsodm_lv(fixedcovar, loadfixed, randomcovar, loadrandom)
+#' pocc <- poccupy.jsodm_lv(fixedcovar, loadfixed, randomcovar, loadrandom)
 #' 
 #' @export
 poccupy_raw.jsodm <- function(fixedcovar, loadfixed, randomcovar = NULL, loadrandom = NULL){
@@ -65,80 +68,61 @@ poccupy.jsodm <- function(fit){
   return(pocc)
 }
 
-
-
-# if no randomness included then it is assumed no information about the LV values or loadings is known and the prediction becomes a plain jsodm prediction
-# MISTAKE: loadings of fixed and lv.v must come from the same draw, that means fixedcovar and loadrandom must be of the same final dimension
-# basically want to marginalise randomcovar without marginalising loadrandom
-# the situation where lv.b and lv.v are tied together is fixedcovar, and loadfixed, but with a changed sd of occ_indicator
-#sd_occ_indicator must be a matrix with rows that are species and columns that are draws
-poccupy_posterior_lvv.jsodm_lv <- function(fixedcovar, loadfixed, sd_occ_indicator){
-  eta_f <- eta_fixed(fixedcovar, loadfixed)
-  #for each column and each drow, scale eta_f by sd_occ_indicator
-  for (modelsite in 1:nrow(eta_f)){
-    eta_f[modelsite, , ] <- eta_f[modelsite, , ] / sd_occ_indicator
-  }
-  pocc <- 1 - pnorm(-eta_f, mean = 0, sd = 1)
-  return(pocc)
-}
-
-poccupy_indlvv.jsodm_lv <- function(fixedcovar, loadfixed, randomcovar, loadrandom){
+poccupy_raw.jsodm_lv <- function(fixedcovar, loadfixed, randomcovar, loadrandom){
   stopifnot(dim(loadfixed)[[3]] == dim(loadrandom)[[3]]) # stop if ndraw of loadrandom differs from loadfixed, this means the draws of each can't be tied together
+  stopifnot(dim(loadfixed)[[3]] == dim(randomcovar)[[3]]) # all are draws are from the same joint distribution of fitted parameter x latent variable value.
+  # It is either the full posterior distribution or the posterior of the loadings with independent latent variable values
   eta_f <- eta_fixed(fixedcovar, loadfixed)
   
   sd_occ_indicator <- apply(loadrandom, MARGIN = c(1, 3), function(x) sqrt(1- sum(x^2)))
 
-  eta_rand <- tensor::tensor(randomcovar, loadrandom, alongA = 2, alongB = 2)
-  # eta_rand has dimensions corresponding to site x random covariate draw x species x load draw
-  eta_rand <- aperm(eta_rand, perm = c(1, 3, 4, 2)) # site x species x load draw x random covariate draw
-
-  # add eta_f, which is the same for each random covariate draw (dimension 2)
-  eta <- apply(eta_rand, MARGIN = 4, function(x) {x + eta_f})
-  # 3 array is converted to vector. I'm guessing it does this by going down row (fixed column and layer), dim(eta) corrects this in the right automatic fashion!
-  dim(eta) <- dim(eta_rand)
-  dimnames(eta) <- dimnames(eta_rand)
+  eta_rand_l <- lapply(1:dim(loadrandom)[[3]], function(d)
+           randomcovar[,,d] %*% t(loadrandom[,,d]))
+  eta_rand <- abind::abind(eta_rand_l, along = 3, force.array = TRUE, use.dnns = TRUE)
+  dimnames(eta_rand) <- list(dimnames(randomcovar)[[1]], dimnames(loadrandom)[[1]], dimnames(loadrandom)[[3]])
+  
+  # for each draw combine eta_f and eta_rand 
+  eta <- eta_f + eta_rand
+  
+  # standardise by sd_occ_indicator
+  eta_s <- apply(eta, MARGIN = 1, function(x) x / sd_occ_indicator)
+  dim(eta_s) <- dim(eta)[c(2, 3, 1)]
+  eta_s <- aperm(eta_s, perm = c(3, 1, 2))
   
   # check conversion
-  eta_t <- apply(eta_rand, MARGIN = 4, function(x) {x + eta_f * 0})
-  dim(eta_t) <- dim(eta_rand)
-  stopifnot(all(eta_t == eta_rand))
+  eta_t <- apply(eta, MARGIN = 1, function(x) {x / (1 + 0 * sd_occ_indicator)})
+  dim(eta_t) <- dim(eta)[c(2, 3, 1)]
+  eta_t <- aperm(eta_t, perm = c(3, 1, 2))
+  stopifnot(all(eta_t == eta))
   
-  # for each species for each load draw, eta needs to be divided by sd_occ_indicator
-  eta_s <- apply(eta, MARGIN = c(1, 4), function(x) {x / sd_occ_indicator})
-  # 3 array is converted to vector. I'm guessing it does this by going down row (fixed column and layer), dim(eta) corrects this in the right automatic fashion!
-  dim(eta_s) <- dim(eta)[c(2, 3, 1, 4)]
-  eta_s <- aperm(eta_s, perm = c(3, 1, 2, 4))
-  dimnames(eta_s) <- dimnames(eta_rand)
-  
-  # check conversion
-  eta_t <- apply(eta, MARGIN = c(1, 4), function(x) {x / (1 + 0 * sd_occ_indicator)})
-  # 3 array is converted to vector. I'm guessing it does this by going down row (fixed column and layer), dim(eta) corrects this in the right automatic fashion!
-  dim(eta_t) <- dim(eta)[c(2, 3, 1, 4)]
-  eta_t <- aperm(eta_t, perm = c(3, 1, 2, 4))
-  all(eta_t == eta)
-  
-  pocc <- 1 - pnorm(-eta, mean = 0, sd = 1)
+  pocc <- 1 - pnorm(-eta_s, mean = 0, sd = 1)
   
   stopifnot(all.equal(dim(pocc), c( #test that final dimensions are correct
     dim(fixedcovar)[[1]],
     dim(loadfixed)[[1]],
-    dim(loadfixed)[[3]],
-    dim(randomcovar)[[3]]
+    dim(loadfixed)[[3]]
   )))
   return(pocc)
 }
 
-poccupy.jsodm_lv <- function(fit, simlvnum = 100){
+# default treats lv.v and loadings as independent, simulating the former. Fullposterior = TRUE draws lv.v from the posterior with all other loadings.
+poccupy.jsodm_lv <- function(fit, fullposterior){
   occ.v <- fit$data$Xocc
   dimnames(occ.v) <- list(ModelSite = rownames(occ.v), Covariate = colnames(occ.v))
   
   occ.b <- get_occ_b(fit)
   lv.b <- get_lv_b(fit)
-  lv.v <- array(rnorm(dim(occ.v)[[1]] * dim(lv.b)[[2]] * simlvnum), 
-                dim = c(dim(occ.v)[[1]], dim(lv.b)[[2]], simlvnum),
-                dimnames = list(ModelSite = rownames(occ.v),
-                                lv.v = paste0("lv.v", 1:dim(lv.b)[[2]]),
-                                lvdraw = 1:simlvnum))
-  pocc <- poccupy_indlvv.jsodm_lv(occ.v, occ.b, lv.v, lv.b)
+  if (!fullposterior){
+    lv.v <- array(rnorm(dim(occ.v)[[1]] * dim(lv.b)[[2]] *  dim(lv.b)[[3]]), 
+                  dim = c(dim(occ.v)[[1]], dim(lv.b)[[2]],  dim(lv.b)[[3]]),
+                  dimnames = list(ModelSite = rownames(occ.v),
+                                  LV = paste0("lv", 1:dim(lv.b)[[2]], ".v"),
+                                  Draw = 1:dim(lv.b)[[3]]))
+  } else {
+    lv.v <- get_lv_v(fit)
+  }
+  pocc <- poccupy_raw.jsodm_lv(occ.v, occ.b, lv.v, lv.b)
   return(pocc)
 }
+
+

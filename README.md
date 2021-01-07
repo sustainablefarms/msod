@@ -24,16 +24,16 @@ Models are closely related to a JSDM by Tobler and models seen in the Boral pack
    + occupancy RV mean and standard deviation (it will always be normal though)
      + mean will be sum of external predictor component, LV component and RE component depending on the model
      + functions that specific to each model, but have similar interface:
-       + arguments are pairs of covariate values and their loadings.
+       + arguments are covariate values, random covariate values (to be marginalised across perhaps), and their loadings. *Consider making loading all the one array, with a second argument indicating which of the loadings are the random covariate values.*
        + fixed covariate values are fixed for each model site (even if they are estimated) [this is a modelsite x covariate matrix]. Corresponding loadings are drawn from the posterior, any number of draws are allowed [this is a species x covariate x draw array].
-       + random covariate values there is a sample of these for each model site [this is a modelsite x covariate x draw array], loadings *correspond* to each of the sample [this is a species x covariate x draw array].
+       + random covariate values there is a sample of these for each model site [this is a modelsite x covariate x draw array], loadings correspond to each of the *fixed covariate loading draws* [this is a species x covariate x draw array].
        + additional options specific to each model (e.g. including LV uncertainty using theory rather than simulation)
-       + RETURNS: array of occupancy probability values modelsite x species x draw x marginal param value
+       + RETURNS: array of occupancy probability values modelsite x species x draw 
      + have a default version that is applied to a fitted object
    + detection prob when occupied (but only different for some models)
-       + same interface style to the occupancy predictions, except returns draw x visit x species x marginal param
+       + same interface style to the occupancy predictions, except returns visit x species x draw
    + likelihood similar to above probabilities but also needs observed values
-   + functions for marginalising draw x modelsite x species x marginal value
+   + functions for marginalising modelsite x species x draw
    + parameters to check and initialise for running JAGS
    + preparing random effects
    

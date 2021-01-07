@@ -11,13 +11,13 @@ get_occ_b <- function(fit){
 get_lv_v <- function(fit){
   draws <- do.call(rbind, fit$mcmc)
   lv.v <- bugsvar2array(draws, "lv.v", 1:fit$data$nmodelsites, 1:fit$data$nlv)
-  dimnames(lv.v) <- list(ModelSite = rownames(fit$data$Xocc), LV = paste0("lv.v.", 1:fit$data$nlv), Draw = 1:nrow(draws))
+  dimnames(lv.v) <- list(ModelSite = rownames(fit$data$Xocc), LV = paste0("lv", 1:fit$data$nlv, ".v"), Draw = 1:nrow(draws))
   return(lv.v)
 }
 
 get_lv_b <- function(fit){
   draws <- do.call(rbind, fit$mcmc)
-  lv.v <- bugsvar2array(draws, "lv.b", 1:fit$data$nspecies, 1:fit$data$nlv)
-  dimnames(lv.v) <- list(Species = fit$species, LV = paste0("lv.b.", 1:fit$data$nlv), Draw = 1:nrow(draws))
-  return(lv.v)
+  lv.b <- bugsvar2array(draws, "lv.b", 1:fit$data$nspecies, 1:fit$data$nlv)
+  dimnames(lv.b) <- list(Species = fit$species, LV = paste0("lv", 1:fit$data$nlv, ".b"), Draw = 1:nrow(draws))
+  return(lv.b)
 }
