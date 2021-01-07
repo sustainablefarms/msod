@@ -47,6 +47,7 @@ simulate_lv.v <- function(fit, replaceinsitu = FALSE){
 }
 
 #' @describeIn simulate_detections Simulate LV values and use these for simulating detections (with [simulate_detections()]). For each site the simulated LV values are copied across all draws.
+#' @export
 simulate_detections_lv.v <- function(fit, esttype = "median"){
   fit <- simulate_lv.v(fit, replaceinsitu = TRUE)
   detected <- simulate_detections(fit, esttype = esttype)
