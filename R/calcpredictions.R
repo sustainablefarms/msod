@@ -123,7 +123,7 @@ pdetect_condoccupied <- function(fit, type = "median"){
   ## det.b (detection coefficients)
   det.b_arr <- bugsvar2array(draws, "det.b", 1:fit$data$nspecies, 1:fit$data$nobsvar) # rows are species, columns are observation (detection) covariates
   
-  Detection.Pred <- pdetection_occupied_raw(fit$data$Xobs, det.b_arr)
+  Detection.Pred <- pdet_occ_raw.jsodm(fit$data$Xobs, det.b_arr)[,,1]
   
   if (!is.null(fit$species)){colnames(Detection.Pred) <- fit$species} # a special modification of runjags with occupation detection meta info
   return(Detection.Pred)
@@ -176,7 +176,7 @@ poccupy_species <- function(fit, type = "median", conditionalLV = TRUE, numLVsim
     lv.v <- NULL
   }
   
-  pocc <- poccupy_species_raw(fit$data$Xocc, occ.b_arr, lv.b_arr, lv.v)
+  pocc <- poccupy_species_raw_temporary(fit$data$Xocc, occ.b_arr, lv.b_arr, lv.v)
   colnames(pocc) <- fit$species
   return(pocc)
 }
@@ -214,3 +214,18 @@ poccupy_species_raw <- function(Xocc, occ.b_arr, lv.b_arr = NULL, lv.v = NULL){
   
   return(pocc)
 }
+
+poccupy_species_raw_temporary <- function(Xocc, occ.b_arr, lv.b_arr = NULL, lv.v = NULL){
+  if (length(dim(lv.v)) == 3){
+    stopifnot(dim(lv.b_arr)[[3]] == dim(lv.v)[[3]])
+    pocc_arr <- poccupy_raw.jsodm_lv(fixedcovar = Xocc,
+                              loadfixed = occ.b_arr,
+                              randomcovar = lv.v,
+                              loadrandom = lv.b_arr)
+  } else {
+    pocc_arr <- poccupy_raw.jsodm(fixedcovar = Xocc,
+                                     loadfixed = occ.b_arr)
+  }
+  return(pocc_arr[,,1])
+}
+
