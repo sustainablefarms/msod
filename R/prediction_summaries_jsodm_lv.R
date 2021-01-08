@@ -13,7 +13,7 @@
 #' pocc <- poccupancy_margotherspecies.jsodm_lv(fit, Xocc)
 #' pocc <- poccupancy_mostfavourablesite.jsodm_lv(fit, Xocc)
 #' pocc <- poccupancy_randomsite.jsodm_lv(fit, Xocc)
-profvis::profvis(sprich <- specrichness.jsodm_lv(fit, Xocc))
+# profvis::profvis(sprich <- specrichness.jsodm_lv(fit, Xocc))
 #' sprich <- specrichness_avsite.jsodm_lv(fit, Xocc)
 
 #' @export

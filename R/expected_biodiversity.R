@@ -36,6 +36,7 @@
 #' @return A named vector of the expectation and variance of the numbers of species occupying the ModelSite and given parameter set.
 #' If observational covariates are supplied then the expection and variance of numbers of species detected is also returned.
 #' @export
+# the following is really slow - too slow to use in a webapp
 expectedspeciesnum.ModelSite.theta <- function(Xocc, Xobs = NULL, occ.b, det.b = NULL, lv.b = NULL, lv.v = NULL){
   ## Probability of Site Occupancy
   stopifnot(nrow(Xocc) == 1)
