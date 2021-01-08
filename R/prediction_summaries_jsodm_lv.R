@@ -6,13 +6,15 @@
 #' @param Xocc A matrix of unprocessed occupancy covariates. Each row is a site, each column a covariate.
 #' @param occ.b An array of occupancy covariate loadings. Each row is a species, each column a covariate, and each layer a draw from the posterior.
 #' @examples 
-#' fit <- readRDS("../../../sflddata/private/data/testdata/cutfit_7_4_11_2LV.rds")
+#' fit <- readRDS("../sflddata/private/data/testdata/cutfit_7_4_11_2LV.rds")
 #' fit <- readRDS("../Experiments/7_4_modelrefinement/fittedmodels/7_4_13_model_2lv_e13.rds")
 #' fit <- translatefit(fit)
 #' Xocc <- unstandardise.designmatprocess(fit$XoccProcess, fit$data$Xocc[1:5, ])
 #' pocc <- poccupancy_margotherspecies.jsodm_lv(fit, Xocc)
 #' pocc <- poccupancy_mostfavourablesite.jsodm_lv(fit, Xocc)
 #' pocc <- poccupancy_randomsite.jsodm_lv(fit, Xocc)
+profvis::profvis(sprich <- specrichness.jsodm_lv(fit, Xocc))
+#' sprich <- specrichness_avsite.jsodm_lv(fit, Xocc)
 
 #' @export
 # returns probability of occupancy of each species ignoring other species, for each site
@@ -67,6 +69,18 @@ specrichness.jsodm_lv <- function(fit, Xocc){
   stopifnot("jsodm_lv" %in% class(fit))
   specrich <- predsumspecies_newdata(fit, Xocc, nLVsim = 1000, type = "marginal")
   return(specrich)
+}
+
+specrichness_avsite.jsodm_lv <- function(fit, Xocc){
+  specrich <- specrichness.jsodm_lv(fit, Xocc)
+  Esum <- mean(specrich["Esum_occ",])
+  m2_site <- specrich["Vsum_occ", ] + specrich["Esum_occ",]^2
+  Em2 <- mean(m2_site)
+  Vsum <- Em2 - Esum^2
+  return(c(
+    E = Esum,
+    V = Vsum
+  ))
 }
 
 # given an n array, with one dimension representing draws, compute the hpd interval. Returns an array with the dimension representing draws removed.
