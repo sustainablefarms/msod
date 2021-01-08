@@ -9,7 +9,7 @@
 #' fit <- readRDS("../sflddata/private/data/testdata/cutfit_7_4_11_2LV.rds")
 #' fit <- readRDS("../Experiments/7_4_modelrefinement/fittedmodels/7_4_13_model_2lv_e13.rds")
 #' fit <- translatefit(fit)
-#' Xocc <- unstandardise.designmatprocess(fit$XoccProcess, fit$data$Xocc[1:5, ])
+#' Xocc <- unstandardise.designmatprocess(fit$XoccProcess, fit$data$Xocc[1, , drop = FALSE])
 #' pocc <- poccupancy_margotherspecies.jsodm_lv(fit, Xocc)
 #' pocc <- poccupancy_mostfavourablesite.jsodm_lv(fit, Xocc)
 #' pocc <- poccupancy_randomsite.jsodm_lv(fit, Xocc)
@@ -33,7 +33,7 @@ poccupancy_margotherspecies.jsodm_lv <- function(fit, Xocc){
 #' @export
 poccupancy_mostfavourablesite.jsodm_lv <- function(fit, Xocc){
   pocc <- poccupancy_margotherspecies.jsodm_lv(fit, Xocc)
-  bestsite <- apply(pocc[,,"median"], MARGIN = 2, which.max)
+  bestsite <- apply(pocc[,,"median", drop = FALSE], MARGIN = 2, which.max)
   pocc_best <- pocc[1, , ] * 0
   for (i in 1:ncol(pocc)){
     pocc_best[i, ] <- pocc[bestsite[i], i, ]
@@ -71,6 +71,8 @@ specrichness.jsodm_lv <- function(fit, Xocc){
   return(specrich)
 }
 
+#' @export
+# returns species richness predicted mean and variance when the site is chosen randomly with equal probability
 specrichness_avsite.jsodm_lv <- function(fit, Xocc){
   specrich <- specrichness.jsodm_lv(fit, Xocc)
   Esum <- mean(specrich["Esum_occ",])
