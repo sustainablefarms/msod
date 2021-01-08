@@ -1,5 +1,6 @@
 #' @title For a list of random variables, return random variable that is a random selection one of the RVs
 #' @param rvs A list of Random Variable (distributions) of class 'RV'
+#' @param pmat A matrix of probabilities. Each element creates a Bernoulli RV with probability of success (1), given by p.
 #' @examples 
 #' library(discreteRV)
 #' X1 <- RV(c(1,0), c(.5,.5))
@@ -18,7 +19,7 @@ sumRV_margrow <- function(pmat){
 }
 
 randselRV <- function(rvs, weights = rep(1, length(rvs))){
-  outcomes <- unique(unlist(lapply(rvs, outcomes)))
+  outcomes <- unique(unlist(lapply(rvs, discreteRV::outcomes)))
   pmf <- vapply(outcomes, function(value) Poutcome(value, rvs, weights), FUN.VALUE = 0.2)
   outRV <- discreteRV::RV(outcomes,
               probs = pmf,

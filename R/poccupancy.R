@@ -108,12 +108,18 @@ poccupy_raw.jsodm_lv <- function(fixedcovar, loadfixed, randomcovar, loadrandom)
 }
 
 # default treats lv.v and loadings as independent, simulating the former. Fullposterior = TRUE draws lv.v from the posterior with all other loadings.
+# margLV = TRUE returns probabilities marginal over fitted lv.b and unknown lv.v. Marginalising over lv.v (non-fitted) is equivalent to the plain jsodm occupancy probability given the occ.b loadings.
 #' @export
-poccupy.jsodm_lv <- function(fit, fullposterior){
+poccupy.jsodm_lv <- function(fit, fullposterior, margLV = FALSE){
   occ.v <- fit$data$Xocc
   dimnames(occ.v) <- list(ModelSite = rownames(occ.v), Covariate = colnames(occ.v))
-  
+
   occ.b <- get_occ_b(fit)
+  
+  if (ignoreLV){
+    return(poccupy_raw.jsodm(occ.v, occ.b))
+  }
+  
   lv.b <- get_lv_b(fit)
   if (!fullposterior){
     lv.v <- array(rnorm(dim(occ.v)[[1]] * dim(lv.b)[[2]] *  dim(lv.b)[[3]]), 
