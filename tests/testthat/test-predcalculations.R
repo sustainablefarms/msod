@@ -2,6 +2,15 @@ library(testthat);
 
 context("Calculations of Predicted Probabilities")
 
+test_that("poccupy marginal across LV by simulation is equal to theoretical", {
+  fit <- artificial_runjags(nspecies = 5, nsites = 20, nvisitspersite = 2, 
+                            modeltype = "jsodm_lv", nlv = 2)
+  simulation_occ_for_LV <- replicate(1000, poccupy.jsodm_lv(fit, fullposterior = FALSE))
+  bysimulation <- apply(simulation_occ_for_LV, MARGIN = c(1, 2), mean)
+  bytheory <- poccupy.jsodm_lv(fit, fullposterior = FALSE, margLV = TRUE)[,,1]
+  expect_equivalent(bytheory, bysimulation, tolerance = 0.01)
+})
+
 test_that("poccupy_species is correct without lv.v", {
   OccFmla = "~ 1"
   occ.b.min <- matrix(runif(5) , ncol = 1)
