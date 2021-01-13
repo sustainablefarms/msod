@@ -13,7 +13,8 @@
 #' pocc <- poccupancy_margotherspecies.jsodm_lv(fit, Xocc)
 #' pocc <- poccupancy_mostfavourablesite.jsodm_lv(fit, Xocc)
 #' pocc <- poccupancy_randomsite.jsodm_lv(fit, Xocc)
-# profvis::profvis(sprich <- specrichness.jsodm_lv(fit, Xocc))
+#' sprich1 <- specrichness.jsodm_lv(fit, Xocc)
+#' sprich <- specrichnessRV.jsodm_lv(fit, Xocc)
 #' sprich <- specrichness_avsite.jsodm_lv(fit, Xocc)
 
 #' @export
@@ -68,6 +69,13 @@ poccupancy_randomsite.jsodm_lv <- function(fit, Xocc){
 specrichness.jsodm_lv <- function(fit, Xocc){
   stopifnot("jsodm_lv" %in% class(fit))
   specrich <- predsumspecies_newdata(fit, Xocc, nLVsim = 1000, type = "marginal")
+  return(specrich)
+}
+
+#' @export
+specrichnessRV.jsodm_lv <- function(fit, Xocc){
+  stopifnot("jsodm_lv" %in% class(fit))
+  specrich <- predsumspeciesRV_newdata(fit, Xocc, nLVsim = 100, type = "marginal")
   return(specrich)
 }
 
