@@ -90,12 +90,13 @@ poccupy_raw.jsodm_lv <- function(fixedcovar, loadfixed, randomcovar, loadrandom)
   eta_s <- apply(eta, MARGIN = 1, function(x) x / sd_occ_indicator)
   dim(eta_s) <- dim(eta)[c(2, 3, 1)]
   eta_s <- aperm(eta_s, perm = c(3, 1, 2))
+  dimnames(eta_s) <- dimnames(eta)
   
   # check conversion
-  eta_t <- apply(eta, MARGIN = 1, function(x) {x / (1 + 0 * sd_occ_indicator)})
-  dim(eta_t) <- dim(eta)[c(2, 3, 1)]
-  eta_t <- aperm(eta_t, perm = c(3, 1, 2))
-  stopifnot(all(eta_t == eta))
+  # eta_t <- apply(eta, MARGIN = 1, function(x) {x / (1 + 0 * sd_occ_indicator)})
+  # dim(eta_t) <- dim(eta)[c(2, 3, 1)]
+  # eta_t <- aperm(eta_t, perm = c(3, 1, 2))
+  # stopifnot(all(eta_t == eta))
   
   pocc <- 1 - pnorm(-eta_s, mean = 0, sd = 1)
   
@@ -107,7 +108,8 @@ poccupy_raw.jsodm_lv <- function(fixedcovar, loadfixed, randomcovar, loadrandom)
   return(pocc)
 }
 
-# default treats lv.v and loadings as independent, simulating the former. Fullposterior = TRUE draws lv.v from the posterior with all other loadings.
+# default treats lv.v and loadings as independent, simulating the former. 
+#' Fullposterior = TRUE draws lv.v from the posterior with all other loadings.
 # margLV = TRUE returns probabilities marginal over fitted lv.b and unknown lv.v. Marginalising over lv.v (non-fitted) is equivalent to the plain jsodm occupancy probability given the occ.b loadings.
 #' @export
 poccupy.jsodm_lv <- function(fit, fullposterior, margLV = FALSE){
@@ -116,7 +118,7 @@ poccupy.jsodm_lv <- function(fit, fullposterior, margLV = FALSE){
 
   occ.b <- get_occ_b(fit)
   
-  if (ignoreLV){
+  if (margLV){
     return(poccupy_raw.jsodm(occ.v, occ.b))
   }
   
