@@ -63,6 +63,7 @@ predsumspeciesRV <- function(fit, chains = NULL, UseFittedLV = TRUE, nLVsim = 10
 }
 
 #' @describeIn predsumspeciesRV Distribution of species numbers for new ModelSite
+#' @export
 predsumspeciesRV_newdata <- function(fit, Xocc, Xobs = NULL, ModelSiteVars = NULL, chains = NULL, nLVsim = 100, type = "marginal", cl = NULL){
   stopifnot(type %in% c("draws", "marginal"))
   

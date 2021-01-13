@@ -10,7 +10,7 @@
 sumRV_margrow <- function(pmat){
   sum_RVs <- lapply(1:nrow(pmat),
                                    function(row) {
-                                     LVs <- lapply(pmat[row, ], function(p) RV(c(0, 1), probs = c(1 - p, p)))
+                                     LVs <- lapply(pmat[row, ], function(p) discreteRV::RV(c(0, 1), probs = c(1 - p, p)))
                                      sumRV <- do.call(discreteRV::SofI, LVs)
                                      return(sumRV)
                                    })
