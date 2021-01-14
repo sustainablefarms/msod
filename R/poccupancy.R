@@ -76,7 +76,7 @@ poccupy_raw.jsodm_lv <- function(fixedcovar, loadfixed, randomcovar, loadrandom)
   # It is either the full posterior distribution or the posterior of the loadings with independent latent variable values
   eta_f <- eta_fixed(fixedcovar, loadfixed)
   
-  sd_occ_indicator <- apply(loadrandom, MARGIN = c(1, 3), function(x) sqrt(1- sum(x^2)))
+  sd_occ_indicator <- sqrt(1 - arr3_sumalong2(loadrandom^2))
 
   eta_rand_l <- lapply(1:dim(loadrandom)[[3]], function(d)
            randomcovar[,,d] %*% t(loadrandom[,,d]))
@@ -106,6 +106,19 @@ poccupy_raw.jsodm_lv <- function(fixedcovar, loadfixed, randomcovar, loadrandom)
     dim(loadfixed)[[3]]
   )))
   return(pocc)
+}
+
+# equivalent, but hopefully faster than apply(arr, MARGIN = c(1, 3), sum)
+# stopifnot(all.equal(apply(arr, MARGIN = c(1, 3), sum), arr3_sumalong2(arr)))
+arr3_sumalong2 <- function(arr){
+  stopifnot(length(dim(arr))==3)
+  arr2 <- aperm(arr, perm = c(1, 3, 2))
+  dim(arr2) <- c(dim(arr)[[1]] * dim(arr)[[3]], dim(arr)[[2]])
+  colsum2 <- Rfast::rowsums(arr2)
+  dim(colsum2) <- dim(arr)[c(1, 3)]
+  colsum <- colsum2
+  dimnames(colsum) <- list(dimnames(arr)[[1]], dimnames(arr)[[3]])
+  return(colsum)
 }
 
 # default treats lv.v and loadings as independent, simulating the former. 
