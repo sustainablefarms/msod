@@ -80,8 +80,11 @@ poccupy_raw.jsodm_lv <- function(fixedcovar, loadfixed, randomcovar, loadrandom)
 
   eta_rand_l <- lapply(1:dim(loadrandom)[[3]], function(d)
            randomcovar[,,d] %*% t(loadrandom[,,d]))
-  eta_rand <- abind::abind(eta_rand_l, along = 3, force.array = TRUE, use.dnns = TRUE)
-  dimnames(eta_rand) <- list(dimnames(randomcovar)[[1]], dimnames(loadrandom)[[1]], dimnames(loadrandom)[[3]])
+  names(eta_rand_l) <- dimnames(loadrandom)[[3]]
+  eta_rand <- abind_alongNp1(eta_rand_l)
+  #slower version:
+  #   eta_rand <- abind::abind(eta_rand_l, along = 3, force.array = TRUE, use.dnns = TRUE)
+  #   dimnames(eta_rand) <- list(dimnames(randomcovar)[[1]], dimnames(loadrandom)[[1]], dimnames(loadrandom)[[3]])
   
   # for each draw combine eta_f and eta_rand 
   eta <- eta_f + eta_rand
@@ -119,6 +122,16 @@ arr3_sumalong2 <- function(arr){
   colsum <- colsum2
   dimnames(colsum) <- list(dimnames(arr)[[1]], dimnames(arr)[[3]])
   return(colsum)
+}
+
+abind_alongNp1 <- function(listofarrays){
+  a <- unlist(listofarrays)
+  dim(a) <- c(dim(listofarrays[[1]])[c(1,2)],
+              length(listofarrays))
+  dimnames(a)[[1]] <- dimnames(listofarrays[[1]])[[1]]
+  dimnames(a)[[2]] <- dimnames(listofarrays[[1]])[[2]]
+  dimnames(a)[[3]] <- names(listofarrays)
+  return(a)
 }
 
 # default treats lv.v and loadings as independent, simulating the former. 
