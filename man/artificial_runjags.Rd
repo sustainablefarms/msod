@@ -12,12 +12,12 @@ artificial_runjags(
   nvisitspersite = 2,
   OccFmla = "~ UpSite + Sine1 + Sine2",
   ObsFmla = "~ UpVisit + Step",
-  u.b.min = -1,
-  u.b.max = 1,
-  v.b.min = -1,
-  v.b.max = 1,
-  lv.coef.min = -0.5,
-  lv.coef.max = 0.5,
+  occ.b.min = -1,
+  occ.b.max = 1,
+  det.b.min = -1,
+  det.b.max = 1,
+  lv.b.min = -0.5,
+  lv.b.max = 0.5,
   modeltype = "jsodm_lv",
   ...
 )
@@ -37,10 +37,10 @@ simulate_iid_detections(nspecies, nvisits, p = 0.5)
 
 \item{ObsFmla}{Formula for detection. Available variables: Upvisit, Step}
 
-\item{u.b.min, }{u.b.max, v.b.min, v.b.max The upper and lower bouonds of the u.b and v.b parameters.
+\item{occ.b.min, }{occ.b.max, det.b.min, det.b.max The upper and lower bouonds of the occ.b and det.b parameters.
 May be a single number or an array with rows corresponding to species and columns to covariates.}
 
-\item{lv.coef.min, }{lv.coef.max Same as u.b.min and u.b.max for the latent variable loadings.}
+\item{lv.b.min, }{lv.b.max Same as occ.b.min and occ.b.max for the latent variable loadings.}
 
 \item{nvisits}{Number of visits in total to simulate}
 
@@ -79,8 +79,8 @@ artfit <- artificial_runjags(nspecies = 2, nsites = 10, nvisitspersite = 4, mode
 \# with high correlation between occupancy of species
 artfit <- artificial_runjags(nspecies = 2, nsites = 10, nvisitspersite = 4,
                               OccFmla = "~ 1",
-                              u.b.min = 0.8,
-                              lv.coef.min = 0.3,
+                              occ.b.min = 0.8,
+                              lv.b.min = 0.3,
                               modeltype = "jsodm_lv",
                               nlv = 2)
  cor(artfit$data$y)
