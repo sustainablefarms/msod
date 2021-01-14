@@ -27,7 +27,29 @@
 #' 
 #' # approximate 95% posterior density interval for sum of species detected using Gaussian approximation and variance.
 #' numspec_interval <- numspec_posteriorinterval_Gaussian_approx(draws_sites_summaries)
-#' 
+
+# parameters the same as poccupy_raw
+# returns a matrix with each column a site. Rows of expectation and variance.
+occspeciesrichness_raw.jsodm_lv <- function(fixedcovar, loadfixed, randomcovar, loadrandom){
+  pocc <- poccupy_raw.jsodm_lv(fixedcovar, loadfixed, randomcovar, loadrandom)
+  # En_sitedraw <- apply(pocc, MARGIN = c(1, 3), sum)
+  # En_site <- apply(En_sitedraw, MARGIN = 1, mean)
+  En_site <- apply(pocc, MARGIN = 1, sum) / dim(pocc)[[3]] #equivalent to two step process above
+  # similarly V can be summed, then dived by number of draws squared
+  Vocc <- pocc * (1 - pocc)
+  # use total law of variance
+  Edrawvariance <- apply(Vocc, MARGIN = 1, sum) / dim(pocc)[[3]]
+  Vdrawexpectation <- apply(apply(pocc, MARGIN = c(1, 3), sum)^2,
+                            MARGIN = 1, mean) - En_site^2  #warning this is a biased estimate of variance: better would be to use the var function below
+  # Vdrawexpectation <- apply(apply(pocc, MARGIN = c(1, 3), sum), MARGIN = 1, var)
+  Vn_site <- Edrawvariance + Vdrawexpectation
+  Evals <- rbind(En = En_site,
+                 Vn = Vn_site)
+  return(Evals)
+}
+
+
+
 #' @describeIn predsumspecies Computes expected numbers of species for a single parameter set and single ModelSite
 #' @param Xocc A matrix of occupancy covariates. Must have a single row. Columns correspond to covariates.
 #' @param Xobs A matrix of detection covariates, each row is a visit. If NULL then expected number of species in occupation is returned
@@ -353,6 +375,30 @@ EVtheta2EVmarg <- function(Vsum, Esum){
     Esum = En,
     Vsum = Vn
   ))
+}
+
+#nlvperdraw = 1 by default.
+occspeciesrichness_newdata.jsodm_lv <- function(fit, Xocc,
+                                    desiredspecies = fit$species,
+                                    nlvperdraw = 1){
+  stopifnot(all(desiredspecies %in% fit$species))
+  occ.v <- apply.designmatprocess(fit$XoccProcess, Xocc)
+  occ.b <- get_occ_b(fit)
+  lv.b <- get_lv_b(fit)
+  if (nlvperdraw > 1){
+    occ.bs <- lapply(1:nlvperdraw, function(x){occ.b})
+    occ.b <- abind::abind(occ.bs, along = 3)
+    
+    lv.bs <- lapply(1:nlvperdraw, function(x){lv.b})
+    lv.b <- abind::abind(lv.bs, along = 3)
+  }
+  lv.v <- array(rnorm(dim(occ.v)[[1]] * dim(lv.b)[[2]] *  dim(lv.b)[[3]]), 
+                dim = c(dim(occ.v)[[1]], dim(lv.b)[[2]],  dim(lv.b)[[3]]),
+                dimnames = list(ModelSite = rownames(occ.v),
+                                LV = paste0("lv", 1:dim(lv.b)[[2]], ".v"),
+                                Draw = 1:dim(lv.b)[[3]]))
+  specrich <- occspeciesrichness_raw.jsodm_lv(occ.v, occ.b, lv.v, lv.b)
+  return(specrich)
 }
 
 #' @describeIn predsumspecies For new ModelSite occupancy covariates and detection covariates, predicted number of expected species
