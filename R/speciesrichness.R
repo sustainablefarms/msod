@@ -39,16 +39,74 @@ occspeciesrichness_raw.jsodm_lv <- function(fixedcovar, loadfixed, randomcovar, 
   Vocc <- pocc * (1 - pocc)
   # use total law of variance
   Edrawvariance <- apply(Vocc, MARGIN = 1, sum) / dim(pocc)[[3]]
-  Vdrawexpectation <- apply(apply(pocc, MARGIN = c(1, 3), sum)^2,
-                            MARGIN = 1, mean) - En_site^2  #warning this is a biased estimate of variance: better would be to use the var function below
-  # Vdrawexpectation <- apply(apply(pocc, MARGIN = c(1, 3), sum), MARGIN = 1, var)
+  # Vdrawexpectation <- apply(apply(pocc, MARGIN = c(1, 3), sum)^2,
+  #                           MARGIN = 1, mean) - En_site^2  #warning this is a biased estimate of variance: better would be to use the var function below
+  Vdrawexpectation <- Rfast::rowVars(arr3_sumalong2(pocc))
   Vn_site <- Edrawvariance + Vdrawexpectation
-  Evals <- rbind(En = En_site,
-                 Vn = Vn_site)
+  Evals <- rbind(E = En_site,
+                 V = Vn_site)
   return(Evals)
 }
 
+#returns the variance of the "expected number of species", not the variance of the number of species
+Eoccspeciesrichness_raw.jsodm_lv <- function(fixedcovar, loadfixed, randomcovar, loadrandom){
+  pocc <- poccupy_raw.jsodm_lv(fixedcovar, loadfixed, randomcovar, loadrandom)
+  EEn_site <- apply(pocc, MARGIN = 1, sum) / dim(pocc)[[3]] 
+  En_sitedraw <- arr3_sumalong2(pocc)
+  # VEn_site <- apply(En_sitedraw, MARGIN = 1, var)
+  VEn_site <- Rfast::rowVars(En_sitedraw)
+  vals <- rbind(E = EEn_site,
+                 V = VEn_site)
+  return(vals)
+}
 
+detspeciesrichness_raw.jsodm_lv <- function(Xocc, occ.b, Xobs, det.b, ModelSite, lv.v, lv.b){
+  pocc <- poccupy_raw.jsodm_lv(Xocc, occ.b, lv.v, lv.b)
+
+  ## Probability of Detection
+  pdet_occ <- pdet_occ_raw.jsodm(Xobs, det.b)
+  ModSiteVisits <- plyr::split_indices(ModelSite)
+  
+  NoDetections_occ <- vapply(ModSiteVisits,
+                             function(visits){
+                               NoDetectProb <- rowprods_arr(1 - pdet_occ[visits, , , drop = FALSE])
+                               return(NoDetectProb)
+                             },
+                             FUN.VALUE = matrix(1.1, nrow = ncol(pdet_occ), ncol = dim(pdet_occ)[[3]]))
+  #NoDetections_occ array of species x draw x ModelSite
+  NoDetections_occ <- aperm(NoDetections_occ, perm = c(3, 1, 2))
+
+  ## probability of no detections for all visits to a site, marginal on occupancy
+  NoDetections <- NoDetections_occ * pocc + 1 - pocc
+  pdet <- 1 - NoDetections
+  En_site <- apply(pdet, MARGIN = 1, sum) / dim(pdet)[[3]] 
+  Vdet <- pdet * (1 - pdet)
+  Edrawvariance <- apply(Vdet, MARGIN = 1, sum) / dim(pdet)[[3]]
+  Vdrawexpectation <- Rfast::rowVars(arr3_sumalong2(pdet))
+  Vn_site <- Edrawvariance + Vdrawexpectation
+  Evals <- rbind(E = En_site,
+                 V = Vn_site)
+  return(Evals)
+}
+
+colprods_arr <- function(arr){
+  arr2 <- aperm(arr, c(1, 3, 2))
+  dim(arr2) <- c(dim(arr)[[1]] * dim(arr)[[3]], dim(arr)[[2]])
+  colsum2 <- Rfast::rowprods(arr2)
+  dim(colsum2) <- dim(arr)[c(1, 3)]
+  colsum <- colsum2
+  dimnames(colsum) <- list(dimnames(arr)[[1]], dimnames(arr)[[3]])
+}
+
+rowprods_arr <- function(arr){
+  arr2 <- arr #aperm(arr, c(1, 3, 2))
+  dim(arr2) <- c(dim(arr)[[1]],  dim(arr)[[2]] * dim(arr)[[3]])
+  colsum2 <- Rfast::colprods(arr2)
+  dim(colsum2) <- dim(arr)[c(2, 3)]
+  colsum <- colsum2
+  dimnames(colsum) <- list(dimnames(arr)[[2]], dimnames(arr)[[3]])
+  return(colsum)
+}
 
 #' @describeIn predsumspecies Computes expected numbers of species for a single parameter set and single ModelSite
 #' @param Xocc A matrix of occupancy covariates. Must have a single row. Columns correspond to covariates.
@@ -378,13 +436,20 @@ EVtheta2EVmarg <- function(Vsum, Esum){
 }
 
 #nlvperdraw = 1 by default.
-occspeciesrichness_newdata.jsodm_lv <- function(fit, Xocc,
+speciesrichness_newdata.jsodm_lv <- function(fit, Xocc, Xobs = NULL, ModelSiteVars = NULL,
                                     desiredspecies = fit$species,
                                     nlvperdraw = 1){
   stopifnot(all(desiredspecies %in% fit$species))
-  occ.v <- apply.designmatprocess(fit$XoccProcess, Xocc)
-  occ.b <- get_occ_b(fit)
-  lv.b <- get_lv_b(fit)
+  if (!is.null(Xobs)) {datalist <- prep_new_data(fit, Xocc, Xobs, ModelSite = ModelSiteVars)
+    occ.v <- datalist$Xocc
+    det.v <- datalist$Xobs
+    ModelSite <- datalist$ModelSite
+  } else { 
+    occ.v <- apply.designmatprocess(fit$XoccProcess, Xocc)
+  }
+  
+  occ.b <- get_occ_b(fit)[desiredspecies, , , drop = FALSE]
+  lv.b <- get_lv_b(fit)[desiredspecies, , , drop = FALSE]
   if (nlvperdraw > 1){
     occ.bs <- lapply(1:nlvperdraw, function(x){occ.b})
     occ.b <- abind::abind(occ.bs, along = 3)
@@ -397,7 +462,17 @@ occspeciesrichness_newdata.jsodm_lv <- function(fit, Xocc,
                 dimnames = list(ModelSite = rownames(occ.v),
                                 LV = paste0("lv", 1:dim(lv.b)[[2]], ".v"),
                                 Draw = 1:dim(lv.b)[[3]]))
-  specrich <- occspeciesrichness_raw.jsodm_lv(occ.v, occ.b, lv.v, lv.b)
+  
+  if (!is.null(Xobs)){
+    det.b <- get_det_b(fit)[desiredspecies, , , drop = FALSE]
+    if (nlvperdraw > 1){    
+      det.bs <- lapply(1:nlvperdraw, function(x){det.b})
+      det.b <- abind::abind(det.bs, along = 3) 
+    }
+    specrich <- detspeciesrichness_raw.jsodm_lv(occ.v, occ.b, det.v, det.b, ModelSite, lv.v, lv.b)
+  } else {
+    specrich <- occspeciesrichness_raw.jsodm_lv(occ.v, occ.b, lv.v, lv.b)
+  }
   return(specrich)
 }
 
@@ -407,6 +482,13 @@ occspeciesrichness_newdata.jsodm_lv <- function(fit, Xocc,
 predsumspecies_newdata <- function(fit, Xocc, Xobs = NULL, ModelSiteVars = NULL,
                                    desiredspecies = fit$species,
                                    chains = NULL, nLVsim = 1000, type = "marginal", cl = NULL){
+  if (type == "marginal" && ("jsodm_lv" %in% class(fit))){
+    out <- speciesrichness_newdata.jsodm_lv(fit, Xocc, Xobs,
+                                            ModelSiteVars,  desiredspecies, 
+                                            nlvperdraw = as.integer(nLVsim/100))
+    return(out)
+  }
+  
   stopifnot(type %in% c("draws", "marginal", "median"))
   stopifnot(all(desiredspecies %in% fit$species))
   

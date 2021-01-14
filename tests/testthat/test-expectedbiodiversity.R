@@ -283,14 +283,14 @@ test_that("Holdout data; has lv.vs", {
   originalXobs <- cbind(ModelSite = artfit$data$ModelSite, originalXobs)
   outofsample_y <- simulate_detections_lv.v(artfit, esttype = 1)
   
-  Enumspec <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite", chains = NULL, nLVsim = 1000, type = "median", cl = NULL)
+  Enumspec <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite", chains = NULL, nLVsim = 1000, type = "marginal", cl = NULL)
   
   expect_equal(ncol(Enumspec), nsites)
   
   NumSpecies <- detectednumspec(y = outofsample_y, ModelSite = originalXobs[, "ModelSite"])
   
-  meandiff <- dplyr::cummean(NumSpecies - Enumspec["Esum_det_median", ])
-  meanvar <- cumsum(Enumspec["Vsum_det_median", ])/((1:ncol(Enumspec))^2)
+  meandiff <- dplyr::cummean(NumSpecies - Enumspec["E", ])
+  meanvar <- cumsum(Enumspec["V", ])/((1:ncol(Enumspec))^2)
   plt <- cbind(diff = meandiff, var  = meanvar) %>% 
     dplyr::as_tibble(rownames = "CumSites") %>% 
     dplyr::mutate(CumSites = as.double(CumSites)) %>%
@@ -307,16 +307,16 @@ test_that("Holdout data; has lv.vs", {
   expect_lt(abs(meandiff[length(meandiff)]), max(abs(meandiff[floor(length(meandiff) / 100) + 1:20 ])))
   
   Enum_compare_sum <- Enum_compare(NumSpecies,
-                                   data.frame(pred = Enumspec["Esum_det_median", ]),
-                                   data.frame(pred = Enumspec["Vsum_det_median", ])
+                                   data.frame(pred = Enumspec["E", ]),
+                                   data.frame(pred = Enumspec["V", ])
   )
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
   expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
   
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
-  ininterval <- (NumSpecies > Enumspec["Esum_det_margpost", ] - 2 * sqrt(Enumspec["Vsum_det_margpost", ])) & 
-    (NumSpecies < Enumspec["Esum_det_margpost", ] + 2 * sqrt(Enumspec["Vsum_det_margpost", ]))
+  ininterval <- (NumSpecies > Enumspec["E", ] - 2 * sqrt(Enumspec["V", ])) & 
+    (NumSpecies < Enumspec["E", ] + 2 * sqrt(Enumspec["V", ]))
   expect_equal(mean(ininterval), 0.95, tol = 0.05)
 })
 
