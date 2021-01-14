@@ -15,7 +15,7 @@
 #' pocc <- poccupancy_randomsite.jsodm_lv(fit, Xocc)
 #' sprich1 <- specrichness.jsodm_lv(fit, Xocc)
 #' sprich <- specrichnessRV.jsodm_lv(fit, Xocc)
-#' sprich <- specrichness_avsite.jsodm_lv(fit, Xocc)
+#' system.time(sprich <- specrichness_avsite.jsodm_lv(fit, Xocc))
 
 #' @export
 # returns probability of occupancy of each species ignoring other species, for each site
@@ -66,9 +66,16 @@ poccupancy_randomsite.jsodm_lv <- function(fit, Xocc){
 
 # returns species richness predicted mean and variance
 #' @export
-specrichness.jsodm_lv <- function(fit, Xocc){
+specrichness_old.jsodm_lv <- function(fit, Xocc){
   stopifnot("jsodm_lv" %in% class(fit))
   specrich <- predsumspecies_newdata(fit, Xocc, nLVsim = 1000, type = "marginal")
+  return(specrich)
+}
+
+#' @export
+specrichness.jsodm_lv <- function(fit, Xocc){
+  stopifnot("jsodm_lv" %in% class(fit))
+  specrich <- occspeciesrichness_newdata.jsodm_lv(fit, Xocc, nlvperdraw = 10)
   return(specrich)
 }
 
@@ -83,8 +90,8 @@ specrichnessRV.jsodm_lv <- function(fit, Xocc){
 # returns species richness predicted mean and variance when the site is chosen randomly with equal probability
 specrichness_avsite.jsodm_lv <- function(fit, Xocc){
   specrich <- specrichness.jsodm_lv(fit, Xocc)
-  Esum <- mean(specrich["Esum_occ",])
-  m2_site <- specrich["Vsum_occ", ] + specrich["Esum_occ",]^2
+  Esum <- mean(specrich["En",])
+  m2_site <- specrich["Vn", ] + specrich["En",]^2
   Em2 <- mean(m2_site)
   Vsum <- Em2 - Esum^2
   return(c(
