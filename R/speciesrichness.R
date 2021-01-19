@@ -89,6 +89,47 @@ detspeciesrichness_raw.jsodm_lv <- function(Xocc, occ.b, Xobs, det.b, ModelSite,
   return(Evals)
 }
 
+#nlvperdraw = 1 by default.
+speciesrichness_newdata.jsodm_lv <- function(fit, Xocc, Xobs = NULL, ModelSiteVars = NULL,
+                                    desiredspecies = fit$species,
+                                    nlvperdraw = 1){
+  stopifnot(all(desiredspecies %in% fit$species))
+  if (!is.null(Xobs)) {datalist <- prep_new_data(fit, Xocc, Xobs, ModelSite = ModelSiteVars)
+    occ.v <- datalist$Xocc
+    det.v <- datalist$Xobs
+    ModelSite <- datalist$ModelSite
+  } else { 
+    occ.v <- apply.designmatprocess(fit$XoccProcess, Xocc)
+  }
+  
+  occ.b <- get_occ_b(fit)[desiredspecies, , , drop = FALSE]
+  lv.b <- get_lv_b(fit)[desiredspecies, , , drop = FALSE]
+  if (nlvperdraw > 1){
+    occ.bs <- lapply(1:nlvperdraw, function(x){occ.b})
+    occ.b <- abind::abind(occ.bs, along = 3)
+    
+    lv.bs <- lapply(1:nlvperdraw, function(x){lv.b})
+    lv.b <- abind::abind(lv.bs, along = 3)
+  }
+  lv.v <- array(rnorm(dim(occ.v)[[1]] * dim(lv.b)[[2]] *  dim(lv.b)[[3]]), 
+                dim = c(dim(occ.v)[[1]], dim(lv.b)[[2]],  dim(lv.b)[[3]]),
+                dimnames = list(ModelSite = rownames(occ.v),
+                                LV = paste0("lv", 1:dim(lv.b)[[2]], ".v"),
+                                Draw = 1:dim(lv.b)[[3]]))
+  
+  if (!is.null(Xobs)){
+    det.b <- get_det_b(fit)[desiredspecies, , , drop = FALSE]
+    if (nlvperdraw > 1){    
+      det.bs <- lapply(1:nlvperdraw, function(x){det.b})
+      det.b <- abind::abind(det.bs, along = 3) 
+    }
+    specrich <- detspeciesrichness_raw.jsodm_lv(occ.v, occ.b, det.v, det.b, ModelSite, lv.v, lv.b)
+  } else {
+    specrich <- occspeciesrichness_raw.jsodm_lv(occ.v, occ.b, lv.v, lv.b)
+  }
+  return(specrich)
+}
+
 colprods_arr <- function(arr){
   arr2 <- aperm(arr, c(1, 3, 2))
   dim(arr2) <- c(dim(arr)[[1]] * dim(arr)[[3]], dim(arr)[[2]])
@@ -435,46 +476,6 @@ EVtheta2EVmarg <- function(Vsum, Esum){
   ))
 }
 
-#nlvperdraw = 1 by default.
-speciesrichness_newdata.jsodm_lv <- function(fit, Xocc, Xobs = NULL, ModelSiteVars = NULL,
-                                    desiredspecies = fit$species,
-                                    nlvperdraw = 1){
-  stopifnot(all(desiredspecies %in% fit$species))
-  if (!is.null(Xobs)) {datalist <- prep_new_data(fit, Xocc, Xobs, ModelSite = ModelSiteVars)
-    occ.v <- datalist$Xocc
-    det.v <- datalist$Xobs
-    ModelSite <- datalist$ModelSite
-  } else { 
-    occ.v <- apply.designmatprocess(fit$XoccProcess, Xocc)
-  }
-  
-  occ.b <- get_occ_b(fit)[desiredspecies, , , drop = FALSE]
-  lv.b <- get_lv_b(fit)[desiredspecies, , , drop = FALSE]
-  if (nlvperdraw > 1){
-    occ.bs <- lapply(1:nlvperdraw, function(x){occ.b})
-    occ.b <- abind::abind(occ.bs, along = 3)
-    
-    lv.bs <- lapply(1:nlvperdraw, function(x){lv.b})
-    lv.b <- abind::abind(lv.bs, along = 3)
-  }
-  lv.v <- array(rnorm(dim(occ.v)[[1]] * dim(lv.b)[[2]] *  dim(lv.b)[[3]]), 
-                dim = c(dim(occ.v)[[1]], dim(lv.b)[[2]],  dim(lv.b)[[3]]),
-                dimnames = list(ModelSite = rownames(occ.v),
-                                LV = paste0("lv", 1:dim(lv.b)[[2]], ".v"),
-                                Draw = 1:dim(lv.b)[[3]]))
-  
-  if (!is.null(Xobs)){
-    det.b <- get_det_b(fit)[desiredspecies, , , drop = FALSE]
-    if (nlvperdraw > 1){    
-      det.bs <- lapply(1:nlvperdraw, function(x){det.b})
-      det.b <- abind::abind(det.bs, along = 3) 
-    }
-    specrich <- detspeciesrichness_raw.jsodm_lv(occ.v, occ.b, det.v, det.b, ModelSite, lv.v, lv.b)
-  } else {
-    specrich <- occspeciesrichness_raw.jsodm_lv(occ.v, occ.b, lv.v, lv.b)
-  }
-  return(specrich)
-}
 
 #' @describeIn predsumspecies For new ModelSite occupancy covariates and detection covariates, predicted number of expected species
 #' @param desiredspecies List of species to sum over. Names must match names in fit$species. Default is to sum over all species.

@@ -75,7 +75,7 @@ specrichness_old.jsodm_lv <- function(fit, Xocc){
 #' @export
 specrichness.jsodm_lv <- function(fit, Xocc){
   stopifnot("jsodm_lv" %in% class(fit))
-  specrich <- occspeciesrichness_newdata.jsodm_lv(fit, Xocc, nlvperdraw = 10)
+  specrich <- speciesrichness_newdata.jsodm_lv(fit, Xocc, nlvperdraw = 5)
   return(specrich)
 }
 
@@ -90,13 +90,13 @@ specrichnessRV.jsodm_lv <- function(fit, Xocc){
 # returns species richness predicted mean and variance when the site is chosen randomly with equal probability
 specrichness_avsite.jsodm_lv <- function(fit, Xocc){
   specrich <- specrichness.jsodm_lv(fit, Xocc)
-  Esum <- mean(specrich["En",])
-  m2_site <- specrich["Vn", ] + specrich["En",]^2
+  Epred <- mean(specrich["E",])
+  m2_site <- specrich["V", ] + specrich["E",]^2
   Em2 <- mean(m2_site)
-  Vsum <- Em2 - Esum^2
+  Vpred <- Em2 - Epred^2
   return(c(
-    E = Esum,
-    V = Vsum
+    E = Epred,
+    V = Vpred
   ))
 }
 

@@ -59,6 +59,7 @@ gvifs_lm <- function(Xocc, yXobs, species, ModelSite, OccFmla = "~ 1", ObsFmla =
     alldata <- data.frame(y.occ.mock_bysp[, x, drop = FALSE], data.list$Xocc, check.names = FALSE)
     return(lm(fmla, alldata))
   })
+  stopifnot(length(mods) > 0)
   names(mods) <- species
                  
   
