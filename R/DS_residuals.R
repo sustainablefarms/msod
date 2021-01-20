@@ -8,6 +8,9 @@
 #' fit <- readRDS("./tmpdata/7_2_10_clim_year.rds")
 #' detection_resids <- ds_detection_residuals.fit(fit, type = "median")
 #' occupancy_resids <- ds_occupancy_residuals.fit(fit, type = "median", conditionalLV = FALSE)
+#' fitold <- readRDS("../Experiments/7_4_modelrefinement/fittedmodels/7_4_13_allhyp_vif_logwoody500m_msnm_year_Time_Wind.rds")
+#' fit <- translatefit(fitold)
+#' ds_detection_residuals.fit(fit)
 
 ##### Full Dunn-Smyth Residual Functions ####
 #' @describeIn DunnSmythResiduals Given a fitted occupancy detection model (variable names must match). Computes Dunn-Smyth residuals for detection, marginalising the latent variables.
@@ -18,23 +21,28 @@
 #' Detection residuals are only computed for species and sites that have at least one detection. Other values are NA.
 #' @export
 ds_detection_residuals.fit <- function(fit, type = "median", seed = NULL){
-  pDetection <- pdetect_condoccupied(fit, type = type)  #the detection probabilities, assuming occupied
+  fit$data <- as_list_format(fit$data)
+  det.v <- fit$data$Xobs
+  theta <- get_theta(fit, type = type)
+  det.b <- bugsvar2array(theta, "det.b", 1:ncol(fit$data$y), 1:ncol(det.v))
+  if(!is.null(fit$species)){ rownames(det.b) <- fit$species }
+  pDetection <- pdet_occ_raw.jsodm(det.v, det.b)  #the detection probabilities, assuming occupied
+  detections <-  fit$data$y
+  
   if (is.null(colnames(pDetection))){colnames(pDetection) <- paste0("S", 1:ncol(pDetection))} #name the species S1....Sn
-  fitdata <- as_list_format(fit$data)
-  detections <-  fitdata$y
   if (is.null(colnames(detections))) {#name the columns if possible
     if (!is.null(fit$species)) {colnames(detections) <- fit$species}
     else {colnames(detections) <- paste0("S", 1:ncol(detections))}
   }
-  if ("ObservedSite" %in% names(fitdata)){ModelSite <- fitdata$ObservedSite} #to enable calculation on the early fitted objects with different name
-  if ("ModelSite" %in% names(fitdata)){ModelSite <- fitdata$ModelSite}
+  if ("ObservedSite" %in% names(fit$data)){ModelSite <- fit$data$ObservedSite} #to enable calculation on the early fitted objects with different name
+  if ("ModelSite" %in% names(fit$data)){ModelSite <- fit$data$ModelSite}
 
   # Convert the above into format suitable for ds_detection_residuals.raw
-  preds <- cbind(ModelSite = as.numeric(ModelSite), VisitId = 1:nrow(fitdata$Xobs), pDetection) %>%
+  preds <- cbind(ModelSite = as.numeric(ModelSite), VisitId = 1:nrow(fit$data$Xobs), pDetection) %>%
     as_tibble() %>%
     tidyr::pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "pDetected") %>%
     arrange(VisitId, Species, ModelSite)
-  obs <- cbind(ModelSite = as.numeric(ModelSite), VisitId = 1:nrow(fitdata$Xobs), detections) %>%
+  obs <- cbind(ModelSite = as.numeric(ModelSite), VisitId = 1:nrow(fit$data$Xobs), detections) %>%
     as_tibble() %>%
     tidyr::pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "Detected") %>%
     arrange(VisitId, Species, ModelSite)
