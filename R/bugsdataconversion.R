@@ -9,6 +9,11 @@ bugsvar2array <- function(values, varname, rowidx, colidx){
   if (is.vector(values)) {
     values <- matrix(values, nrow = 1, dimnames = list(row = NULL, col = names(values)))
   }
+  #checks
+  nvalues <- sum(grepl(paste0("^", varname, "\\[.*"), colnames(values)))
+  stopifnot(nvalues > 0)
+  stopifnot(length(rowidx) * length(colidx) <= nvalues)
+  #actual extraction
   idx <- expand.grid(row = rowidx, col = colidx)
   bugsnames <- paste0(varname, "[",idx$row, ",", idx$col, "]") #order matters, expand.grid must go through rows and then columns
   value <- array(t(values[, bugsnames]), 
