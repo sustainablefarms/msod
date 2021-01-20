@@ -23,12 +23,9 @@
 ds_detection_residuals.fit <- function(fit, type = "median", seed = NULL){
   fit$data <- as_list_format(fit$data)
   det.v <- fit$data$Xobs
-  theta <- get_theta(fit, type = type)
-  det.b <- bugsvar2array(theta, "det.b", 1:ncol(fit$data$y), 1:ncol(det.v))
-  if(!is.null(fit$species)){ rownames(det.b) <- fit$species }
+  det.b <- get_det_b(fit, usesummary = type)
   pDetection <- pdet_occ_raw.jsodm(det.v, det.b)  #the detection probabilities, assuming occupied
   detections <-  fit$data$y
-  
   if (is.null(colnames(pDetection))){colnames(pDetection) <- paste0("S", 1:ncol(pDetection))} #name the species S1....Sn
   if (is.null(colnames(detections))) {#name the columns if possible
     if (!is.null(fit$species)) {colnames(detections) <- fit$species}
@@ -63,6 +60,7 @@ ds_detection_residuals.fit <- function(fit, type = "median", seed = NULL){
 #' @return A matrix, each row is a ModelSite and each column is a species.
 #' @export
 ds_occupancy_residuals.fit <- function(fit, type = "median", seed = NULL, conditionalLV = TRUE){
+  theta <- get_theta(fit, type = type)
   pOccupancy <- poccupy_species(fit, type = type, conditionalLV = conditionalLV) #occupany probabilities
   if (is.null(colnames(pOccupancy))){colnames(pOccupancy) <- paste0("S", 1:ncol(pOccupancy))} #name the species S1....Sn
   pDetected_cond <- pdetect_condoccupied(fit, type = type)  #the detection probabilities if sites occupied

@@ -7,6 +7,7 @@
 #' If [type] is "marginal" or "all" then all draws are returned.
 #' @export
 get_theta <- function(fit, type){
+  warning("Prefer using functions get_occ_b, get_det_b etc over get_theta if possible.")
   if (is.numeric(type) && length(type) > 1 && !is.null(names(type))){ #assumed passed 'type' is actually the desired theta
     return(type)
   }
