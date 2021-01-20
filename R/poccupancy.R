@@ -135,14 +135,17 @@ abind_alongNp1 <- function(listofarrays){
 }
 
 # default treats lv.v and loadings as independent, simulating the former. 
-#' Fullposterior = TRUE draws lv.v from the posterior with all other loadings.
+#' lvfromposterior = TRUE draws lv.v from the posterior with all other loadings.
 # margLV = TRUE returns probabilities marginal over fitted lv.b and unknown lv.v. Marginalising over lv.v (non-fitted) is equivalent to the plain jsodm occupancy probability given the occ.b loadings.
 #' @export
-poccupy.jsodm_lv <- function(fit, fullposterior, margLV = FALSE){
+poccupy.jsodm_lv <- function(fit, usethetasummary = NULL, lvfromposterior = TRUE, margLV = FALSE){
   occ.v <- fit$data$Xocc
   dimnames(occ.v) <- list(ModelSite = rownames(occ.v), Covariate = colnames(occ.v))
-
-  occ.b <- get_occ_b(fit)
+  
+  if (is.null(usethetasummary)){occ.b <- get_occ_b(fit)}
+  else {
+    occ.b <- get_theta(fit, type = type)
+  }
   
   if (margLV){
     return(poccupy_raw.jsodm(occ.v, occ.b))
