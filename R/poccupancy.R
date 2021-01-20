@@ -60,11 +60,11 @@ eta_fixed <- function(fixedcovar, loadfixed){
 
 
 #' @export
-poccupy.jsodm <- function(fit){
+poccupy.jsodm <- function(fit, usethetasummary = NULL){
   fixedcovar <- fit$data$Xocc
   dimnames(fixedcovar) <- list(ModelSite = rownames(fixedcovar), Covariate = colnames(fixedcovar))
   
-  loadfixed <- get_occ_b(fit)
+  loadfixed <- get_occ_b(fit, usesummary = usethetasummary)
   pocc <- poccupy_raw.jsodm(fixedcovar, loadfixed)
   return(pocc)
 }
@@ -142,16 +142,13 @@ poccupy.jsodm_lv <- function(fit, usethetasummary = NULL, lvfromposterior = TRUE
   occ.v <- fit$data$Xocc
   dimnames(occ.v) <- list(ModelSite = rownames(occ.v), Covariate = colnames(occ.v))
   
-  if (is.null(usethetasummary)){occ.b <- get_occ_b(fit)}
-  else {
-    occ.b <- get_theta(fit, type = type)
-  }
+  occ.b <- get_occ_b(fit, usesummary = usethetasummary)
   
   if (margLV){
     return(poccupy_raw.jsodm(occ.v, occ.b))
   }
   
-  lv.b <- get_lv_b(fit)
+  lv.b <- get_lv_b(fit, usesummary = usethetasummary)
   if (!fullposterior){
     lv.v <- array(rnorm(dim(occ.v)[[1]] * dim(lv.b)[[2]] *  dim(lv.b)[[3]]), 
                   dim = c(dim(occ.v)[[1]], dim(lv.b)[[2]],  dim(lv.b)[[3]]),
@@ -159,7 +156,7 @@ poccupy.jsodm_lv <- function(fit, usethetasummary = NULL, lvfromposterior = TRUE
                                   LV = paste0("lv", 1:dim(lv.b)[[2]], ".v"),
                                   Draw = 1:dim(lv.b)[[3]]))
   } else {
-    lv.v <- get_lv_v(fit)
+    lv.v <- get_lv_v(fit, usesummary = usethetasummary)
   }
   pocc <- poccupy_raw.jsodm_lv(occ.v, occ.b, lv.v, lv.b)
   return(pocc)
