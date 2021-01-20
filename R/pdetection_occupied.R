@@ -33,3 +33,11 @@ pdet_occ_raw.jsodm <- function(fixedcovar, loadfixed){
   pdet <- exp(det_linpred) / (exp(det_linpred) + 1)   #this is the inverse logit function
   return(pdet)
 }
+
+pdet_occ.jsodm <- function(fit){
+  det.v <- fit$data$Xobs
+  det.b <- get_det_b(fit)
+  return(pdet_occ_raw.jsodm(det.v, det.b))
+}
+  
+  
