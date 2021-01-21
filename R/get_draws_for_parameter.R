@@ -46,7 +46,7 @@ picksummary <- function(arr, usesummary = NULL){
   if (is.numeric(usesummary) && length(usesummary) == 1){
     chainidx <- floor(usesummary / (fit$sample + 1 )) + 1
     sampleinchain <- usesummary - fit$sample * (chainidx - 1)
-    theta <- fit$mcmc[[chainidx]][sampleinchain, ]
+    theta <- arr[,, sampleinchain, drop = FALSE]
     return(theta)
   } else {
     theta <- apply(arr, MARGIN = c(1, 2), usesummary)
