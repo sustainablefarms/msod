@@ -34,10 +34,18 @@ pdet_occ_raw.jsodm <- function(fixedcovar, loadfixed){
   return(pdet)
 }
 
-pdet_occ.jsodm <- function(fit){
+#' @export
+pdet_occ <- function(fit, usethetasummary = NULL, ...){
+  UseMethod("pdet_occ")
+}
+#' @export
+pdet_occ.jsodm <- function(fit, usethetasummary = NULL){
   det.v <- fit$data$Xobs
-  det.b <- get_det_b(fit)
+  det.b <- get_det_b(fit, usesummary = usethetasummary)
   return(pdet_occ_raw.jsodm(det.v, det.b))
 }
+
+#' @export
+pdet_occ.jsodm_lv <- pdet_occ.jsodm
   
   
