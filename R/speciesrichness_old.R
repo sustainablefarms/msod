@@ -106,11 +106,16 @@ predsumspecies <- function(fit,
   stopifnot(type == "marginal")
   warning("Obsolete function, modified to fit with new backend. nLVsim will be divided by 100.")
   if (!is.null(chains)){fit$mcmc <- fit$mcmc[chains]}
-  specrich <- speciesrichness(fit,
-                              occORdetection = "detection",
-                              usefittedlvv = UseFittedLV,
-                              desiredspecies = desiredspecies,
-                              nlvperdraw = as.integer(nLVsim/100))
+  if ("jsodm_lv" %in% class(fit)){
+    specrich <- speciesrichness(fit,
+                                occORdetection = "detection",
+                                usefittedlvv = UseFittedLV,
+                                desiredspecies = desiredspecies,
+                                nlvperdraw = as.integer(nLVsim/100))
+  } else {
+    specrich <- speciesrichness(fit,
+                                occORdetection = "detection")
+  }
   return(specrich)
 }
 
