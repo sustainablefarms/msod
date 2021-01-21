@@ -34,6 +34,11 @@
 #' pocc <- poccupy.jsodm_lv(model2lv_new, fullposterior = FALSE)
 #' 
 #' @export
+poccupy <- function(fit, usethetasummary = NULL, ...){
+  UseMethod("poccupy")
+}
+
+#' @export
 poccupy_raw.jsodm <- function(fixedcovar, loadfixed, randomcovar = NULL, loadrandom = NULL){
   stopifnot(is.null(randomcovar))
   stopifnot(is.null(loadrandom))
@@ -135,10 +140,11 @@ abind_alongNp1 <- function(listofarrays){
 }
 
 # default treats lv.v and loadings as independent, simulating the former. 
-#' lvfromposterior = TRUE draws lv.v from the posterior with all other loadings.
+#' lvvfromposterior = TRUE draws lv.v from the posterior with all other loadings.
 # margLV = TRUE returns probabilities marginal over fitted lv.b and unknown lv.v. Marginalising over lv.v (non-fitted) is equivalent to the plain jsodm occupancy probability given the occ.b loadings.
+# due to use in DS_residuals default MUST be to use lv.v from posterior
 #' @export
-poccupy.jsodm_lv <- function(fit, usethetasummary = NULL, lvfromposterior = TRUE, margLV = FALSE){
+poccupy.jsodm_lv <- function(fit, usethetasummary = NULL, lvvfromposterior = TRUE, margLV = FALSE){
   occ.v <- fit$data$Xocc
   dimnames(occ.v) <- list(ModelSite = rownames(occ.v), Covariate = colnames(occ.v))
   
