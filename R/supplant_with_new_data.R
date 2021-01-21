@@ -22,12 +22,16 @@
 #' ds_occupancy_residuals.fit(fitwnewdata) #detection residuals on this new data
 #' 
 #' @export
-supplant_new_data <- function(fit, Xocc, Xobs, ModelSite, y = NULL, ...){
+supplant_new_data <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL, y = NULL, ...){
   UseMethod("supplant_new_data")
 }
 
 #' @export
-supplant_new_data.jsodm <- function(fit, Xocc, Xobs, ModelSite, y = NULL){
+supplant_new_data.jsodm <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL, y = NULL){
+  if (is.null(Xobs)){
+    Xobs <- matrix(NA_real_, nrow = nrow(Xocc), ncol = 1)
+    ModelSite <- rep(NA_integer_, nrow(Xobs))
+  }
   if(is.null(y)){
     y <- matrix(0, nrow = nrow(Xobs), ncol = length(fit$species))
     colnames(y) <- fit$species

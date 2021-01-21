@@ -100,13 +100,15 @@ predsumspecies <- function(fit,
                            desiredspecies = fit$species,
                            chains = NULL,
                            UseFittedLV = TRUE,
-                           nLVsim = 1000,
-                           type = "median",
+                           nLVsim = 100,
+                           type = "marginal",
                            cl = NULL){
   stopifnot(type == "marginal")
   warning("Obsolete function, modified to fit with new backend. nLVsim will be divided by 100.")
+  if (!is.null(chains)){fit$mcmc <- fit$mcmc[chains]}
   specrich <- speciesrichness(fit,
                               occORdetection = "detection",
+                              usefittedlvv = UseFittedLV,
                               desiredspecies = desiredspecies,
                               nlvperdraw = as.integer(nLVsim/100))
   return(specrich)

@@ -120,12 +120,16 @@ speciesrichness <- function(fit, occORdetection, ...){
 #' @export
 speciesrichness.jsodm_lv <- function(fit, 
                                      occORdetection,
+                                     usefittedlvv = FALSE,
                                     desiredspecies = fit$species,
                                     nlvperdraw = 1){
   stopifnot(all(desiredspecies %in% fit$species))
   occ.v <- fit$data$Xocc
   occ.b <- get_occ_b(fit)[desiredspecies, , , drop = FALSE]
   lv.b <- get_lv_b(fit)[desiredspecies, , , drop = FALSE]
+  if (sum(usefittedlvv, nlvperdraw > 1) > 1){
+    stop("If using fitted lv.v then can not simulate multiple lv.v per draw.")
+  }
   if (nlvperdraw > 1){
     occ.bs <- lapply(1:nlvperdraw, function(x){occ.b})
     occ.b <- abind::abind(occ.bs, along = 3)
@@ -133,11 +137,15 @@ speciesrichness.jsodm_lv <- function(fit,
     lv.bs <- lapply(1:nlvperdraw, function(x){lv.b})
     lv.b <- abind::abind(lv.bs, along = 3)
   }
-  lv.v <- array(rnorm(dim(occ.v)[[1]] * dim(lv.b)[[2]] *  dim(lv.b)[[3]]), 
-                dim = c(dim(occ.v)[[1]], dim(lv.b)[[2]],  dim(lv.b)[[3]]),
-                dimnames = list(ModelSite = rownames(occ.v),
-                                LV = paste0("lv", 1:dim(lv.b)[[2]], ".v"),
-                                Draw = 1:dim(lv.b)[[3]]))
+  if (usefittedlvv){
+    lv.v <- get_lv_v(fit)
+  } else {
+    lv.v <- array(rnorm(dim(occ.v)[[1]] * dim(lv.b)[[2]] *  dim(lv.b)[[3]]), 
+                  dim = c(dim(occ.v)[[1]], dim(lv.b)[[2]],  dim(lv.b)[[3]]),
+                  dimnames = list(ModelSite = rownames(occ.v),
+                                  LV = paste0("lv", 1:dim(lv.b)[[2]], ".v"),
+                                  Draw = 1:dim(lv.b)[[3]]))
+  }
   
   pocc <- poccupy_raw.jsodm_lv(occ.v, occ.b, lv.v, lv.b)
   if (occORdetection == "detection"){
