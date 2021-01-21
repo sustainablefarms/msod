@@ -11,6 +11,7 @@
 #' fitold <- readRDS("../Experiments/7_4_modelrefinement/fittedmodels/7_4_13_allhyp_vif_logwoody500m_msnm_year_Time_Wind.rds")
 #' fit <- translatefit(fitold)
 #' ds_detection_residuals.fit(fit)
+#' ds_occupancy_residuals.fit(fit)
 
 ##### Full Dunn-Smyth Residual Functions ####
 #' @describeIn DunnSmythResiduals Given a fitted occupancy detection model (variable names must match). Computes Dunn-Smyth residuals for detection, marginalising the latent variables.
@@ -60,29 +61,28 @@ ds_detection_residuals.fit <- function(fit, type = "median", seed = NULL){
 #' @return A matrix, each row is a ModelSite and each column is a species.
 #' @export
 ds_occupancy_residuals.fit <- function(fit, type = "median", seed = NULL, conditionalLV = TRUE){
-  theta <- get_theta(fit, type = type)
-  pOccupancy <- poccupy_species(fit, type = type, conditionalLV = conditionalLV) #occupany probabilities
+  fit$data <- as_list_format(fit$data)
+  pOccupancy <- poccupy(fit, usethetasummary = type)
   if (is.null(colnames(pOccupancy))){colnames(pOccupancy) <- paste0("S", 1:ncol(pOccupancy))} #name the species S1....Sn
-  pDetected_cond <- pdetect_condoccupied(fit, type = type)  #the detection probabilities if sites occupied
+  pDetected_cond <- pdet_occ(fit, usethetasummary = type)  #the detection probabilities if sites occupied
   if (is.null(colnames(pDetected_cond))){colnames(pDetected_cond) <- paste0("S", 1:ncol(pDetected_cond))} #name the species S1....Sn
-  fitdata <- as_list_format(fit$data)
-  detections <- fitdata$y
+  detections <- fit$data$y
   if (is.null(colnames(detections))) {#name the columns if possible
     if (!is.null(fit$species)) {colnames(detections) <- fit$species}
     else {colnames(detections) <- paste0("S", 1:ncol(detections))}
   }
-  if ("ObservedSite" %in% names(fitdata)){ModelSite <- fitdata$ObservedSite} #to enable calculation on the early fitted objects with different name
-  if ("ModelSite" %in% names(fitdata)){ModelSite <- fitdata$ModelSite}
+  if ("ObservedSite" %in% names(fit$data)){ModelSite <- fit$data$ObservedSite} #to enable calculation on the early fitted objects with different name
+  if ("ModelSite" %in% names(fit$data)){ModelSite <- fit$data$ModelSite}
   
   # convert to format for raw function
-  pOccupancy <- cbind(ModelSite = 1:nrow(fitdata$Xocc), pOccupancy) %>%
+  pOccupancy <- cbind(ModelSite = 1:nrow(fit$data$Xocc), drop_to_matrix(pOccupancy)) %>%
     as_tibble() %>%
     tidyr::pivot_longer(-ModelSite, names_to = "Species", values_to = "pOccupancy")
-  pDetCondOcc <- cbind(ModelSite = as.numeric(ModelSite), VisitId = 1:nrow(fitdata$Xobs), pDetected_cond) %>%
+  pDetCondOcc <- cbind(ModelSite = as.numeric(ModelSite), VisitId = 1:nrow(fit$data$Xobs), drop_to_matrix(pDetected_cond)) %>%
     as_tibble() %>%
     tidyr::pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "pDetected_cond")
   preds <- inner_join(pOccupancy, pDetCondOcc, by = c("ModelSite", "Species")) %>% arrange(VisitId, Species, ModelSite)
-  obs <- cbind(ModelSite = as.numeric(ModelSite), VisitId = 1:nrow(fitdata$Xobs), detections) %>%
+  obs <- cbind(ModelSite = as.numeric(ModelSite), VisitId = 1:nrow(fit$data$Xobs), detections) %>%
     as_tibble() %>%
     tidyr::pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "Detected") %>%
     arrange(VisitId, Species, ModelSite)
