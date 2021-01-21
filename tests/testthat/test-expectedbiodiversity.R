@@ -113,14 +113,14 @@ test_that("In sample data; fitted lv.v", {
   artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, modeltype = "jsodm_lv", nlv = 4)
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
-  numspec <- predsumspecies(artfit, UseFittedLV = TRUE, type = "median")
+  numspec <- predsumspecies(artfit, UseFittedLV = TRUE, type = "marginal")
   expect_equal(ncol(numspec), nsites)
   
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
   
   # median of theta should be correct
-  meandiff <- dplyr::cummean(NumSpecies - numspec["Esum_det_median", ])
-  meanvar <- cumsum(numspec["Vsum_det_median", ])/((1:ncol(numspec))^2)
+  meandiff <- dplyr::cummean(NumSpecies - numspec["E", ])
+  meanvar <- cumsum(numspec["V", ])/((1:ncol(numspec))^2)
   plt <- cbind(diff = meandiff, var  = meanvar) %>% 
     dplyr::as_tibble(rownames = "CumSites") %>% 
     dplyr::mutate(CumSites = as.double(CumSites)) %>%
@@ -137,19 +137,19 @@ test_that("In sample data; fitted lv.v", {
   expect_lt(abs(meandiff[length(meandiff)]), max(abs(meandiff[floor(length(meandiff) / 20) + 1:20 ])))
   
   Enum_compare_sum <- Enum_compare(NumSpecies,
-               data.frame(pred = numspec["Esum_det_median", ]),
-               data.frame(pred = numspec["Vsum_det_median", ])
+               data.frame(pred = numspec["E", ]),
+               data.frame(pred = numspec["V", ])
                )
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
   expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
   
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
-  ininterval <- (NumSpecies > numspec["Esum_det_margpost", ] - 2 * sqrt(numspec["Vsum_det_margpost", ])) & 
-    (NumSpecies < numspec["Esum_det_margpost", ] + 2 * sqrt(numspec["Vsum_det_margpost", ]))
+  ininterval <- (NumSpecies > numspec["E", ] - 2 * sqrt(numspec["V", ])) & 
+    (NumSpecies < numspec["E", ] + 2 * sqrt(numspec["V", ]))
   expect_equal(mean(ininterval), 0.95, tol = 0.05)
   
-  plt <- cbind(NumSpecies = NumSpecies, pred = numspec["Esum_det_margpost", ], se = sqrt(numspec["Vsum_det_margpost", ])) %>% 
+  plt <- cbind(NumSpecies = NumSpecies, pred = numspec["E", ], se = sqrt(numspec["V", ])) %>% 
     dplyr::as_tibble() %>% 
     dplyr::mutate(resid = NumSpecies - pred) %>%
     dplyr::arrange(resid) %>%
