@@ -38,7 +38,7 @@ simulate_detections <- function(fit, esttype = "median", seed = NULL){
   
   if (!is.null(seed)){set.seed(seed + 10)}
   detected <- rmanybern(pdetect)
-  return(detected)
+  return(drop_to_matrix(detected))
 }
 
 simulate_lv.v <- function(fit, replaceinsitu = FALSE){
