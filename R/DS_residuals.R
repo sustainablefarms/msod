@@ -35,7 +35,7 @@ ds_detection_residuals.fit <- function(fit, type = "median", seed = NULL){
   if ("ModelSite" %in% names(fit$data)){ModelSite <- fit$data$ModelSite}
 
   # Convert the above into format suitable for ds_detection_residuals.raw
-  preds <- cbind(ModelSite = as.numeric(ModelSite), VisitId = 1:nrow(fit$data$Xobs), pDetection) %>%
+  preds <- cbind(ModelSite = as.numeric(ModelSite), VisitId = 1:nrow(fit$data$Xobs), drop_to_matrix(pDetection)) %>%
     as_tibble() %>%
     tidyr::pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "pDetected") %>%
     arrange(VisitId, Species, ModelSite)
