@@ -44,9 +44,7 @@ get_lv_b <- function(fit, usesummary = NULL){
 picksummary <- function(arr, usesummary = NULL){
   if (is.null(usesummary)){return(arr)}
   if (is.numeric(usesummary) && length(usesummary) == 1){
-    chainidx <- floor(usesummary / (fit$sample + 1 )) + 1
-    sampleinchain <- usesummary - fit$sample * (chainidx - 1)
-    theta <- arr[,, sampleinchain, drop = FALSE]
+    theta <- arr[,, usesummary, drop = FALSE]
     return(theta)
   } else {
     theta <- apply(arr, MARGIN = c(1, 2), usesummary)
