@@ -24,6 +24,7 @@ parnames <- matrix(c(
   "J", "nmodelsites",
   "Vvisits", "nvisits",
   "ModelSite", "ModelSite",
+  "ObservedSite", "ModelSite",
   "Vocc", "noccvar",
   "Vobs", "nobsvar",
   "nlv", "nlv",
