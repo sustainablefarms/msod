@@ -47,10 +47,14 @@ ds_detection_residuals.fit <- function(fit, type = "median", seed = NULL){
   
   # Compute residuals
   detection_resids <- ds_detection_residuals.raw(preds, obs, seed = seed)
-  detection_resids %>%
+  det_r_wide <- detection_resids %>%
     tidyr::pivot_wider(names_from = "Species",
-                values_from = "DetectionResidual") %>%
-    return()
+                values_from = "DetectionResidual") 
+  # add in species not detected anywhere (and thus have not been included in the columns)
+  det_r_wide[, setdiff(colnames(detections), colnames(det_r_wide))] <- NA_real_
+  det_r_wide <- det_r_wide[, c("ModelSite", colnames(detections))]
+  det_r_wide %>% arrange(ModelSite)
+  return(det_r_wide)
 }
 
 #' @describeIn DunnSmythResiduals Given a fitted occupancy detection model (variable names must match).

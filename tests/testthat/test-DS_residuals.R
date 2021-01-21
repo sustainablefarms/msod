@@ -324,3 +324,48 @@ test_that("Zero detection residuals computed for a very rare species at a single
   if (sum(obs$Detected) == 0){expect_error(ds_detection_residuals.raw(preds, obs))}
 })
 
+test_that("Residuals for fitted and identical external data match for plain JSODM", {
+  # simulate a fitted object
+  fit <- artificial_runjags(nspecies = 5, nsites = 500, nvisitspersite = 5, modeltype = "jsodm")
+  
+  # compute residuals on training data
+  resid_det <- ds_detection_residuals.fit(fit, type = 1, seed = 32165)
+  resid_occ <- ds_occupancy_residuals.fit(fit, type = 1, seed = 32165)
+  
+  # compute using external data
+  originalXocc <- unstandardise.designmatprocess(fit$XoccProcess, fit$data$Xocc)
+  originalXocc <- cbind(ModelSite = 1:nrow(originalXocc), originalXocc)
+  originalXobs <- unstandardise.designmatprocess(fit$XobsProcess, fit$data$Xobs)
+  originalXobs <- cbind(ModelSite = fit$data$ModelSite, originalXobs)
+  Xocc <- originalXocc[1:10, ]
+  Xobs <- originalXobs[originalXobs$ModelSite %in% Xocc$ModelSite, ]
+  y <- fit$data$y[originalXobs$ModelSite %in% Xocc$ModelSite, ]
+  fitwnewdata <- supplant_new_data(fit, Xocc, Xobs, ModelSite = "ModelSite", y = y)
+  
+  resid_det_new <- ds_detection_residuals.fit(fitwnewdata, type = 1, seed = 32165)
+  resid_occ_new <- ds_occupancy_residuals.fit(fitwnewdata, type = 1, seed = 32165)
+  
+  # test
+  expect_equivalent(resid_det[resid_det$ModelSite %in% 1:10, ], resid_det_new)
+  expect_equivalent(resid_occ[1:10, ], resid_occ_new)
+})
+
+
+test_that("Supplanting new data into a fitted jsodm object", {
+  # simulate a fitted object
+  fit <- artificial_runjags(nspecies = 5, nsites = 500, nvisitspersite = 5, modeltype = "jsodm")
+  
+  originalXocc <- unstandardise.designmatprocess(fit$XoccProcess, fit$data$Xocc)
+  originalXocc <- cbind(ModelSite = 1:nrow(originalXocc), originalXocc)
+  originalXobs <- unstandardise.designmatprocess(fit$XobsProcess, fit$data$Xobs)
+  originalXobs <- cbind(ModelSite = fit$data$ModelSite, originalXobs)
+  Xocc <- originalXocc[1:10, ]
+  Xobs <- originalXobs[originalXobs$ModelSite %in% Xocc$ModelSite, ]
+  y <- fit$data$y[originalXobs$ModelSite %in% Xocc$ModelSite, ]
+  fitwnewdata <- supplant_new_data.jsodm_lv(fit, Xocc, Xobs, ModelSite = "ModelSite", y = y)
+
+  expect_equal(fit$data$Xocc[1:10, , drop = FALSE], fitwnewdata$data$Xocc[, , drop = FALSE])
+  expect_equal(fit$data$Xobs[originalXobs$ModelSite %in% Xocc$ModelSite, ], fitwnewdata$data$Xobs[, , drop = FALSE])
+  expect_equivalent(fit$data$y[originalXobs$ModelSite %in% Xocc$ModelSite, ], fitwnewdata$data$y[, , drop = FALSE])
+  # non-equal attributes is the dimname of "row" for species attributes(fitwnewdata$data$y)$dimnames
+})

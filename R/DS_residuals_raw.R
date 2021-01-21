@@ -58,13 +58,14 @@ numdet_cdf <- function(x, pDetected){
 ds_detection_residuals.raw <- function(preds, obs, seed = NULL){
   stopifnot(all(c("Species", "ModelSite", "pDetected") %in% names(preds)))
   stopifnot(all(c("Species", "ModelSite", "Detected") %in% names(obs)))
-  stopifnot(isTRUE(all.equal(preds[, c("Species", "ModelSite")], obs[, c("Species", "ModelSite")])))
+  stopifnot(isTRUE(all.equal(preds[, c("Species", "VisitId", "ModelSite")], obs[, c("Species", "VisitId", "ModelSite")])))
   combined <- cbind(preds, Detected = obs$Detected)
   persite <- combined %>%
     dplyr::group_by(Species, ModelSite) %>%
     dplyr::summarise(numdet = sum(Detected),
                      pDetected = list(pDetected)) %>%
-    dplyr::filter(numdet > 0)  # detection residuals only use sites where a detection occured.
+    dplyr::filter(numdet > 0) %>%
+    arrange(ModelSite, Species) # detection residuals only use sites where a detection occured.
   # can't use mutate because numdet_cdf is not vectorised for the x and pDetected argument yet
   stopifnot(nrow(persite) > 0) #means there is no detection residuals to compute
 
@@ -101,13 +102,14 @@ condition_nonzero.pdf <- function(cdf0, pdfval){
 ds_occupancy_residuals.raw <- function(preds, obs, seed = NULL){
   stopifnot(all(c("Species", "ModelSite", "pOccupancy", "pDetected_cond") %in% names(preds)))
   stopifnot(all(c("Species", "ModelSite", "Detected") %in% names(obs)))
-  stopifnot(isTRUE(all.equal(preds[, c("Species", "ModelSite")], obs[, c("Species", "ModelSite")])))
+  stopifnot(isTRUE(all.equal(preds[, c("Species", "VisitId", "ModelSite")], obs[, c("Species", "VisitId", "ModelSite")])))
   combined <- cbind(preds, Detected = obs$Detected)
   persite <- combined %>%  #### these operations account for about 3/4 of occupancy residual computation time! Using dtplyr reduces it by 50%
     dplyr::group_by(Species, ModelSite) %>%
     dplyr::summarise(anyDetected = sum(Detected) > 0,
                      pDetected_cond = list(pDetected_cond),
-                     pOccupancy = first(pOccupancy))  #using first here as a shortcut --> should be all identical
+                     pOccupancy = first(pOccupancy)) %>% #using first here as a shortcut --> should be all identical
+    dplyr::arrange(ModelSite, Species)
                      # pOccUnique = (1 == length(unique((pOccupancy)))))  # a check that pOccupancy unique, removed for speed
   # stopifnot(all(persite$pOccUnique)) #check that pOccupancy values are unique to site x species
   
