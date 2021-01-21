@@ -31,7 +31,7 @@
 #' model2lv <- readRDS("../Experiments/7_4_modelrefinement/fittedmodels/7_4_13_model_2lv_e13.rds")
 #' model2lv_new <- translatefit(model2lv)
 #' pocc <- poccupy_raw.jsodm_lv(fixedcovar, loadfixed, randomcovar, loadrandom)
-#' pocc <- poccupy.jsodm_lv(model2lv_new, fullposterior = FALSE)
+#' pocc <- poccupy.jsodm_lv(model2lv_new, lvvfromposterior = FALSE)
 #' 
 #' @export
 poccupy <- function(fit, usethetasummary = NULL, ...){
@@ -155,7 +155,7 @@ poccupy.jsodm_lv <- function(fit, usethetasummary = NULL, lvvfromposterior = TRU
   }
   
   lv.b <- get_lv_b(fit, usesummary = usethetasummary)
-  if (!fullposterior){
+  if (!lvvfromposterior){
     lv.v <- array(rnorm(dim(occ.v)[[1]] * dim(lv.b)[[2]] *  dim(lv.b)[[3]]), 
                   dim = c(dim(occ.v)[[1]], dim(lv.b)[[2]],  dim(lv.b)[[3]]),
                   dimnames = list(ModelSite = rownames(occ.v),
