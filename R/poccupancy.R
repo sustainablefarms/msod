@@ -84,7 +84,7 @@ poccupy_raw.jsodm_lv <- function(fixedcovar, loadfixed, randomcovar, loadrandom)
   sd_occ_indicator <- sqrt(1 - arr3_sumalong2(loadrandom^2))
 
   eta_rand_l <- lapply(1:dim(loadrandom)[[3]], function(d)
-           randomcovar[,,d] %*% t(loadrandom[,,d]))
+           randomcovar[,,d] %*% t(drop_to_matrix(loadrandom[,,d, drop = FALSE]))) #hassle with drop_to_matrix and drop = FALSE is to deal with the case of only 1 species, and not dropping to a vector
   names(eta_rand_l) <- dimnames(loadrandom)[[3]]
   eta_rand <- abind_alongNp1(eta_rand_l)
   #slower version:
