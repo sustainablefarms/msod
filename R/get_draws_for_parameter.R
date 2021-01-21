@@ -43,9 +43,9 @@ get_lv_b <- function(fit, usesummary = NULL){
 
 picksummary <- function(arr, usesummary = NULL){
   if (is.null(usesummary)){return(arr)}
-  if (is.numeric(type) && length(type) == 1){
-    chainidx <- floor(type / (fit$sample + 1 )) + 1
-    sampleinchain <- type - fit$sample * (chainidx - 1)
+  if (is.numeric(usesummary) && length(usesummary) == 1){
+    chainidx <- floor(usesummary / (fit$sample + 1 )) + 1
+    sampleinchain <- usesummary - fit$sample * (chainidx - 1)
     theta <- fit$mcmc[[chainidx]][sampleinchain, ]
     return(theta)
   } else {
