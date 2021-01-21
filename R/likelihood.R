@@ -31,7 +31,7 @@
 
 #' @examples
 #' # simulate data
-#' covars <- simulate_covar_data(nsites = 50, nvisitspersite = 2)
+#' covars <- artificial_covar_data(nsites = 50, nvisitspersite = 2)
 #' y <- simulate_iid_detections(3, nrow(covars$Xocc))
 #' 
 #' fittedmodel <- run.detectionoccupancy(
@@ -52,7 +52,7 @@
 #' 
 #' 
 #' 
-#' outofsample_covars <- simulate_covar_data(nsites = 10, nvisitspersite = 2)
+#' outofsample_covars <- artificial_covar_data(nsites = 10, nvisitspersite = 2)
 #' outofsample_y <- simulate_iid_detections(3, nrow(outofsample_covars$Xocc))
 #' outofsample_lppd <- lppd.newdata(fittedmodel,
 #'              Xocc = outofsample_covars$Xocc,
@@ -76,7 +76,11 @@
 #' lppd: the computed log pointwise predictive density (sum of the lpds). This is equation (5) in Gelman et al 2014
 #' @export
 lppd_newdata <- function(fit, Xocc, yXobs, ModelSite, chains = 1, ...){
-  likel.mat <- likelihood(fit, Xocc = Xocc, yXobs = yXobs, ModelSite = ModelSite, ...)
+  likel.mat <- apply_to_new_data(likelihood, fit, Xocc, 
+                    Xobs = yXobs[, !(colnames(yXobs) %in% fit$species), drop = FALSE],
+                    ModelSite = ModelSite,
+                    y = yXobs[, colnames(yXobs) %in% fit$species, drop = FALSE])
+  # likel.mat <- likelihood(fit, Xocc = Xocc, yXobs = yXobs, ModelSite = ModelSite, ...)
   elpd_out <- elpd(likel.mat)
   return(elpd_out)
 }
