@@ -27,14 +27,14 @@ test_that("In sample data; fitted lv.v; different draws", {
   
   # Predicted number of species detected and in occupation
   numspec <- predsumspecies(artfit, UseFittedLV = TRUE)
-  meanvar <- cumsum(numspec["Vsum_det_median", ])/((1:ncol(numspec))^2)
+  meanvar <- cumsum(numspec["V", ])/((1:ncol(numspec))^2)
   sd_final <- sqrt(meanvar[ncol(numspec)])
   expect_equal(ncol(numspec), nsites)
   
   # Anticipate the Enumspec is wrong when using both draws, as simulated data in artfit is from the first draw
   NumSpecies_1st <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
   
-  meandiff_1st <- dplyr::cummean(NumSpecies_1st - numspec["Esum_det_median", ])
+  meandiff_1st <- dplyr::cummean(NumSpecies_1st - numspec["E", ])
   plt <- cbind(diff = meandiff_1st, var  = meanvar) %>% 
     dplyr::as_tibble(rownames = "CumSites") %>% 
     dplyr::mutate(CumSites = as.double(CumSites)) %>%
@@ -46,10 +46,10 @@ test_that("In sample data; fitted lv.v; different draws", {
   
   # Anticipate the Enumspec is correct when using only first draw (chain), as simulated data in artfit is from the first draw
   Enumspec_1stonly <- predsumspecies(artfit, chain = 1, UseFittedLV = TRUE)
-  meanvar_1stonly <- cumsum(Enumspec_1stonly["Vsum_det_median", ])/((1:ncol(Enumspec_1stonly))^2)
+  meanvar_1stonly <- cumsum(Enumspec_1stonly["V", ])/((1:ncol(Enumspec_1stonly))^2)
   sd_final_1st <- sqrt(meanvar[ncol(Enumspec_1stonly)])
   
-  meandiff_1st <- dplyr::cummean(NumSpecies_1st - Enumspec_1stonly["Esum_det_median", ])
+  meandiff_1st <- dplyr::cummean(NumSpecies_1st - Enumspec_1stonly["E", ])
   plt <- cbind(diff = meandiff_1st, var  = meanvar) %>% 
     dplyr::as_tibble(rownames = "CumSites") %>% 
     dplyr::mutate(CumSites = as.double(CumSites)) %>%
@@ -64,9 +64,9 @@ test_that("In sample data; fitted lv.v; different draws", {
   y_2nd <- simulate_detections(artfit, esttype = 2)
   NumSpecies_2nd <- detectednumspec(y = y_2nd, ModelSite = artfit$data$ModelSite)
   Enumspec_2ndonly <- predsumspecies(artfit, chain = 2, UseFittedLV = TRUE)
-  meanvar_2ndonly <- cumsum(Enumspec_2ndonly["Vsum_det_median", ])/((1:ncol(Enumspec_2ndonly))^2)
+  meanvar_2ndonly <- cumsum(Enumspec_2ndonly["V", ])/((1:ncol(Enumspec_2ndonly))^2)
   sd_final_2nd <- sqrt(meanvar[ncol(Enumspec_2ndonly)])
-  meandiff_2nd <- dplyr::cummean(NumSpecies_2nd - Enumspec_2ndonly["Esum_det_median", ])
+  meandiff_2nd <- dplyr::cummean(NumSpecies_2nd - Enumspec_2ndonly["E", ])
   plt <- cbind(diff = meandiff_2nd, var  = meanvar) %>% 
     dplyr::as_tibble(rownames = "CumSites") %>% 
     dplyr::mutate(CumSites = as.double(CumSites)) %>%
@@ -84,8 +84,8 @@ test_that("In sample data; fitted lv.v; different draws", {
   drawselect <- as.logical(rbinom(1000, size = 1, prob = 0.5))
   NumSpecies_interleaved[drawselect] <- NumSpecies_2nd[drawselect]
   
-  meandiff <- dplyr::cummean(NumSpecies_interleaved - numspec["Esum_det_margpost", ])
-  meanvar <- cumsum(numspec["Vsum_det_margpost", ])/((1:ncol(numspec))^2)
+  meandiff <- dplyr::cummean(NumSpecies_interleaved - numspec["E", ])
+  meanvar <- cumsum(numspec["V", ])/((1:ncol(numspec))^2)
   plt <- cbind(diff = meandiff, var = meanvar) %>% 
     dplyr::as_tibble(rownames = "CumSites") %>% 
     dplyr::mutate(CumSites = as.double(CumSites)) %>%
@@ -98,14 +98,9 @@ test_that("In sample data; fitted lv.v; different draws", {
   expect_lt(abs(meandiff[ncol(numspec)]), 3 * sd_final)
   
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
-  ininterval_marg <- (NumSpecies_interleaved > numspec["Esum_det_margpost", ] - 2 * sqrt(numspec["Vsum_det_margpost", ])) & 
-    (NumSpecies_interleaved < numspec["Esum_det_margpost", ] + 2 * sqrt(numspec["Vsum_det_margpost", ]))
+  ininterval_marg <- (NumSpecies_interleaved > numspec["E", ] - 2 * sqrt(numspec["V", ])) & 
+    (NumSpecies_interleaved < numspec["E", ] + 2 * sqrt(numspec["V", ]))
   expect_equal(mean(ininterval_marg), 0.95, tol = 0.05)
-  
-  # and that within-model median parameters *do not*
-  ininterval_median <- (NumSpecies_interleaved > numspec["Esum_det_median", ] - 2 * sqrt(numspec["Vsum_det_median", ])) & 
-    (NumSpecies_interleaved < numspec["Esum_det_median", ] + 2 * sqrt(numspec["Vsum_det_median", ]))
-  expect_lt(mean(ininterval_median), 0.90)
 })
 
 test_that("In sample data; fitted lv.v", {
@@ -174,14 +169,13 @@ test_that("In sample data; marginal on lv.v", {
                                )
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
-  numspec <- predsumspecies(artfit, UseFittedLV = FALSE, nLVsim = 1000, type = "median")
+  numspec <- predsumspecies(artfit, UseFittedLV = FALSE, nLVsim = 1000, type = "marginal")
   expect_equal(ncol(numspec), nsites)
   
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
   
-  # the median should be perfectly correct except that it ignores the fitted lv.v aren't used
-  meandiff <- dplyr::cummean(NumSpecies - numspec["Esum_det_median", ])
-  meanvar <- cumsum(numspec["Vsum_det_median", ])/((1:ncol(numspec))^2)
+  meandiff <- dplyr::cummean(NumSpecies - numspec["E", ])
+  meanvar <- cumsum(numspec["V", ])/((1:ncol(numspec))^2)
   plt <- cbind(diff = meandiff, var  = meanvar) %>% 
     dplyr::as_tibble(rownames = "CumSites") %>% 
     dplyr::mutate(CumSites = as.double(CumSites)) %>%
@@ -197,15 +191,15 @@ test_that("In sample data; marginal on lv.v", {
   # expect that cover by posterior approximate interval is about 
   # right as lv.v simulate from are not extreme for a Gaussian
   # and the calculations marginalise of the lv.v distribution
-  ininterval <- (NumSpecies > numspec["Esum_det_margpost", ] - 2 * sqrt(numspec["Vsum_det_margpost", ])) & 
-    (NumSpecies < numspec["Esum_det_margpost", ] + 2 * sqrt(numspec["Vsum_det_margpost", ]))
+  ininterval <- (NumSpecies > numspec["E", ] - 2 * sqrt(numspec["V", ])) & 
+    (NumSpecies < numspec["E", ] + 2 * sqrt(numspec["V", ]))
   expect_gt(mean(ininterval), 0.95)
   
   ######################################### Now try using marginalised lv.v simulations #####################################
   NumSpecies <- detectednumspec(y = simulate_detections_lv.v(artfit, esttype = 1), ModelSite = artfit$data$ModelSite)
   
-  meandiff <- dplyr::cummean(NumSpecies - numspec["Esum_det_median", ])
-  meanvar <- cumsum(numspec["Vsum_det_median", ])/((1:ncol(numspec))^2)
+  meandiff <- dplyr::cummean(NumSpecies - numspec["E", ])
+  meanvar <- cumsum(numspec["V", ])/((1:ncol(numspec))^2)
   plt <- cbind(diff = meandiff, var  = meanvar) %>% 
     dplyr::as_tibble(rownames = "CumSites") %>% 
     dplyr::mutate(CumSites = as.double(CumSites)) %>%
@@ -222,12 +216,12 @@ test_that("In sample data; marginal on lv.v", {
   expect_lt(abs(meandiff[length(meandiff)]), max(abs(meandiff[floor(length(meandiff) / 20) + 1:20 ])))
   
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
-  ininterval <- (NumSpecies > numspec["Esum_det_margpost", ] - 2 * sqrt(numspec["Vsum_det_margpost", ])) & 
-    (NumSpecies < numspec["Esum_det_margpost", ] + 2 * sqrt(numspec["Vsum_det_margpost", ]))
+  ininterval <- (NumSpecies > numspec["E", ] - 2 * sqrt(numspec["V", ])) & 
+    (NumSpecies < numspec["E", ] + 2 * sqrt(numspec["V", ]))
   expect_gt(mean(ininterval), 0.99)
   # I suspect this is not 0.95 because the Gaussian approximation may not work: the variance is enormous compared to the allowed range of number of species
   
-  plt <- cbind(NumSpecies = NumSpecies, pred = numspec["Esum_det_margpost", ], se = sqrt(numspec["Vsum_det_margpost", ])) %>% 
+  plt <- cbind(NumSpecies = NumSpecies, pred = numspec["E", ], se = sqrt(numspec["V", ])) %>% 
     dplyr::as_tibble() %>% 
     dplyr::mutate(resid = NumSpecies - pred) %>%
     dplyr::arrange(resid) %>%
@@ -248,8 +242,8 @@ test_that("In sample data; no lv.v", {
   
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
   
-  meandiff <- dplyr::cummean(NumSpecies - Enumspecdet["Esum_det", ])
-  meanvar <- cumsum(Enumspecdet["Vsum_det", ])/((1:ncol(Enumspecdet))^2)
+  meandiff <- dplyr::cummean(NumSpecies - Enumspecdet["E", ])
+  meanvar <- cumsum(Enumspecdet["V", ])/((1:ncol(Enumspecdet))^2)
   plt <- cbind(diff = meandiff, var  = meanvar) %>% 
     dplyr::as_tibble(rownames = "CumSites") %>% 
     dplyr::mutate(CumSites = as.double(CumSites)) %>%
@@ -266,8 +260,8 @@ test_that("In sample data; no lv.v", {
   expect_lt(abs(meandiff[length(meandiff)]), max(abs(meandiff[floor(length(meandiff) / 20) + 1:20 ])))
   
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
-  ininterval <- (NumSpecies > Enumspecdet["Esum_det", ] - 2 * sqrt(Enumspecdet["Vsum_det", ])) & 
-    (NumSpecies < Enumspecdet["Esum_det", ] + 2 * sqrt(Enumspecdet["Vsum_det", ]))
+  ininterval <- (NumSpecies > Enumspecdet["E", ] - 2 * sqrt(Enumspecdet["V", ])) & 
+    (NumSpecies < Enumspecdet["E", ] + 2 * sqrt(Enumspecdet["V", ]))
   expect_equal(mean(ininterval), 0.95, tol = 0.05)
 })
 
@@ -283,7 +277,13 @@ test_that("Holdout data; has lv.vs", {
   originalXobs <- cbind(ModelSite = artfit$data$ModelSite, originalXobs)
   outofsample_y <- simulate_detections_lv.v(artfit, esttype = 1)
   
-  Enumspec <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite", chains = NULL, nLVsim = 1000, type = "marginal", cl = NULL)
+  Enumspec <- apply_to_new_data(speciesrichness,
+                    artfit, originalXocc, originalXobs, ModelSite = "ModelSite",
+                    funargs = list(occORdetection = "detection",
+                                   usefittedlvv = FALSE,
+                                   nlvperdraw = 100))
+  
+  # Enumspec <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite", chains = NULL, nLVsim = 1000, type = "marginal", cl = NULL)
   
   expect_equal(ncol(Enumspec), nsites)
   
@@ -333,14 +333,16 @@ test_that("Holdout data; no lv.vs", {
   originalXobs <- cbind(ModelSite = artfit$data$ModelSite, originalXobs)
   outofsample_y <- simulate_detections(artfit, esttype = 1)
   
-  Enumspec <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite", chains = NULL, nLVsim = 1000, type = "marginal", cl = NULL)
-  
+  Enumspec <- apply_to_new_data(speciesrichness,
+                                artfit, originalXocc, originalXobs, ModelSite = "ModelSite",
+                                funargs = list(occORdetection = "detection"))
+
   expect_equal(ncol(Enumspec), nsites)
   
   NumSpecies <- detectednumspec(y = outofsample_y, ModelSite = originalXobs[, "ModelSite"])
   
-  meandiff <- dplyr::cummean(NumSpecies - Enumspec["Esum_det", ])
-  meanvar <- cumsum(Enumspec["Vsum_det", ])/((1:ncol(Enumspec))^2)
+  meandiff <- dplyr::cummean(NumSpecies - Enumspec["E", ])
+  meanvar <- cumsum(Enumspec["V", ])/((1:ncol(Enumspec))^2)
   plt <- cbind(diff = meandiff, var  = meanvar) %>% 
     dplyr::as_tibble(rownames = "CumSites") %>% 
     dplyr::mutate(CumSites = as.double(CumSites)) %>%
@@ -357,17 +359,16 @@ test_that("Holdout data; no lv.vs", {
   expect_lt(abs(meandiff[length(meandiff)]), max(abs(meandiff[floor(length(meandiff) / 100) + 1:20 ])))
   
   Enum_compare_sum <- Enum_compare(NumSpecies,
-                                   data.frame(pred = Enumspec["Esum_det", ]),
-                                   data.frame(pred = Enumspec["Vsum_det", ])
+                                   data.frame(pred = Enumspec["E", ]),
+                                   data.frame(pred = Enumspec["V", ])
   )
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
   expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
   
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
-  Enumspecdet <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite", chains = NULL, nLVsim = 1000, type = "marginal")
-  ininterval <- (NumSpecies > Enumspecdet["Esum_det", ] - 2 * sqrt(Enumspecdet["Vsum_det", ])) & 
-    (NumSpecies < Enumspecdet["Esum_det", ] + 2 * sqrt(Enumspecdet["Vsum_det", ]))
+  ininterval <- (NumSpecies > Enumspec["E", ] - 2 * sqrt(Enumspec["V", ])) & 
+    (NumSpecies < Enumspec["E", ] + 2 * sqrt(Enumspec["V", ]))
   expect_equal(mean(ininterval), 0.95, tol = 0.05)
 })
 
@@ -398,14 +399,14 @@ test_that("Subset biodiversity matches simulations", {
   
   # Predict number within subset, in sample, using lv.v
   numspec_insample_fitlv.v <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedLV = TRUE, type = "marginal")
-  inci_insample_fitlv.v <- (NumSpeciesObs > numspec_insample_fitlv.v["Esum_det", ] - 2 * sqrt(numspec_insample_fitlv.v["Vsum_det", ])) & 
-    (NumSpeciesObs < numspec_insample_fitlv.v["Esum_det", ] + 2 * sqrt(numspec_insample_fitlv.v["Vsum_det", ]))
+  inci_insample_fitlv.v <- (NumSpeciesObs > numspec_insample_fitlv.v["E", ] - 2 * sqrt(numspec_insample_fitlv.v["V", ])) & 
+    (NumSpeciesObs < numspec_insample_fitlv.v["E", ] + 2 * sqrt(numspec_insample_fitlv.v["V", ]))
   expect_equal(mean(inci_insample_fitlv.v), 0.95, tol = 0.05)
   
   # Predict number within subset, in sample, marginal lv.v
   numspec_insample_marglv.v <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedLV = FALSE, type = "marginal")
-  inci_insample_marglv.v <- (NumSpeciesObs > numspec_insample_marglv.v["Esum_det", ] - 2 * sqrt(numspec_insample_marglv.v["Vsum_det", ])) & 
-    (NumSpeciesObs < numspec_insample_marglv.v["Esum_det", ] + 2 * sqrt(numspec_insample_marglv.v["Vsum_det", ]))
+  inci_insample_marglv.v <- (NumSpeciesObs > numspec_insample_marglv.v["E", ] - 2 * sqrt(numspec_insample_marglv.v["V", ])) & 
+    (NumSpeciesObs < numspec_insample_marglv.v["E", ] + 2 * sqrt(numspec_insample_marglv.v["V", ]))
   expect_equal(mean(inci_insample_marglv.v), 0.95, tol = 0.05)
   
   # Predict number within subset, outside sample, marginal lv.v
@@ -419,8 +420,8 @@ test_that("Subset biodiversity matches simulations", {
                                      desiredspecies = speciessubset,
                                      chains = NULL, nLVsim = 1000, type = "marginal", cl = NULL)
   
-  inci_holdout_marglv.v <- (NumSpeciesObs > numspec_holdout_marglv.v["Esum_det", ] - 2 * sqrt(numspec_holdout_marglv.v["Vsum_det", ])) & 
-    (NumSpeciesObs < numspec_holdout_marglv.v["Esum_det", ] + 2 * sqrt(numspec_holdout_marglv.v["Vsum_det", ]))
+  inci_holdout_marglv.v <- (NumSpeciesObs > numspec_holdout_marglv.v["E", ] - 2 * sqrt(numspec_holdout_marglv.v["Vsum_det", ])) & 
+    (NumSpeciesObs < numspec_holdout_marglv.v["E", ] + 2 * sqrt(numspec_holdout_marglv.v["V", ]))
   expect_equal(mean(inci_holdout_marglv.v), 0.95, tol = 0.05)
 })
 
@@ -452,8 +453,8 @@ test_that("Subset biodiversity to single species matches simulations", {
   # Predict number within subset, in sample, using lv.v
   numspec_insample_fitlv.v <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedLV = TRUE, type = "marginal")
   Enum_compare_sum <- Enum_compare(NumSpeciesObs,
-                                   data.frame(pred = numspec_insample_fitlv.v["Esum_det", ]),
-                                   data.frame(pred = numspec_insample_fitlv.v["Vsum_det", ])
+                                   data.frame(pred = numspec_insample_fitlv.v["E", ]),
+                                   data.frame(pred = numspec_insample_fitlv.v["V", ])
   )
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
@@ -462,8 +463,8 @@ test_that("Subset biodiversity to single species matches simulations", {
   # Predict number within subset, in sample, marginal lv.v
   numspec_insample_marglv.v <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedLV = FALSE, type = "marginal")
   Enum_compare_sum <- Enum_compare(NumSpeciesObs,
-                                   data.frame(pred = numspec_insample_marglv.v["Esum_det", ]),
-                                   data.frame(pred = numspec_insample_marglv.v["Vsum_det", ])
+                                   data.frame(pred = numspec_insample_marglv.v["E", ]),
+                                   data.frame(pred = numspec_insample_marglv.v["V", ])
   )
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
@@ -481,8 +482,8 @@ test_that("Subset biodiversity to single species matches simulations", {
                                                    desiredspecies = speciessubset,
                                                    chains = NULL, nLVsim = 1000, type = "marginal", cl = NULL)
   Enum_compare_sum <- Enum_compare(NumSpeciesObs,
-                                   data.frame(pred = numspec_holdout_marglv.v["Esum_det", ]),
-                                   data.frame(pred = numspec_holdout_marglv.v["Vsum_det", ])
+                                   data.frame(pred = numspec_holdout_marglv.v["E", ]),
+                                   data.frame(pred = numspec_holdout_marglv.v["V", ])
   )
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
   expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
@@ -502,10 +503,10 @@ test_that("Endetect_modelsite matches predsumspecies", {
                   #marginal works here because artfit has only one draw
                   return(Edet)}
                   )
-  Edet2_t <- t(do.call(rbind, lapply(Edet2, function(x) x["Esum_det", , drop = FALSE])))
+  Edet2_t <- t(do.call(rbind, lapply(Edet2, function(x) x["E", , drop = FALSE])))
   expect_equivalent(Edet1[[1]], Edet2_t)
   
-  Edet2_V_t <- t(do.call(rbind, lapply(Edet2, function(x) x["Vsum_det", , drop = FALSE])))
+  Edet2_V_t <- t(do.call(rbind, lapply(Edet2, function(x) x["V", , drop = FALSE])))
   expect_equivalent(Edet1[[2]], Edet2_V_t)
   
   # marginal to lv.v
@@ -515,10 +516,10 @@ test_that("Endetect_modelsite matches predsumspecies", {
     #marginal works here because artfit has only one draw
     return(Edet)}
   )
-  Edet2_t <- t(do.call(rbind, lapply(Edet2, function(x) x["Esum_det", , drop = FALSE])))
+  Edet2_t <- t(do.call(rbind, lapply(Edet2, function(x) x["E", , drop = FALSE])))
   expect_equivalent(Edet1[[1]], Edet2_t, tol = 1E-2)
   
-  Edet2_V_t <- t(do.call(rbind, lapply(Edet2, function(x) x["Vsum_det", , drop = FALSE])))
+  Edet2_V_t <- t(do.call(rbind, lapply(Edet2, function(x) x["V", , drop = FALSE])))
   expect_equivalent(Edet1[[2]], Edet2_V_t, tol = 1E-2)
 })
 
@@ -529,16 +530,16 @@ test_that("No lv.v and identical sites", {
                                ObsFmla = "~ 1",
                                OccFmla = "~ 1",
                                modeltype = "jsodm")
-  EVsum <- predsumspecies(artfit, UseFittedLV = FALSE, type = "marginal")
+  EVsum <- speciesrichness(artfit, occORdetection = "detection")
   
   # check that many other sites have the same expected number of species
-  expect_equivalent(EVsum["Esum_det", ], rep(EVsum["Esum_det", 1], ncol(EVsum)))
+  expect_equivalent(EVsum["E", ], rep(EVsum["E", 1], ncol(EVsum)))
   
   # treat each model site as a repeat simulation of a ModelSite (cos all the parameters are nearly identical)
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
   
-  meandiff <- dplyr::cummean(NumSpecies - EVsum["Esum_det", ])
-  meanvar <- cumsum(EVsum["Vsum_det", ])/((1:ncol(EVsum))^2)
+  meandiff <- dplyr::cummean(NumSpecies - EVsum["E", ])
+  meanvar <- cumsum(EVsum["V", ])/((1:ncol(EVsum))^2)
   plt <- cbind(diff = meandiff, var  = meanvar) %>% 
     dplyr::as_tibble(rownames = "CumSites") %>% 
     dplyr::mutate(CumSites = as.double(CumSites)) %>%
@@ -555,12 +556,12 @@ test_that("No lv.v and identical sites", {
   expect_lt(abs(meandiff[length(meandiff)]), max(abs(meandiff[floor(length(meandiff) / 20) + 1:20 ])))
 
   # Expect sd to be close to theoretical sd. Hopefully within 10%
-  expect_equivalent(sd(NumSpecies), sqrt(EVsum["Vsum_det", 1]), tol = 0.1 * sqrt(EVsum["Vsum_det", 1]))
+  expect_equivalent(sd(NumSpecies), sqrt(EVsum["V", 1]), tol = 0.1 * sqrt(EVsum["V", 1]))
   
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
   Enumspecdet <- predsumspecies(artfit, type = "marginal", UseFittedLV = FALSE)
-  ininterval <- (NumSpecies > Enumspecdet["Esum_det", ] - 2 * sqrt(Enumspecdet["Vsum_det", ])) & 
-    (NumSpecies < Enumspecdet["Esum_det", ] + 2 * sqrt(Enumspecdet["Vsum_det", ]))
+  ininterval <- (NumSpecies > Enumspecdet["E", ] - 2 * sqrt(Enumspecdet["V", ])) & 
+    (NumSpecies < Enumspecdet["E", ] + 2 * sqrt(Enumspecdet["V", ]))
   expect_equal(mean(ininterval), 0.95, tol = 0.05)
 })
 
@@ -575,8 +576,8 @@ test_that("Expected occupied number for in sample data; fitted lv.v", {
   
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
   
-  meandiff <- dplyr::cummean(NumSpecies - Enumspecdet["Esum_det", ])
-  meanvar <- cumsum(Enumspecdet["Vsum_det", ])/((1:ncol(Enumspecdet))^2)
+  meandiff <- dplyr::cummean(NumSpecies - Enumspecdet["E", ])
+  meanvar <- cumsum(Enumspecdet["V", ])/((1:ncol(Enumspecdet))^2)
   plt <- cbind(diff = meandiff, var  = meanvar) %>% 
     dplyr::as_tibble(rownames = "CumSites") %>% 
     dplyr::mutate(CumSites = as.double(CumSites)) %>%

@@ -5,7 +5,7 @@ library(testthat)
 context("Tests of Running JAGS Preparation")
 
 test_that("Covariate scaling scales non-constant covariates correctly", {
-  covars <- simulate_covar_data(100, 2)
+  covars <- artificial_covar_data(100, 2)
   
   OccFmla = "~ UpSite + Sine1 + Sine2"
   ObsFmla = "~ UpVisit + Step"

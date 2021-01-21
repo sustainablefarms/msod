@@ -2,7 +2,7 @@
 context("Prep design matrix functions")
 
 test_that("Prep design matrix version 2 works", {
-  indata <- simulate_covar_data(10, 3)[[1]]
+  indata <- artificial_covar_data(10, 3)[[1]]
   fmla <- "~ 1 + UpSite + Sine1 + UpSite : Sine1 + I(Sine1^2)"
   desmatproc <- prep.designmatprocess_v2(indata, fmla)
   desmat <- apply.designmatprocess_v2(desmatproc, indata)
@@ -21,7 +21,7 @@ test_that("Prep design matrix version 2 works", {
 })
 
 test_that("Prep design matrix version 2 works for logs", {
-  indata <- simulate_covar_data(10, 3)[[1]]
+  indata <- artificial_covar_data(10, 3)[[1]]
   fmla <- "~ 1 + UpSite + log(UpSite)"
   
   desmatproc <- prep.designmatprocess(indata, fmla, version = 2)
@@ -32,7 +32,7 @@ test_that("Prep design matrix version 2 works for logs", {
 })
 
 test_that("Prep design matrix version 2 works for squares", {
-  indata <- simulate_covar_data(10, 3)[[1]]
+  indata <- artificial_covar_data(10, 3)[[1]]
   fmla <- "~ 1 + UpSite + I(UpSite^2)"
   
   desmatproc <- prep.designmatprocess(indata, fmla, version = 2)
@@ -44,7 +44,7 @@ test_that("Prep design matrix version 2 works for squares", {
 })
 
 test_that("Prep design matrix version 2 doesn't standardise squares with interactions", {
-  indata <- simulate_covar_data(10, 3)[[1]]
+  indata <- artificial_covar_data(10, 3)[[1]]
   fmla <- "~ 1 + I(UpSite^2) * Sine1"
   
   desmatproc <- prep.designmatprocess(indata, fmla, version = 2)
@@ -57,7 +57,7 @@ test_that("Prep design matrix version 2 doesn't standardise squares with interac
 })
 
 test_that("Prep design matrix version 2 works for spaces in quotes", {
-  indata <- simulate_covar_data(10, 3)[[1]]
+  indata <- artificial_covar_data(10, 3)[[1]]
   names(indata)[3] <- "Sine 1"
   fmla <- "~ 1 + `Sine 1`"
   
@@ -69,7 +69,7 @@ test_that("Prep design matrix version 2 works for spaces in quotes", {
 })
 
 test_that("Prep design matrix version 2 works for covariates with I in their name", {
-  indata <- simulate_covar_data(10, 3)[[1]]
+  indata <- artificial_covar_data(10, 3)[[1]]
   names(indata)[3] <- "SIne1"
   fmla <- "~ 1 + SIne1 + Sine2 + I(Sine2^2)"
   
@@ -82,7 +82,7 @@ test_that("Prep design matrix version 2 works for covariates with I in their nam
 })
 
 test_that("Prep design matrix version 2 works for intercept only models", {
-  indata <- simulate_covar_data(10, 3)[[1]]
+  indata <- artificial_covar_data(10, 3)[[1]]
   fmla <- "~ 1"
   
   desmatproc <- prep.designmatprocess(indata, fmla, version = 2)
@@ -95,7 +95,7 @@ test_that("Prep design matrix version 2 works for intercept only models", {
 
 
 test_that("Prep design matrix version 1 works", {
-  indata <- simulate_covar_data(10, 3)[[1]]
+  indata <- artificial_covar_data(10, 3)[[1]]
   fmla <- "~ 1 + UpSite + Sine1 + UpSite : Sine1 + I(Sine1^2) "
   suppressWarnings(desmatproc <- prep.designmatprocess_v1(indata, fmla))
   desmat <- apply.designmatprocess_v1(desmatproc, indata)
@@ -110,7 +110,7 @@ test_that("Prep design matrix version 1 works", {
 })
 
 test_that("Selection of correct design matrix processing", {
-  indata <- simulate_covar_data(10, 3)[[1]]
+  indata <- artificial_covar_data(10, 3)[[1]]
   fmla <- "~ 1 + UpSite + Sine1 + Sine2 + UpSite*Sine2 + I(Sine1^2) + log(UpSite)"
   
   desmatproc <- prep.designmatprocess(indata, fmla, version = 2)
@@ -129,7 +129,7 @@ test_that("Selection of correct design matrix processing", {
 })
 
 test_that("Undoing scaling and centering works", {
-  indata <- simulate_covar_data(10, 3)[[1]]
+  indata <- artificial_covar_data(10, 3)[[1]]
   fmla <- "~ 1 + UpSite + Sine1 + Sine2 + UpSite*Sine2 + I(Sine1^2) + log(UpSite)"
   
   suppressWarnings(desmatproc <- prep.designmatprocess(indata, fmla, version = 1))

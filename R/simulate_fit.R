@@ -16,21 +16,28 @@
 #' @param UseFittedLV Logical. If TRUE, the simulation uses fitted latent variable values.
 #'  If FALSE, latent variable values will be simulated for each ModelSite
 #' @export
-simulate_detections <- function(fit, esttype = "median"){
+simulate_detections <- function(fit, esttype = "median", seed = NULL){
   fit$data <- as_list_format(fit$data)
-  if (inherits(fit, "jsodm_lv")) {poccupy <- poccupy_species(fit, type = esttype, conditionalLV = TRUE)
-  } else if (inherits(fit, "jsodm")) {poccupy <- poccupy_species(fit, type = esttype, conditionalLV = FALSE)}
-  pdetectcond <- pdetect_condoccupied(fit, type = esttype)
+  pocc <- poccupy(fit, usethetasummary = esttype)
+  if (inherits(fit, "jsodm_lv")) {
+    pocc <- poccupy(fit, usethetasummary = esttype, lvvfromposterior = TRUE)
+  } else if (inherits(fit, "jsodm")) {
+    pocc <- poccupy(fit, usethetasummary = esttype)}
+  pdet_occ <- pdet_occ(fit, usethetasummary = esttype)
   
-  occupied <- apply(poccupy, c(1, 2), function(x) rbinom(1, 1, x))
+  # simulate occupied
+  set.seed(seed)
+  occupied <- rmanybern(pocc)
+  # dim(occupied) <- dim(pocc)
   # array(NA, dim = c(replicates, dim(poccupy)[[1]], dim(poccupy)[[2]]),
   #       dimnames = list(replicates = paste0("replicate", 1:replicates),
   #                       modelsite = 1:nrow(poccupy),
   #                       species = colnames(poccupy)))
   
-  pdetect <- pdetectcond * occupied[fit$data$ModelSite, ]
-  detected <- apply(pdetect, c(1, 2), function(x) rbinom(1, 1, x))
+  pdetect <- pdet_occ * occupied[fit$data$ModelSite, , , drop = FALSE]
   
+  if (!is.null(seed)){set.seed(seed + 10)}
+  detected <- rmanybern(pdetect)
   return(detected)
 }
 
@@ -48,9 +55,10 @@ simulate_lv.v <- function(fit, replaceinsitu = FALSE){
 
 #' @describeIn simulate_detections Simulate LV values and use these for simulating detections (with [simulate_detections()]). For each site the simulated LV values are copied across all draws.
 #' @export
-simulate_detections_lv.v <- function(fit, esttype = "median"){
+simulate_detections_lv.v <- function(fit, esttype = "median", seed = NULL){
+  if (!is.null(seed)){set.seed(seed + 20)}
   fit <- simulate_lv.v(fit, replaceinsitu = TRUE)
-  detected <- simulate_detections(fit, esttype = esttype)
+  detected <- simulate_detections(fit, esttype = esttype, seed = seed)
   return(detected)
 }
 
@@ -71,7 +79,8 @@ simulate_detections_lv.v <- function(fit, esttype = "median"){
 #'  May be a single number or an array with rows corresponding to species and columns to covariates.
 #' @param lv.b.min, lv.b.max Same as occ.b.min and occ.b.max for the latent variable loadings.
 #' @examples 
-#' artfit <- artificial_runjags(nspecies = 2, nsites = 10, nvisitspersite = 4, modeltype = "jsodm_lv", nlv = 2)
+#' artfit <- artificial_runjags(nspecies = 2, nsites = 20, nvisitspersite = 4, 
+#' modeltype = "jsodm_lv", nlv = 2, seed = NULL)
 #' \# with high correlation between occupancy of species
 #' artfit <- artificial_runjags(nspecies = 2, nsites = 10, nvisitspersite = 4,
 #'                               OccFmla = "~ 1",
@@ -91,13 +100,14 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2,
                                lv.b.min = -0.5,
                                lv.b.max = 0.5,
                                modeltype = "jsodm_lv",
+                               seed = NULL,
                                ...
                                ){
   stopifnot(modeltype %in% availmodeltypes)
   
   # first step is to populate predictor values (including LV) and parameter values
   species <- make.names(rep(LETTERS, ceiling(nspecies / length(LETTERS))), unique = TRUE)[1:nspecies]
-  covardfs <- simulate_covar_data(nsites, nvisitspersite)
+  covardfs <- artificial_covar_data(nsites, nvisitspersite)
   XoccProcess <- prep.designmatprocess(covardfs$Xocc, OccFmla)
   XobsProcess <- prep.designmatprocess(covardfs$Xobs, ObsFmla)
 
@@ -120,7 +130,9 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2,
   fit$sample <- 1
 
   # set parameters
+  if (!is.null(seed)){set.seed(seed)}
   occ.b <- matrix(runif( fit$data$nspecies * fit$data$noccvar, min = occ.b.min, max = occ.b.max), nrow = fit$data$nspecies, ncol = fit$data$noccvar, byrow = FALSE)
+  if (!is.null(seed)){set.seed(seed + 1)}
   det.b <- matrix(runif(  fit$data$nspecies * fit$data$nobsvar, min = det.b.min, max = det.b.max), nrow = fit$data$nspecies, ncol = fit$data$nobsvar, byrow = FALSE)
   theta <- c(matrix2bugsvar(occ.b, name = "occ.b"),
              matrix2bugsvar(det.b, name = "det.b"))
@@ -135,6 +147,7 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2,
                       ((sites %/% 5) * 5 == sites ) | (sites %/% 3) * 3 == sites))
     if (nlv == 0) {LV <- NULL}
     else {LV <- LV[, 1:nlv, drop = FALSE]}
+  if (!is.null(seed)){set.seed(seed + 2)}
     lv.b <- matrix(runif(  fit$data$nspecies * fit$data$nlv, min = lv.b.min, max = lv.b.max), nrow = fit$data$nspecies, ncol = fit$data$nlv) #0.5 constraint makes sure rowSum(lv.b^2) < 1
     theta <- c(theta, 
                matrix2bugsvar(lv.b, name = "lv.b"),
@@ -146,7 +159,7 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2,
   class(fit) <- c(modeltype, class(fit))
 
   # simulate data using the LV values given above
-  fit$data$y <- simulate_detections(fit, esttype = 1)
+  fit$data$y <- simulate_detections(fit, esttype = 1, seed = seed)
   colnames(fit$data$y) <- species
   
   ellipsis::check_dots_used()
@@ -161,7 +174,7 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2,
 #' Detection dovariate names are UpVisit and Step.
 #' @return A list with elements Xocc, and Xobs for the occupancy and detection covariates respectively
 #' @export
-simulate_covar_data <- function(nsites, nvisitspersite){
+artificial_covar_data <- function(nsites, nvisitspersite){
   sites <- c(1:nsites)
   XoccIn <- data.frame(ModelSite = sites,
                      UpSite = sites,

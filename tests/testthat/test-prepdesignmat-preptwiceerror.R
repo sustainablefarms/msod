@@ -10,7 +10,7 @@ context("Prep design matrix functions")
 # Error was due to stuffing up resetting global option for na.action
 
 test_that("Error does not occur using prep design matrix process twice", {
-  covardf <- simulate_covar_data(20, 2)
+  covardf <- artificial_covar_data(20, 2)
   OccFmla = "~ 1"
   XoccProcess <- prep.designmatprocess(covardf$Xocc, OccFmla)
   Xocc <- apply.designmatprocess(XoccProcess, covardf$Xocc)
@@ -29,7 +29,7 @@ test_that("Error does not occur via artificial_runjags", {
 })
 
 test_that("Error does not occur using prep design matrix process twice", {
-  covardf <- simulate_covar_data(20, 2)
+  covardf <- artificial_covar_data(20, 2)
   OccFmla = "~ 1"
   XoccProcess <- prep.designmatprocess(covardf$Xocc, OccFmla)
   expect_silent(XoccProcess <- prep.designmatprocess(covardf$Xocc, OccFmla))

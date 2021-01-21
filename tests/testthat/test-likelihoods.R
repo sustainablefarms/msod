@@ -9,7 +9,7 @@ pbopt <- pbapply::pboptions(type = "none")
 context("Tests of Likelihood Computations")
 
 test_that("Likelihood computations run in sample data with lv.v", {
-  covars <- simulate_covar_data(nsites = 50, nvisitspersite = 2)
+  covars <- artificial_covar_data(nsites = 50, nvisitspersite = 2)
   y <- simulate_iid_detections(3, nrow(covars$Xocc))
   
   suppressWarnings(fittedmodel <- run.detectionoccupancy(
@@ -29,7 +29,7 @@ test_that("Likelihood computations run in sample data with lv.v", {
 })
 
 test_that("Likelihood computations run in sample data with out lv.v", {
-  covars <- simulate_covar_data(nsites = 20, nvisitspersite = 2)
+  covars <- artificial_covar_data(nsites = 20, nvisitspersite = 2)
   y <- simulate_iid_detections(3, nrow(covars$Xocc))
   
   suppressWarnings(fittedmodel <- run.detectionoccupancy(
