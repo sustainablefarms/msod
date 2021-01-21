@@ -54,7 +54,8 @@ prednumsuccess <- function(probarr){
   Edrawvariance <- apply(Vrv, MARGIN = 1, sum) / dim(probarr)[[3]]
   # Vdrawexpectation <- apply(apply(probarr, MARGIN = c(1, 3), sum)^2,
   #                           MARGIN = 1, mean) - En_site^2  #warning this is a biased estimate of variance: better would be to use the var function below
-  Vdrawexpectation <- Rfast::rowVars(arr3_sumalong2(probarr))
+  if (dim(probarr)[[3]] == 1){Vdrawexpectation <- 0 * Edrawvariance} #only one draw so variance between draws is 0
+  else {Vdrawexpectation <- Rfast::rowVars(arr3_sumalong2(probarr))}
   Vn_site <- Edrawvariance + Vdrawexpectation
   Evals <- rbind(E = En_site,
                  V = Vn_site)
