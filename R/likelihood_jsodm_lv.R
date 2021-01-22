@@ -51,7 +51,7 @@ likelihood.jsodm_lv <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL
         simseed
       )
       return(lkl)
-    }, FUN.VALUE = 1:nrow(Xocc) * 1.0001)
+    })
   }  
   
   likel.mat <- do.call(rbind, likel.l) # each row is a draw, each column is a modelsite (which are independent data points)
