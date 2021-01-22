@@ -8,7 +8,8 @@
 #' @return Returns a matrix. Each row corresponds to a draw of the parameters from the posterior. Each column to a ModelSite.
 #' The value in each cell is the probability density, given the parameters from the draw, evaluated at the observations for the model site.
 #' @export
-likelihood.jsodm_lv <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL, numlvsims = 1000, cl = NULL, simseed = NULL){
+likelihood.jsodm_lv <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL,
+                                numlvsims = 1000, cl = NULL, simseed = NULL){
   stopifnot(class(fit)[[1]] %in% c("jsodm_lv"))
 
   if (is.null(Xocc)){ #Extract the Xocc, yXobs etc from the fitted object, no preprocessing required
