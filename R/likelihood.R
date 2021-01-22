@@ -76,6 +76,7 @@
 #' lppd: the computed log pointwise predictive density (sum of the lpds). This is equation (5) in Gelman et al 2014
 #' @export
 lppd_newdata <- function(fit, Xocc, yXobs, ModelSite, chains = 1, ...){
+  warning("Function will become obsolete soon, apply_to_new_data is easier to use")
   likel.mat <- apply_to_new_data(likelihood, fit, Xocc, 
                     Xobs = yXobs[, !(colnames(yXobs) %in% fit$species), drop = FALSE],
                     ModelSite = ModelSite,
