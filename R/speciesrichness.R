@@ -85,6 +85,10 @@ detspeciesrichness_probarr <- function(pocc, pdet_occ, ModelSite){
                                return(NoDetectProb)
                              },
                              FUN.VALUE = matrix(1.1, nrow = ncol(pdet_occ), ncol = dim(pdet_occ)[[3]]))
+  if (is.null(dim(NoDetections_occ))) {
+    dim(NoDetections_occ) <- dim(pocc)[c(2, 3, 1)]
+    dimnames(NoDetections_occ) <- dimnames(pocc)[c(2, 3, 1)]
+  }
   #NoDetections_occ array of species x draw x ModelSite
   NoDetections_occ <- aperm(NoDetections_occ, perm = c(3, 1, 2))
 
