@@ -40,7 +40,7 @@ modelqualstats <- function(fit, holdoutXocc, holdoutyXobs, ModelSite, cl, nlvper
     prednumbers_holdout <- 
       apply_to_new_data(speciesrichness, fit, 
                         holdoutXocc, holdoutyXobs[, !(colnames(holdoutyXobs) %in% fit$species), drop = FALSE],
-                        ModelSite = "ModelSite",
+                        ModelSite = ModelSite,
                         funargs = list(occORdetection = "detection",
                                        usefittedlvv = FALSE,
                                        nlvperdraw = nlvperdraw))
@@ -53,7 +53,7 @@ modelqualstats <- function(fit, holdoutXocc, holdoutyXobs, ModelSite, cl, nlvper
     prednumbers_holdout <- 
       apply_to_new_data(speciesrichness,fit, 
                         holdoutXocc, holdoutyXobs[, !(colnames(holdoutyXobs) %in% fit$species), drop = FALSE],
-                        ModelSite = "ModelSite",
+                        ModelSite = ModelSite,
                         funargs = list(occORdetection = "detection"))
     print("Computed: Predicted Number of Species for Holdout Data")
     prednumbers_insample <- speciesrichness(fit, occORdetection = "detection")

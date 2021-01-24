@@ -15,7 +15,11 @@ Suggests:
     Rfast,
     parallel,
     runjags,
-    ggplot2
+    ggplot2,
+    tensor,
+    plyr,
+    Rfast,
+    loo
 Encoding: UTF-8
 ByteCompile: true
 Roxygen: list(markdown = TRUE)
