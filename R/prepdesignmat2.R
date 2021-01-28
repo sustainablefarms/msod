@@ -3,7 +3,7 @@
 # if model only has intercept then scale and center parameters have length 0
 # computes and stardises log(vars), but not anything else in I... (just standardises components if possible)
 # Squares in interactions (e.g. I(UpSite^2) : Sine1) are not standardised, but the components are
-prep.designmatprocess_v2 <- function(indata, fmla, keep = NULL, drop = NULL){
+prep.designmatprocess_v2 <- function(indata, fmla, keep = NULL, drop = NULL, preserve = NULL){
   fmlaNdata <- computelogsnow(fmla, indata)
   
   # get wanted columns (which be default aren't precomputed)
@@ -26,7 +26,7 @@ prep.designmatprocess_v2 <- function(indata, fmla, keep = NULL, drop = NULL){
   rm(mf)
   
   # center and scale before computing interactions
-  c_n_s <- get_center_n_scale(wanteddata)
+  c_n_s <- get_center_n_scale(wanteddata, preserve = preserve)
   out <- c(
     fmla = fmla,
     c_n_s,

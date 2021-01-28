@@ -28,14 +28,15 @@
 fitjsodm              <- function(Xocc, yXobs, species, ModelSite, modeltype,  #all these arguments are mandatory
                                   ..., #ellipsis for arguments specific to each model type
                                   OccFmla = "~ 1", ObsFmla = "~ 1",
+                                  OccPreserve = NULL, ObsPreserve = NULL,
                                   initsfunction = get0(paste0("paraminits.", modeltype)),
                                   MCMCparams = list(n.chains = 1, adapt = 2000, burnin = 25000, sample = 1000, thin = 30),
                                   filename = NULL){
   stopifnot(modeltype %in% availmodeltypes)
   
   if (!is.null(filename)){checkwritable(filename)} # check that file can be written before continuing
-  XoccProcess <- prep.designmatprocess(Xocc, OccFmla)
-  XobsProcess <- prep.designmatprocess(yXobs, ObsFmla)
+  XoccProcess <- prep.designmatprocess(Xocc, OccFmla, preserve = OccPreserve)
+  XobsProcess <- prep.designmatprocess(yXobs, ObsFmla, preserve = ObsPreserve)
   
   #Specify the data
   data.list <- prepJAGSdata(modeltype,

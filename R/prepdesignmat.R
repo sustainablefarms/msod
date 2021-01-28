@@ -8,8 +8,8 @@
 prep.designmatprocess <- function(indata, fmla, version = 2, ...){
   out <- NULL
   out <- switch(version,
-                prep.designmatprocess_v1(indata, fmla),
-                prep.designmatprocess_v2(indata, fmla))
+                prep.designmatprocess_v1(indata, fmla, ...),
+                prep.designmatprocess_v2(indata, fmla, ...))
   stopifnot(!is.null(out))
   return(out)
 }
@@ -44,7 +44,7 @@ unstandardise.designmatprocess <- function(designmatprocess, indata){
 
 # Gets centres and scales for a matrix/data.frame. Columns that are constant are shifted to 1
 # const_tol is the tolerance on the (population) SD which determines whether a column is treated as constant.
-get_center_n_scale <- function(indata, const_tol = 1E-8){
+get_center_n_scale <- function(indata, const_tol = 1E-8, preserve = NULL){
   means <- colMeans(indata)
   sds <- ((nrow(indata) - 1) / nrow(indata)) * apply(indata, 2, sd)
   center <- means
@@ -52,6 +52,9 @@ get_center_n_scale <- function(indata, const_tol = 1E-8){
   isconstant <- (sds < const_tol)
   center[isconstant] <- means[isconstant] - 1 #centering of constant columns to 1
   scale[isconstant] <- 1 #no scaling of constant columns - they are already set to 1
+  stopifnot(length(setdiff(preserve, names(center))) == 0)
+  center[preserve] <- 0 #no centering of preserved columns
+  scale[preserve] <- 1 #no scaling of preserved columns
   return(list(
     center = center,
     scale = scale
