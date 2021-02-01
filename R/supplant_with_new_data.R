@@ -30,9 +30,9 @@ supplant_new_data <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL, y = NULL
 supplant_new_data.jsodm <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL, y = NULL){
   if (is.null(Xobs)){
     yXobs <- NULL
-  }
-  if (!is.null(y) && !is.null(Xobs)){
-    yXobs <- cbind(Xobs, y)
+  } else {
+    if (is.null(y)) {yXobs <- Xobs}
+    else {yXobs <- cbind(Xobs, y)}
   }
   sitedata <- prep_new_data(fit, Xocc, yXobs, ModelSite)
   fit$data <- sitedata
