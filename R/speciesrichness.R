@@ -166,25 +166,6 @@ speciesrichness.jsodm <- function(fit,
 }
 
 
-#nlvperdraw = 1 by default.
-speciesrichness_newdata.jsodm_lv <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL,
-                                    desiredspecies = fit$species,
-                                    nlvperdraw = 1){
-  fit <- supplant_new_data(fit, Xocc, Xobs, ModelSite = ModelSite)
-  occORdetection <- switch(
-    as.character(is.null(Xobs)),
-    `FALSE` = "occupancy",
-    `TRUE` = "detection"
-  )
-  specrich <- speciesrichness.jsodm_lv(fit, 
-                                       occORdetection = occORdetection,
-                                       desiredspecies = desiredspecies, 
-                                       nlvperdraw = nlvperdraw)
-  return(specrich)
-}
-
-
-
 #' @title The number of observed species in a matrix of observation recordings
 #' @param y A matrix of species *observations* with each row a visit and each column a species. Entries must be either 0 or 1.
 #' @param ModelSite The list of ModelSite indexes corresponding to each row in y
