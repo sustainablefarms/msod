@@ -22,8 +22,18 @@ prepJAGSdata <- function(modeltype, Xocc, yXobs, ModelSite, species, XoccProcess
 
 #' @describeIn prepJAGSdata Data preparation for the jsodm model.
 prepJAGSdata.jsodm <- function(Xocc, yXobs, ModelSite, species, XoccProcess, XobsProcess, ...){
+  # do the prep that doesn't involve detections, so can exit early if detection components not included
+  XoccDesign <- apply.designmatprocess(XoccProcess, Xocc)
+  nspecies = length(species) #number of species
+  nmodelsites <- nrow(XoccDesign)  #number of unique sites should also be max(occ_covariates$SiteID)
+  if (is.null(yXobs)){ #exit early if no Xobs included
+    return(list(nspecies=nspecies,
+                Xocc=XoccDesign,
+                noccvar=ncol(XoccDesign)))
+  }
+  
   # check data inputs
-  stopifnot(all(ModelSite %in% colnames(Xocc)))
+  stopifnot(all(ModelSite %in% colnames(Xocc))) # check data input
   stopifnot(all(ModelSite %in% colnames(yXobs)))
   stopifnot(anyDuplicated(Xocc[, ModelSite]) == 0) #model site uniquely specified
   if (all(species %in% colnames(yXobs))) {stopifnot(all(as.matrix(yXobs[, species]) %in% c(1, 0)))}
@@ -36,12 +46,8 @@ prepJAGSdata.jsodm <- function(Xocc, yXobs, ModelSite, species, XoccProcess, Xob
   stopifnot(is.integer(visitedModelSite))
   stopifnot(all(visitedModelSite <= nrow(Xocc)))
   
-  XoccDesign <- apply.designmatprocess(XoccProcess, Xocc)
   XobsDesign <- apply.designmatprocess(XobsProcess, yXobs)
   # rownames(XobsDesign) <- visitedModelSite
-  
-  nspecies = length(species) #number of species
-  nmodelsites <- nrow(XoccDesign)  #number of unique sites should also be max(occ_covariates$SiteID)
   if (all(species %in% colnames(yXobs))) { #if this is true the y is part of yXobs
     y <- as.matrix(yXobs[, species])
   } else { #if not then situation of prepping data of new ModelSites
@@ -79,9 +85,10 @@ prepJAGSdata.jsodm_lv_sepexp <- function(Xocc, yXobs, ModelSite, species, XoccPr
 }
 
 #' @describeIn prepJAGSdata A short function that applies the prepJAGSdata function to new data, given an object created by run.detectionoccupancy
-#' Xocc, yXobs, ModelSite must follow some rules as for run.detectionoccupancy, except yXobs may omit the species detections
+#' Xocc, yXobs, ModelSite must follow some rules as for run.detectionoccupancy.
+#' yXobs may omit the species detections, or yXobs and ModelSite may be ommitted completely if only want to be able to use the occupancy components of the model.
 #' @export
-prep_new_data <- function(fit, Xocc, yXobs, ModelSite, ...){
+prep_new_data <- function(fit, Xocc, yXobs = NULL, ModelSite = NULL, ...){
   data.list <- switch(class(fit)[[1]],
          "jsodm" = do.call(prepJAGSdata, 
                            list(class(fit)[[1]], Xocc, yXobs, ModelSite, species = fit$species, XoccProcess = fit$XoccProcess, XobsProcess =  fit$XobsProcess)),

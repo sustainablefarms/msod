@@ -29,14 +29,9 @@ supplant_new_data <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL, y = NULL
 #' @export
 supplant_new_data.jsodm <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL, y = NULL){
   if (is.null(Xobs)){
-    Xobs <- matrix(NA_real_, nrow = nrow(Xocc), ncol = 1)
-    ModelSite <- rep(NA_integer_, nrow(Xobs))
+    yXobs <- NULL
   }
-  if(is.null(y)){
-    y <- matrix(0, nrow = nrow(Xobs), ncol = length(fit$species))
-    colnames(y) <- fit$species
-    yXobs <- cbind(Xobs, y)
-  } else {
+  if (!is.null(y) && !is.null(Xobs)){
     yXobs <- cbind(Xobs, y)
   }
   sitedata <- prep_new_data(fit, Xocc, yXobs, ModelSite)
@@ -45,7 +40,7 @@ supplant_new_data.jsodm <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL, y 
 }
 
 #' @export
-supplant_new_data.jsodm_lv <- function(fit, Xocc, Xobs, ModelSite, y = NULL){
+supplant_new_data.jsodm_lv <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL, y = NULL){
   fit <- supplant_new_data.jsodm(fit, Xocc, Xobs, ModelSite, y = y)
   #remove fitted lvv as no longer valid to new sites
   bugsnames_lvv <- grepl("^lv.v", colnames(fit$mcmc[[1]]))
