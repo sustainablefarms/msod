@@ -283,8 +283,6 @@ test_that("Holdout data; has lv.vs", {
                                    usefittedlvv = FALSE,
                                    nlvperdraw = 100))
   
-  # Enumspec <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite", chains = NULL, nLVsim = 1000, type = "marginal", cl = NULL)
-  
   expect_equal(ncol(Enumspec), nsites)
   
   NumSpecies <- detectednumspec(y = outofsample_y, ModelSite = originalXobs[, "ModelSite"])
@@ -416,12 +414,17 @@ test_that("Subset biodiversity matches simulations", {
   originalXobs <- cbind(ModelSite = artfit$data$ModelSite, originalXobs)
   outofsample_y <- simulate_detections_lv.v(artfit, esttype = 1)
   
-  numspec_holdout_marglv.v <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite",
-                                     desiredspecies = speciessubset,
-                                     chains = NULL, nLVsim = 1000, type = "marginal", cl = NULL)
+  numspec_holdout_marglv.v <- 
+    apply_to_new_data(speciesrichness,artfit, 
+                      originalXocc, originalXobs, ModelSite = "ModelSite",
+                      funargs = list(occORdetection = "detection",
+                                     usefittedlvv = FALSE,
+                                     nlvperdraw = 1000))
   
-  inci_holdout_marglv.v <- (NumSpeciesObs > numspec_holdout_marglv.v["E", ] - 2 * sqrt(numspec_holdout_marglv.v["Vsum_det", ])) & 
-    (NumSpeciesObs < numspec_holdout_marglv.v["E", ] + 2 * sqrt(numspec_holdout_marglv.v["V", ]))
+  NumSpeciesObsHoldout <- detectednumspec(outofsample_y, artfit$data$ModelSite)
+
+  inci_holdout_marglv.v <- (NumSpeciesObsHoldout > numspec_holdout_marglv.v["E", ] - 2 * sqrt(numspec_holdout_marglv.v["V", ])) & 
+    (NumSpeciesObsHoldout < numspec_holdout_marglv.v["E", ] + 2 * sqrt(numspec_holdout_marglv.v["V", ]))
   expect_equal(mean(inci_holdout_marglv.v), 0.95, tol = 0.05)
 })
 
@@ -478,9 +481,16 @@ test_that("Subset biodiversity to single species matches simulations", {
   originalXobs <- cbind(ModelSite = artfit$data$ModelSite, originalXobs)
   outofsample_y <- simulate_detections_lv.v(artfit, esttype = 1)
   
-  numspec_holdout_marglv.v <- predsumspecies_newdata(artfit, originalXocc, originalXobs, ModelSiteVars = "ModelSite",
-                                                   desiredspecies = speciessubset,
-                                                   chains = NULL, nLVsim = 1000, type = "marginal", cl = NULL)
+  numspec_holdout_marglv.v <- 
+    apply_to_new_data(speciesrichness, 
+                      fit = artfit,
+                      originalXocc, 
+                      originalXobs, 
+                      ModelSite = "ModelSite",
+                      funargs = list(occORdetection = "detection",
+                                     desiredspecies = speciessubset,
+                                     usefittedlvv = FALSE,
+                                     nlvperdraw = 100))
   Enum_compare_sum <- Enum_compare(NumSpeciesObs,
                                    data.frame(pred = numspec_holdout_marglv.v["E", ]),
                                    data.frame(pred = numspec_holdout_marglv.v["V", ])
@@ -499,8 +509,10 @@ test_that("Endetect_modelsite matches predsumspecies", {
   # using fitted lv.v
   Edet1 <- Endetect_modelsite(artfit, type = "median", conditionalLV = TRUE)
   Edet2 <- lapply(artfit$species, function(sp) {
-                  Edet <- predsumspecies(artfit, desiredspecies = sp, UseFittedLV = TRUE, type = "marginal")
-                  #marginal works here because artfit has only one draw
+                  Edet <- speciesrichness(artfit, 
+                   occORdetection = "detection",
+                   usefittedlvv = TRUE,
+                   desiredspecies = sp)
                   return(Edet)}
                   )
   Edet2_t <- t(do.call(rbind, lapply(Edet2, function(x) x["E", , drop = FALSE])))
@@ -512,8 +524,11 @@ test_that("Endetect_modelsite matches predsumspecies", {
   # marginal to lv.v
   Edet1 <- Endetect_modelsite(artfit, type = "median", conditionalLV = FALSE)
   Edet2 <- lapply(artfit$species, function(sp) {
-    Edet <- predsumspecies(artfit, desiredspecies = sp, UseFittedLV = FALSE, nLVsim = 5000, type = "marginal")
-    #marginal works here because artfit has only one draw
+    Edet <- speciesrichness(artfit, 
+                            occORdetection = "detection",
+                            usefittedlvv = FALSE,
+                            nlvperdraw = 1000,
+                            desiredspecies = sp)
     return(Edet)}
   )
   Edet2_t <- t(do.call(rbind, lapply(Edet2, function(x) x["E", , drop = FALSE])))

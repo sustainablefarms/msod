@@ -1,32 +1,7 @@
 #' @title Expected Biodiversity
 #' @description The expected number of species occupying a ModelSite, or the expected number of species detected at a ModelSite.
 #' 
-#' @examples 
-#' fit <- readRDS("./tmpdata/7_2_9_addyear_msnm_year_time_2lv.rds")
-#' theta <- get_theta(fit, type = 1)
-#' Xocc <- fit$data$Xocc[2, , drop = FALSE]
-#' Xobs <- fit$data$Xobs[fit$data$ModelSite == 2, , drop = FALSE]
-#' numspecies <- fit$data$nspecies
-#' lvsim <- matrix(rnorm(2 * 1), ncol = 2, nrow = 2) #dummy lvsim vars
-#' lv.b.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$nspecies, ncol = 2), "lv.b")
-#' theta <- c(theta, lv.b.bugs)
-#' 
-#' Enumspec <- predsumspecies(fit, UseFittedLV = TRUE, return = "median")
-#' 
-#' 
-#' indata <- readRDS("./private/data/clean/7_2_10_input_data.rds")
-#' predsumspecies_newdata(fit, Xocc = indata$holdoutdata$Xocc, Xobs = indata$holdoutdata$yXobs, ModelSiteVars = "ModelSiteID", return = "median", cl = NULL)
-#' draws_sites_summaries <- predsumspecies_newdata(fit, 
-#'                                                 Xocc = indata$holdoutdata$Xocc,
-#'                                                 Xobs = indata$holdoutdata$yXobs,
-#'                                                 ModelSiteVars = "ModelSiteID",
-#'                                                 bydraw = TRUE,
-#'                                                 cl = NULL)
-#' # Median expected biodiversity with 95% credible intervals for expected biodiversity
-#' Enumspec_quantiles_drawssitessummaries(draws_sites_summaries, probs  = c(0.025, 0.5, 0.0975))
-#' 
-#' # approximate 95% posterior density interval for sum of species detected using Gaussian approximation and variance.
-#' numspec_interval <- numspec_posteriorinterval_Gaussian_approx(draws_sites_summaries)
+
 
 # parameters the same as poccupy_raw
 # returns a matrix with each column a site. Rows of expectation and variance.
@@ -118,15 +93,15 @@ detspeciesrichness_raw.jsodm <- function(Xocc, occ.b, Xobs, det.b, ModelSite){
 }
 
 #' @export
-speciesrichness <- function(fit, occORdetection, ...){
+speciesrichness <- function(fit, occORdetection, desiredspecies, ...){
   UseMethod("speciesrichness")
 }
 
 #' @export
 speciesrichness.jsodm_lv <- function(fit, 
                                      occORdetection,
-                                     usefittedlvv = FALSE,
                                     desiredspecies = fit$species,
+                                     usefittedlvv = FALSE,
                                     nlvperdraw = 1){
   stopifnot(all(desiredspecies %in% fit$species))
   occ.v <- fit$data$Xocc
@@ -209,92 +184,6 @@ speciesrichness_newdata.jsodm_lv <- function(fit, Xocc, Xobs = NULL, ModelSite =
 }
 
 
-
-#' @describeIn predsumspecies For new ModelSite occupancy covariates and detection covariates, predicted number of expected species
-#' @param desiredspecies List of species to sum over. Names must match names in fit$species. Default is to sum over all species.
-#' @export
-predsumspecies_newdata <- function(fit, Xocc, Xobs = NULL, ModelSiteVars = NULL,
-                                   desiredspecies = fit$species,
-                                   chains = NULL, nLVsim = 1000, type = "marginal", cl = NULL){
-  if (type == "marginal" && ("jsodm_lv" %in% class(fit))){
-    out <- speciesrichness_newdata.jsodm_lv(fit, Xocc, Xobs,
-                                            ModelSiteVars,  desiredspecies, 
-                                            nlvperdraw = as.integer(nLVsim/100))
-    return(out)
-  }
-  
-  warning("Using old code to predict species richness")
-  
-  stopifnot(type %in% c("draws", "marginal", "median"))
-  stopifnot(all(desiredspecies %in% fit$species))
-  
-  if (!is.null(Xobs)) {datalist <- prep_new_data(fit, Xocc, Xobs, ModelSite = ModelSiteVars)}
-  else{datalist <- list(
-    Xocc = apply.designmatprocess(fit$XoccProcess, Xocc),
-    Xobs = NULL,
-    ModelSite = NULL
-  )}
-  UseFittedLV <- FALSE # no LV available for new model sites
-  
-  fit$data <- as_list_format(fit$data)
-  if (is.null(chains)){chains <- 1:length(fit$mcmc)}
-  draws <- do.call(rbind, fit$mcmc[chains])
-  
-  if ( (is.null(fit$data$nlv)) || (fit$data$nlv == 0)){ #LVs not in model, add dummy variables
-    lv.b.bugs <- matrix2bugsvar(matrix(0, nrow = fit$data$nspecies, ncol = 2), "lv.b")
-    lv.b.draws <- Rfast::rep_row(lv.b.bugs, nrow(draws))
-    colnames(lv.b.draws) <- names(lv.b.bugs)
-    draws <- cbind(draws, lv.b.draws)
-    fit$data$nlv <- 2
-    nLVsim = 2 #calculations faster when not simulating 1000s of LV values, especially since they are all ignored here.
-  }
-  
-  numspec_drawsitesumm <- predsumspecies_raw(
-    Xocc = datalist$Xocc,
-    Xobs = datalist$Xobs,
-    ModelSite = datalist$ModelSite,
-    numspeciesinmodel = fit$data$nspecies,
-    desiredspecies = (1:fit$data$nspecies)[fit$species %in% desiredspecies],
-    nlv = fit$data$nlv,
-    draws = draws,
-    useLVindraws = FALSE,
-    nLVsim = nLVsim,
-    cl = cl
-  )
-  # convert predictions for each site and theta into predictions for each site, marginal across theta distribution
-  if (type == "draws") {out <- numspec_drawsitesumm}
-  if (type == "marginal") {out <- EVnumspec_marginalposterior_drawssitessummaries(numspec_drawsitesumm)}
-  if (type == "median"){
-    posterior_numspec <- EVnumspec_marginalposterior_drawssitessummaries(numspec_drawsitesumm)
-    
-    thetamedian <- apply(draws, MARGIN = 2, median)
-    thetamedian <- matrix(thetamedian, nrow = 1, ncol = length(thetamedian),
-                          dimnames = list(row = "median", cols = names(thetamedian)))
-    numspec_site_median <- predsumspecies_raw(
-      Xocc = datalist$Xocc,
-      Xobs = datalist$Xobs,
-      ModelSite = datalist$ModelSite,
-      numspecies = fit$data$nspecies,
-      nlv = fit$data$nlv,
-      draws = thetamedian,
-      useLVindraws = FALSE,
-      nLVsim = nLVsim,
-      cl = cl
-    )
-    out <- rbind(
-      Esum_occ_median = numspec_site_median[1, , "Esum_occ"],
-      Vsum_occ_median = numspec_site_median[1, , "Vsum_occ"],
-      Esum_occ_margpost = posterior_numspec["Esum_occ", ],
-      Vsum_occ_margpost = posterior_numspec["Vsum_occ", ],
-      
-      Esum_det_median = numspec_site_median[1, , "Esum_det"],
-      Vsum_det_median = numspec_site_median[1, , "Vsum_det"],
-      Esum_det_margpost = posterior_numspec["Esum_det", ],
-      Vsum_det_margpost = posterior_numspec["Vsum_det", ]
-    )
-  }
-  return(out)
-}
 
 #' @title The number of observed species in a matrix of observation recordings
 #' @param y A matrix of species *observations* with each row a visit and each column a species. Entries must be either 0 or 1.

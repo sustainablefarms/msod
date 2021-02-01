@@ -18,26 +18,20 @@
 #' @return A matrix with a column for the aggregate (summed) difference of model sites between models,
 #'  and the standard error of this difference (computed as the sample standard deviation of difference, multiplied by the square root of the number of ModelSites)
 #' @examples 
-#' inputdata <- readRDS("./private/data/clean/7_2_10_input_data.rds")
-#' observed <- detectednumspec(inputdata$holdoutdata$yXobs[, inputdata$species], 
-#'                             inputdata$holdoutdata$yXobs[, "ModelSiteID", drop = TRUE])
-
-#' modelspecs <- readRDS("./tmpdata/7_3_00_modelspecs.rds")
-#' filenames <- lapply(modelspecs, function(x) x$filename)
-#' a <- vapply(filenames, file.exists, FUN.VALUE = FALSE)
-#' fittedmods <- lapply(filenames, function(x) {
-#'   fit <- readRDS(x)
-#'   return(fit)})
-#' prednumbers_l <- lapply(
-#'   fittedmods, function(fit) {
-#'     predsumspecies_newdata(fit,
-#'                            inputdata$holdoutdata$Xocc,
-#'                            inputdata$holdoutdata$yXobs,
-#'                            ModelSiteVars = "ModelSiteID")
-#'   })
-#' predicted <- do.call(cbind, lapply(prednumbers_l, function(x) x["Esum_det", , drop = TRUE]))
-#' predictedV <- do.call(cbind, lapply(prednumbers_l, function(x) x["Vsum_det", , drop = TRUE]))
-#' Enum_compare(observed, predicted, predictedV)
+#' nsites <- 30
+#' artfitA <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, modeltype = "jsodm_lv", nlv = 4)
+#' artfitB <- artfitA; artfitB$mcmc[[1]] <- artfitB$mcmc[[1]]*0.01 + 10 # a second, poorer model
+#' predspecrichA <- speciesrichness(artfitA, occORdetection = "occupancy",
+#'                            usefittedlvv = FALSE)
+#' predspecrichB <- speciesrichness(artfitA, occORdetection = "occupancy",
+#'                                  usefittedlvv = FALSE)
+#' 
+#' ObsSpecRich <- detectednumspec(y = artfitA$data$y, ModelSite = artfitA$data$ModelSite)
+#' 
+#' Enum_compare_sum <- Enum_compare(ObsSpecRich,
+#'                                  data.frame(A = predspecrichA["E", ], B = predspecrichB["E", ]),
+#'                                  data.frame(A = predspecrichA["V", ], B = predspecrichB["V", ])
+#' )
 
 #' @param observed A list of the number of species observed for each ModelSite
 #' @param predicted A dataframe or matrix with each column the expected number of species detected from a single model. Each row is a ModelSite in the same order as [observed].
