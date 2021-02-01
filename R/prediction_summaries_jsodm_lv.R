@@ -75,7 +75,9 @@ specrichness_old.jsodm_lv <- function(fit, Xocc){
 #' @export
 specrichness.jsodm_lv <- function(fit, Xocc){
   stopifnot("jsodm_lv" %in% class(fit))
-  specrich <- speciesrichness_newdata.jsodm_lv(fit, Xocc, nlvperdraw = 5)
+  specrich <- apply_to_new_data(speciesrichness, fit = fit, Xocc = Xocc,  
+                                funargs = list(occORdetection = "occupancy",
+                                               nlvperdraw = 5))
   return(specrich)
 }
 
