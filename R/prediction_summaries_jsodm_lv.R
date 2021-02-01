@@ -13,9 +13,9 @@
 #' pocc <- poccupancy_margotherspecies.jsodm_lv(fit, Xocc)
 #' pocc <- poccupancy_mostfavourablesite.jsodm_lv(fit, Xocc)
 #' pocc <- poccupancy_randomsite.jsodm_lv(fit, Xocc)
-#' sprich1 <- specrichness.jsodm_lv(fit, Xocc)
-#' sprich <- specrichnessRV.jsodm_lv(fit, Xocc)
-#' system.time(sprich <- specrichness_avsite.jsodm_lv(fit, Xocc))
+#' sprich1 <- occspecrichness.jsodm_lv(fit, Xocc)
+#' sprich <- occspecrichnessRV.jsodm_lv(fit, Xocc)
+#' system.time(sprich <- occspecrichness_avsite.jsodm_lv(fit, Xocc))
 
 #' @export
 # returns probability of occupancy of each species ignoring other species, for each site
@@ -66,14 +66,7 @@ poccupancy_randomsite.jsodm_lv <- function(fit, Xocc){
 
 # returns species richness predicted mean and variance
 #' @export
-specrichness_old.jsodm_lv <- function(fit, Xocc){
-  stopifnot("jsodm_lv" %in% class(fit))
-  specrich <- predsumspecies_newdata(fit, Xocc, nLVsim = 1000, type = "marginal")
-  return(specrich)
-}
-
-#' @export
-specrichness.jsodm_lv <- function(fit, Xocc){
+occspecrichness.jsodm_lv <- function(fit, Xocc){
   stopifnot("jsodm_lv" %in% class(fit))
   specrich <- apply_to_new_data(speciesrichness, fit = fit, Xocc = Xocc,  
                                 funargs = list(occORdetection = "occupancy",
@@ -82,7 +75,7 @@ specrichness.jsodm_lv <- function(fit, Xocc){
 }
 
 #' @export
-specrichnessRV.jsodm_lv <- function(fit, Xocc){
+occspecrichnessRV.jsodm_lv <- function(fit, Xocc){
   stopifnot("jsodm_lv" %in% class(fit))
   specrich <- predsumspeciesRV_newdata(fit, Xocc, nLVsim = 100, type = "marginal")
   return(specrich)
@@ -90,7 +83,7 @@ specrichnessRV.jsodm_lv <- function(fit, Xocc){
 
 #' @export
 # returns species richness predicted mean and variance when the site is chosen randomly with equal probability
-specrichness_avsite.jsodm_lv <- function(fit, Xocc){
+occspecrichness_avsite.jsodm_lv <- function(fit, Xocc){
   specrich <- specrichness.jsodm_lv(fit, Xocc)
   Epred <- mean(specrich["E",])
   m2_site <- specrich["V", ] + specrich["E",]^2
