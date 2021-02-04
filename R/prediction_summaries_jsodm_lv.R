@@ -84,7 +84,7 @@ occspecrichnessRV.jsodm_lv <- function(fit, Xocc){
 #' @export
 # returns species richness predicted mean and variance when the site is chosen randomly with equal probability
 occspecrichness_avsite.jsodm_lv <- function(fit, Xocc){
-  specrich <- specrichness.jsodm_lv(fit, Xocc)
+  specrich <- occspecrichness.jsodm_lv(fit, Xocc)
   Epred <- mean(specrich["E",])
   m2_site <- specrich["V", ] + specrich["E",]^2
   Em2 <- mean(m2_site)
