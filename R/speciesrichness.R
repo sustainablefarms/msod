@@ -3,37 +3,33 @@
 #' 
 
 
-# parameters the same as poccupy_raw
-# returns a matrix with each column a site. Rows of expectation and variance.
-OLDoccspeciesrichness_raw.jsodm_lv <- function(fixedcovar, loadfixed, randomcovar, loadrandom){
-  pocc <- poccupy_raw.jsodm_lv(fixedcovar, loadfixed, randomcovar, loadrandom)
-  Evals <- prednumsuccess(pocc)
-  return(Evals)
-}
-occspeciesrichness_raw.jsodm <- function(fixedcovar, loadfixed){
-  pocc <- poccupy_raw.jsodm_lv(fixedcovar, loadfixed)
-  Evals <- prednumsuccess(pocc)
-  return(Evals)
-}
-
 # probarr is a 3-array of probabilities of sucess Bernoulli RV. Within each layer columns (species) are independent (i.e. conditional on draw)
 # computes the Expectation and Variance of the number of success per site assuming each layer (draw)
 # is a sample from the true distribution of model parameters
 prednumsuccess <- function(probarr){
-  # En_sitedraw <- apply(probarr, MARGIN = c(1, 3), sum)
-  # En_site <- apply(En_sitedraw, MARGIN = 1, mean)
-  En_site <- apply(probarr, MARGIN = 1, sum) / dim(probarr)[[3]] #equivalent to two step process above
-  # similarly V can be summed, then dived by number of draws squared
   Vrv <- probarr * (1 - probarr)
+  Evals <- prednumsuccess_ErvVrv(probarr, Vrv)
+  return(Evals)
+}
+
+# Erv and Vrv are 3-arrays of the mean and variance, respectively, of RV. Within each layer columns (species) are independent (i.e. conditional on draw)
+# computes the Expectation and Variance of the number of success per site assuming each layer (draw)
+# is a sample from the true distribution of model parameters
+# returns the expected sum for each row, along with the variance of this sum.
+prednumsuccess_ErvVrv <- function(Erv, Vrv){
+  stopifnot(dim(Vrv)[[3]] == dim(Erv)[[3]])
+  # Esum_sitedraw <- apply(probarr, MARGIN = c(1, 3), sum)
+  # Esum_site <- apply(En_sitedraw, MARGIN = 1, mean)
+  Esum_site <- apply(Erv, MARGIN = 1, sum) / dim(Erv)[[3]] #equivalent to two step process above
   # use total law of variance
-  Edrawvariance <- apply(Vrv, MARGIN = 1, sum) / dim(probarr)[[3]]
+  Edrawvariance <- apply(Vrv, MARGIN = 1, sum) / dim(Vrv)[[3]]
   # Vdrawexpectation <- apply(apply(probarr, MARGIN = c(1, 3), sum)^2,
   #                           MARGIN = 1, mean) - En_site^2  #warning this is a biased estimate of variance: better would be to use the var function below
-  if (dim(probarr)[[3]] == 1){Vdrawexpectation <- 0 * Edrawvariance} #only one draw so variance between draws is 0
-  else {Vdrawexpectation <- Rfast::rowVars(arr3_sumalong2(probarr))}
-  Vn_site <- Edrawvariance + Vdrawexpectation
-  Evals <- rbind(E = En_site,
-                 V = Vn_site)
+  if (dim(Vrv)[[3]] == 1){Vdrawexpectation <- 0 * Edrawvariance} #only one draw so variance between draws is 0
+  else {Vdrawexpectation <- Rfast::rowVars(arr3_sumalong2(Erv))}
+  Vsum_site <- Edrawvariance + Vdrawexpectation
+  Evals <- rbind(E = Esum_site,
+                 V = Vsum_site)
   return(Evals)
 }
 
