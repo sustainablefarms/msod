@@ -13,7 +13,7 @@
 #' fit <- translatefit(fit)
 #' Xocc <- unstandardise.designmatprocess(fit$XoccProcess, fit$data$Xocc[1:2, , drop = FALSE])
 #' pocc <- poccupancy_margotherspecies.jsodm_lv(fit, Xocc)[,,"median"]
-#' pocc2_all <- poccupy.jsodm_lv(fit, fullposterior = FALSE)
+#' pocc2_all <- poccupy(fit, lvvfromposterior = FALSE, margLV = FALSE)
 #' pocc2 <- pocc2_all[1, , , drop = TRUE]
 #' pocc2 <- t(pocc2)
 #' pocc <- pocc2
