@@ -172,6 +172,7 @@ test_that("Interaction with a binary variable produces zeros and non-zeros", {
   process <- prep.designmatprocess(Xocc, "~ IsPlanting + IsPlanting:PlantingAge", preserve = c("PlantingAge", "IsPlanting"))
   DesMat2 <- apply.designmatprocess(process, Xocc)
   expect_equivalent(DesMat2[1:5, "IsPlanting:PlantingAge"], Xocc$IsPlanting[1:5])
+  expect_equivalent(mean(DesMat2[6:10, "IsPlanting:PlantingAge"]), 0)
 })
 
 
