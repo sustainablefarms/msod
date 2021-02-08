@@ -13,6 +13,7 @@
 #' @param XoccProcess An object create by prep.designmatprocess for the occupancy covariates
 #' @param XobsProcess An object create by prep.designmatprocess for the observation covariates
 #' @export
+# improve: make Xocc the MODEL matrix (DESIGN matrix), Xobs also the ModelMatrix, y the response matrix and ModelSite visited row of Xocc
 prepJAGSdata <- function(modeltype, Xocc, yXobs, ModelSite, species, XoccProcess, XobsProcess, ...){ # nlv){
   stopifnot(modeltype %in% availmodeltypes)
   data.list <- do.call(paste0("prepJAGSdata.", modeltype),
