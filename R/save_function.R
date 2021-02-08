@@ -13,10 +13,23 @@ save_process <- function(fun, checkwith, params = NULL){
   if ("try-error" %in% class(out)){
     stop(paste("Could not run in packages-only envirnoment: ", attr(out, "condition")))
   }
+  
+  # following checks that te result doesn't change each time the function is called (repeatable, a little bit)
+  out2 <- try(do.call(fun, args = c(list(indf = checkwith), params)), silent = TRUE)
+  stopifnot(identical(out, out2))
+  
   return(list(
     fun = fun,
     params = params
   ))
+}
+
+#' @export
+apply_saved_process <- function(saved, indf, envir = parent.env(globalenv())){
+  fun <- saved$fun
+  environment(fun) <- envir
+  processed <- do.call(fun, c(list(indf = indf), saved$params), quote = TRUE)
+  return(processed)
 }
 
 #' @export
