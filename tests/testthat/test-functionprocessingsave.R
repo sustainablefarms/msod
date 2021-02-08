@@ -51,6 +51,7 @@ test_that("Saving process with a column that has standardised values for some ro
   rm(list = setdiff(ls(), c("saved", "Xocc")))
   
   ModMat <- apply_process(saved$fun, Xocc, params = saved$params)
+  expect_equal(ModMat, apply_saved_process(saved, Xocc))
   
   expect_equivalent(ModMat[1:5, "PlantingAge"], Xocc$IsPlanting[1:5])
   expect_equivalent(ModMat[1:5, "IsPlanting"], Xocc$IsPlanting[1:5])
