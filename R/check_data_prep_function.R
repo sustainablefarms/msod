@@ -23,11 +23,14 @@
 #' Or FALSE if arguments are missing, the function tries to access an object in the global environment (and not in the parent environment), 
 #' or if there is some other problem with the function executing. In this case a warning is given. This warning contains the error condition that created the failure.
 #' @export
-runsusingpackagesonly <- function(fun, args){
+runsusingpackagesonly <- function(fun, args, erroronfalse = TRUE){
+  stop("Function obsolete")
   environment(fun) <- parent.env(globalenv())  #an environment with all packages loaded, but none of the interactively defined objects
   out <- try(do.call(fun, args), silent = TRUE) #run the function
   if (!("try-error" %in% class(out))){return(TRUE)}
-  else {
+  if (erroronfalse){
+    stop(attr(out, "condition"))
+  } else {
     warning(attr(out, "condition")) 
     return(FALSE)
   }
