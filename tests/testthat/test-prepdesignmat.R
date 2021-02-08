@@ -156,3 +156,23 @@ test_that("Version 2 works inside artificial model building, with prepdata()", {
   expect_equivalent(colMeans(artmodel$data$Xobs)[c("(Intercept)", "UpVisit", "log.UpVisit.")], c(1, 0, 0))
   expect_gt(abs(mean(artmodel$data$Xobs[, "I(UpVisit^2)"])), 1E-6)
 })
+
+test_that("Interaction with a binary variable produces zeros and non-zeros", {
+  Xocc <- data.frame(ModelSite = 1:10, IsPlanting = 0, PlantingAge = NA)
+  Xocc$IsPlanting[6:10] <- 1 #these sites are plantings
+  Xocc$PlantingAge[6:10] <- 0.1 + (1:5) #these sites are plantings
+  Xocc$PlantingAge[1:5] <- rnorm(5) #these sites are not-plantings, random filler age
+  
+  # check R's build in methods
+  DesMat <- model.matrix(as.formula("~ IsPlanting + IsPlanting:PlantingAge"),
+               Xocc)
+  expect_equivalent(DesMat[1:5, "IsPlanting:PlantingAge"], Xocc$IsPlanting[1:5])
+  
+  # this packages methods
+  process <- prep.designmatprocess(Xocc, "~ IsPlanting + IsPlanting:PlantingAge", preserve = "PlantingAge")
+  DesMat2 <- apply.designmatprocess(process, Xocc)
+  expect_equivalent(DesMat2[1:5, "IsPlanting:PlantingAge"], Xocc$IsPlanting[1:5])
+})
+
+
+
