@@ -86,13 +86,13 @@ prepJAGSdata2.jsodm_lv_sepexp <- function(Xocc, Xobs, y, ModelSite, nlv, SpatDis
 #' Xocc, yXobs, ModelSite must follow some rules as for run.detectionoccupancy.
 #' yXobs may omit the species detections, or yXobs and ModelSite may be ommitted completely if only want to be able to use the occupancy components of the model.
 #' @export
-prep_new_data <- function(fit, Xocc, Xobs = NULL, y = NULL, ModelSite = NULL, ...){
+prep_new_data2 <- function(fit, Xocc, Xobs = NULL, y = NULL, ModelSite = NULL, ...){
   data.list <- switch(class(fit)[[1]],
-         "jsodm" = do.call(prepJAGSdata, 
+         "jsodm" = do.call(prepJAGSdata2, 
                            list(class(fit)[[1]], Xocc, Xobs, y, ModelSite)),
-         "jsodm_lv" = do.call(prepJAGSdata, 
+         "jsodm_lv" = do.call(prepJAGSdata2, 
                               list(class(fit)[[1]], Xocc, Xobs, y, ModelSite, nlv = fit$data$nlv)),
-         "jsodm_lv_sepexp" = do.call(prepJAGSdata, 
+         "jsodm_lv_sepexp" = do.call(prepJAGSdata2, 
                               list(class(fit)[[1]], Xocc, Xobs, y, ModelSite, nlv = fit$data$nlv,
                                    SpatDist = fit$SpatDist, TimeDist = fit$TimeDist)),
          )
