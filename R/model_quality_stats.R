@@ -29,7 +29,7 @@ modelqualstats <- function(fit, holdoutXocc, holdoutXobs, holdoutModelSite, hold
 }
 
 modelqualstats_holdout <- function(fit_wholdoutdata, cl, nlvperdraw = 1000){
-  likel.mat_holdout <- likelihood(fit_wholdoutdata, numlvsims = 1)
+  likel.mat_holdout <- likelihood(fit_wholdoutdata, numlvsims = nlvperdraw)
   lpd_holdout <- elpd(likel.mat_holdout)
   print("Estimated LPD of Holdout Sites")
   
