@@ -8,20 +8,14 @@
 #' @return Returns a matrix. Each row corresponds to a draw of the parameters from the posterior. Each column to a ModelSite.
 #' The value in each cell is the probability density, given the parameters from the draw, evaluated at the observations for the model site.
 #' @export
-likelihood.jsodm_lv <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL,
+likelihood.jsodm_lv <- function(fit,
                                 numlvsims = 1000, cl = NULL, simseed = NULL){
   stopifnot(class(fit)[[1]] %in% c("jsodm_lv"))
 
-  if (is.null(Xocc)){ #Extract the Xocc, yXobs etc from the fitted object, no preprocessing required
-    sitedata <- fit$data
-  } else {
-    sitedata <- prep_new_data(fit, Xocc, yXobs, ModelSite)
-  }
-  
-  Xocc <- sitedata$Xocc
-  Xobs <- sitedata$Xobs
-  y <- sitedata$y
-  ModelSite <- sitedata$ModelSite
+  Xocc <- fit$data$Xocc
+  Xobs <- fit$data$Xobs
+  y <- fit$data$y
+  ModelSite <- fit$data$ModelSite
   
   occ.b_arr <- get_occ_b(fit) # rows are species, columns are occupancy covariates
   det.b_arr <- get_det_b(fit)  # rows are species, columns are observation covariates

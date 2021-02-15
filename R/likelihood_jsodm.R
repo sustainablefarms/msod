@@ -1,19 +1,13 @@
 #' @title Likelihood for Plain JSODM
 
 #' @export
-likelihood.jsodm <- function(fit, Xocc = NULL, yXobs = NULL, ModelSite = NULL, cl = NULL, numlvsims = NULL){
+likelihood.jsodm <- function(fit, cl = NULL, numlvsims = NULL){
   stopifnot(class(fit)[[1]] %in% c("jsodm"))
   
-  if (is.null(Xocc)){ #Extract the Xocc, yXobs etc from the fitted object, no preprocessing required
-    sitedata <- fit$data
-  } else {
-    sitedata <- prep_new_data(fit, Xocc, yXobs, ModelSite)
-  }
-  
-  Xocc <- sitedata$Xocc
-  Xobs <- sitedata$Xobs
-  y <- sitedata$y
-  ModelSite <- sitedata$ModelSite
+  Xocc <- fit$data$Xocc
+  Xobs <- fit$data$Xobs
+  y <- fit$data$y
+  ModelSite <- fit$data$ModelSite
   
   occ.b_arr <- get_occ_b(fit) # rows are species, columns are occupancy covariates
   det.b_arr <- get_det_b(fit)  # rows are species, columns are observation covariates

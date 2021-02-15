@@ -87,7 +87,8 @@ lppd_newdata <- function(fit, Xocc, yXobs, ModelSite, chains = 1, ...){
 }
 
 #' Expected log predictive density: the probability density for each model site, average across posterior draws
-#' @param likelmat A matrix of draw (row) x modelsite (column)
+#' @param likelmat A matrix of predictive density for each draw (row) x modelsite (column)
+#' @export
 elpd <- function(likelmat){
   likel.marg <- Rfast::colmeans(likelmat) # the loglikelihood marginalised over theta (poseterior distribution)
   return(
