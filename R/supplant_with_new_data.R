@@ -22,26 +22,34 @@
 #' ds_occupancy_residuals.fit(fitwnewdata) #detection residuals on this new data
 #' 
 #' @export
-supplant_new_data <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL, y = NULL, ...){
+supplant_new_data <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL, y = NULL, toXocc = NULL, toXobs = NULL, ...){
   UseMethod("supplant_new_data")
 }
 
 #' @export
-supplant_new_data.jsodm <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL, y = NULL){
-  if (is.null(Xobs)){
-    yXobs <- NULL
-  } else {
-    if (is.null(y)) {yXobs <- Xobs}
-    else {yXobs <- cbind(Xobs, y)}
+supplant_new_data.jsodm <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL, y = NULL, toXocc = NULL, toXobs = NULL){
+  if (is.null(toXocc)) { toXocc <- fit$toXocc }
+  if (is.null(toXobs)) { toXobs <- fit$toXobs }
+  stopifnot(!is.null(toXocc))
+  stopifnot(!is.null(toXobs))
+  
+  if (!is.null(Xobs)){
+    Xobs <- apply_saved_process(toXobs, Xobs)
   }
-  sitedata <- prep_new_data(fit, Xocc, yXobs, ModelSite)
-  fit$data <- sitedata
+  Xocc <- apply_saved_process(toXocc, Xocc)
+  
+  data.list <- prepJAGSdata2("jsodm",
+                Xocc = Xocc,
+                Xobs = Xobs,
+                y = y,
+                ModelSite = ModelSite)
+  fit$data <- data.list
   return(fit)
 }
 
 #' @export
-supplant_new_data.jsodm_lv <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL, y = NULL){
-  fit <- supplant_new_data.jsodm(fit, Xocc, Xobs, ModelSite, y = y)
+supplant_new_data.jsodm_lv <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL, y = NULL, toXocc = NULL, toXobs = NULL){
+  fit <- supplant_new_data.jsodm(fit, Xocc, Xobs, ModelSite, y = y, toXocc = toXocc, toXobs = toXobs)
   #remove fitted lvv as no longer valid to new sites
   bugsnames_lvv <- grepl("^lv.v", colnames(fit$mcmc[[1]]))
   fit$mcmc <- lapply(fit$mcmc,
