@@ -6,7 +6,7 @@
 #' Each column is a covariate.
 #' Must also include the ModelSiteVars columns to uniquely specify ModelSite.
 #' @param y A dataframe of species observations (1 or 0). Each column is a species. Rows must correspond to Xobs
-#' @param ModelSite A list of column names in Xocc and yXobs that uniquely specify the ModelSite. Can be simply a ModelSite index
+#' @param ModelSite A vector of integers of equal length to the number of visits. Each entry species for the corresponding visit, the of Xocc that was visited 
 #' @examples 
 #' fitold <- readRDS("../Experiments/7_4_modelrefinement/fittedmodels/7_4_13_model_2lv_e13.rds")
 #' fit <- translatefit(fitold)
@@ -17,9 +17,12 @@
 #' Xocc <- originalXocc[1:10, ]
 #' Xobs <- originalXobs[originalXobs$ModelSite %in% Xocc$ModelSite, ]
 #' y <- fit$data$y[originalXobs$ModelSite %in% Xocc$ModelSite, ]
-#' fitwnewdata <- supplant_new_data.jsodm_lv(fit, Xocc, Xobs, ModelSite = "ModelSite", y = y)
+#' ModelSite <- as.integer(Xobs$ModelSite)
+#' fitwnewdata <- supplant_new_data(fit, Xocc, Xobs, ModelSite = ModelSite, y = y)
 #' ds_detection_residuals.fit(fitwnewdata) #detection residuals on this new data
 #' ds_occupancy_residuals.fit(fitwnewdata) #detection residuals on this new data
+#'
+#' fitwnewdata <- supplant_new_data(fit, Xocc)
 #' 
 #' @export
 supplant_new_data <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL, y = NULL, toXocc = NULL, toXobs = NULL, ...){
@@ -30,8 +33,22 @@ supplant_new_data <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL, y = NULL
 supplant_new_data.jsodm <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL, y = NULL, toXocc = NULL, toXobs = NULL){
   if (is.null(toXocc)) { toXocc <- fit$toXocc }
   if (is.null(toXobs)) { toXobs <- fit$toXobs }
-  stopifnot(!is.null(toXocc))
-  stopifnot(!is.null(toXobs))
+  if (is.null(toXocc)){
+    warning("Using saved XoccProcess. This functionality will become obsolete.")
+    toXoccFun <- function(indf, mainparams = fit$XoccProcess){
+      Xocc <- apply.designmatprocess(mainparams, indf)
+      return(Xocc)
+    }
+    toXocc <- save_process(toXoccFun, checkwith = Xocc, params = list(mainparams = fit$XoccProcess))
+  }
+  if (is.null(toXobs) && !is.null(Xobs)){
+    warning("Using saved XobsProcess. This functionality will become obsolete.")
+    toXobsFun <- function(indf, mainparams = fit$XobsProcess){
+      Xobs <- apply.designmatprocess(mainparams, indf)
+      return(Xobs)
+    }
+    toXobs <- save_process(toXoccFun, checkwith = Xobs, params = list(mainparams = fit$XobsProcess))
+  }
   
   if (!is.null(Xobs)){
     Xobs <- apply_saved_process(toXobs, Xobs)
@@ -43,13 +60,18 @@ supplant_new_data.jsodm <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL, y 
                 Xobs = Xobs,
                 y = y,
                 ModelSite = ModelSite)
-  fit$data <- data.list
+  fit$data$Xocc <- data.list$Xocc
+  fit$data$Xobs <- data.list$Xobs
+  fit$data$y <- data.list$y
+  fit$data$ModelSite <- data.list$ModelSite
+  fit$data$nmodelsites <- data.list$nmodelsites
+  fit$data$nvisits <- data.list$nvisits
   return(fit)
 }
 
 #' @export
 supplant_new_data.jsodm_lv <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL, y = NULL, toXocc = NULL, toXobs = NULL){
-  fit <- supplant_new_data.jsodm(fit, Xocc, Xobs, ModelSite, y = y, toXocc = toXocc, toXobs = toXobs)
+  fit <- supplant_new_data.jsodm(fit, Xocc, Xobs = Xobs, ModelSite = ModelSite, y = y, toXocc = toXocc, toXobs = toXobs)
   #remove fitted lvv as no longer valid to new sites
   bugsnames_lvv <- grepl("^lv.v", colnames(fit$mcmc[[1]]))
   fit$mcmc <- lapply(fit$mcmc,

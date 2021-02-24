@@ -9,6 +9,7 @@
 # improve: make Xocc the MODEL matrix (DESIGN matrix), Xobs also the ModelMatrix, y the response matrix and ModelSite visited row of Xocc
 prepJAGSdata2 <- function(modeltype, Xocc, Xobs, y, ModelSite, ...){ # nlv){
   stopifnot(modeltype %in% availmodeltypes)
+  ModelSite <- as.integer(ModelSite)
   data.list <- do.call(paste0("prepJAGSdata2.", modeltype),
                        c( list(Xocc, Xobs, y, ModelSite), ...))
   return(data.list)
@@ -19,6 +20,7 @@ prepJAGSdata2.jsodm <- function(Xocc, Xobs, y, ModelSite, ...){
   # do the prep that doesn't involve detections, so can exit early if detection components not included
   if (is.null(Xobs)){ #exit early if no Xobs included
     return(list(nspecies=ncol(y),
+                nmodelsites = nrow(Xocc),
                 Xocc=Xocc,
                 noccvar=ncol(Xocc)))
   }
