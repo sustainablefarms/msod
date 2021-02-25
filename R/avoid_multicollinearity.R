@@ -80,6 +80,7 @@ remove_bycorrvif <- function(fmla, data, corrthresh, vifthresh, centrescalemains
                                  ViF = gvifs[[maxind]]))
     stopifnot(!any(duplicated(ViF_removeinfo$Removed))) #error if hasn't been able to remove the relevant column
     mat <- mat[, colnames(mat) != nametoremove]
+    if (ncol(mat) <= 2){ break } #means there is only one covariate in the model
   }
   mat <- mat[, colnames(mat) != "yran"]
   
