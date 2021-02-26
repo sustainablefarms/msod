@@ -1,6 +1,7 @@
 # test expected number of species
 
-context("Number of Detected Species Expected")
+local_edition(3)
+
 pbopt <- pbapply::pboptions(type = "none")
 
 # tests:
@@ -459,9 +460,9 @@ test_that("Subset biodiversity to single species matches simulations", {
                                    data.frame(pred = numspec_insample_fitlv.v["E", ]),
                                    data.frame(pred = numspec_insample_fitlv.v["V", ])
   )
-  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
-  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
-  expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
+  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]], ignore_attr = TRUE)
+  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]], ignore_attr = TRUE)
+  expect_equal(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]], ignore_attr = TRUE)
 
   # Predict number within subset, in sample, marginal lv.v
   numspec_insample_marglv.v <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedLV = FALSE, type = "marginal")
@@ -469,8 +470,8 @@ test_that("Subset biodiversity to single species matches simulations", {
                                    data.frame(pred = numspec_insample_marglv.v["E", ]),
                                    data.frame(pred = numspec_insample_marglv.v["V", ])
   )
-  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
-  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
+  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]], ignore_attr = TRUE)
+  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]], ignore_attr = TRUE)
   # the follow test doesn't pass, which is consistent with the fitted lv.v not being distributed according to a Gaussian distribution
   # expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
   
@@ -495,8 +496,8 @@ test_that("Subset biodiversity to single species matches simulations", {
                                    data.frame(pred = numspec_holdout_marglv.v["E", ]),
                                    data.frame(pred = numspec_holdout_marglv.v["V", ])
   )
-  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
-  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
+  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]], ignore_attr = TRUE)
+  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]], ignore_attr = TRUE)
   # the follow test doesn't pass, which is consistent with the fitted lv.v not being distributed according to a Gaussian distribution
   # expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
 })
@@ -516,10 +517,10 @@ test_that("Endetect_modelsite matches predsumspecies", {
                   return(Edet)}
                   )
   Edet2_t <- t(do.call(rbind, lapply(Edet2, function(x) x["E", , drop = FALSE])))
-  expect_equivalent(Edet1[[1]], Edet2_t)
+  expect_equal(Edet1[[1]], Edet2_t, ignore_attr = TRUE)
   
   Edet2_V_t <- t(do.call(rbind, lapply(Edet2, function(x) x["V", , drop = FALSE])))
-  expect_equivalent(Edet1[[2]], Edet2_V_t)
+  expect_equal(Edet1[[2]], Edet2_V_t, ignore_attr = TRUE)
   
   # marginal to lv.v
   Edet1 <- Endetect_modelsite(artfit, type = "median", conditionalLV = FALSE)
@@ -532,10 +533,10 @@ test_that("Endetect_modelsite matches predsumspecies", {
     return(Edet)}
   )
   Edet2_t <- t(do.call(rbind, lapply(Edet2, function(x) x["E", , drop = FALSE])))
-  expect_equivalent(Edet1[[1]], Edet2_t, tol = 1E-2)
+  expect_equal(Edet1[[1]], Edet2_t, tolerance = 1E-2, ignore_attr = TRUE)
   
   Edet2_V_t <- t(do.call(rbind, lapply(Edet2, function(x) x["V", , drop = FALSE])))
-  expect_equivalent(Edet1[[2]], Edet2_V_t, tol = 1E-2)
+  expect_equal(Edet1[[2]], Edet2_V_t, tolerance = 1E-2, ignore_attr = TRUE)
 })
 
 #########################################################################################
@@ -548,7 +549,7 @@ test_that("No lv.v and identical sites", {
   EVsum <- speciesrichness(artfit, occORdetection = "detection")
   
   # check that many other sites have the same expected number of species
-  expect_equivalent(EVsum["E", ], rep(EVsum["E", 1], ncol(EVsum)))
+  expect_equal(EVsum["E", ], rep(EVsum["E", 1], ncol(EVsum)), ignore_attr = TRUE)
   
   # treat each model site as a repeat simulation of a ModelSite (cos all the parameters are nearly identical)
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
@@ -571,7 +572,7 @@ test_that("No lv.v and identical sites", {
   expect_lt(abs(meandiff[length(meandiff)]), max(abs(meandiff[floor(length(meandiff) / 20) + 1:20 ])))
 
   # Expect sd to be close to theoretical sd. Hopefully within 10%
-  expect_equivalent(sd(NumSpecies), sqrt(EVsum["V", 1]), tol = 0.1 * sqrt(EVsum["V", 1]))
+  expect_equal(sd(NumSpecies), sqrt(EVsum["V", 1]), tol = 0.1 * sqrt(EVsum["V", 1]), ignore_attr = TRUE)
   
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
   Enumspecdet <- predsumspecies(artfit, type = "marginal", UseFittedLV = FALSE)
