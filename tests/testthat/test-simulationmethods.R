@@ -1,6 +1,6 @@
 # test of simulation methods.
 
-context("Simulation Methods")
+local_edition(3)
 
 test_that("Opposite loadings of lv.v gives anticorrelated simulated detections for species", {
   # simulate for species with high Detection, opposite impact by the lv.v
@@ -12,10 +12,10 @@ test_that("Opposite loadings of lv.v gives anticorrelated simulated detections f
                                 lv.b.min = matrix(c(-0.6, 0.6), ncol = 1), lv.b.max = matrix(c(-0.55, 0.65), ncol = 1),
                                 modeltype = "jsodm_lv",
                                 nlv = 1)
-  pocc_corr <- cor(poccupy_species(artfit1, type = 1, conditionalLV = TRUE))
-  expect_equivalent(pocc_corr, matrix(c(1, -1, -1, 1), ncol = 2, nrow = 2, byrow = FALSE))
+  pocc_corr <- cor(poccupy(artfit1, usethetasummary = 1, lvvfromposterior = TRUE)[,,1])
+  expect_equal(pocc_corr, matrix(c(1, -1, -1, 1), ncol = 2, nrow = 2, byrow = FALSE), ignore_attr = TRUE)
   
-  expect_equivalent(colMeans(artfit1$data$y), colMeans(poccupy_species(artfit1, type = 1, conditionalLV = TRUE)), tolerance = 0.1)
+  expect_equal(colMeans(artfit1$data$y), colMeans(poccupy(artfit1, usethetasummary = 1, lvvfromposterior = TRUE)[,,1]), tolerance = 0.1, ignore_attr = TRUE)
   anticor_occ <- cor(artfit1$data$y)
   expect_lt(anticor_occ[1, 2], 0)
 })
@@ -30,8 +30,8 @@ test_that("High, equal loadings of lv.v gives correlated simulated detections fo
                                 modeltype = "jsodm_lv",
                                 nlv = 1)
 
-  expect_equivalent(cor(poccupy_species(artfit2, type = 1, conditionalLV = TRUE)), matrix(1, ncol = 2, nrow = 2, byrow = FALSE))
-  expect_equivalent(colMeans(artfit2$data$y), colMeans(poccupy_species(artfit2, type = 1, conditionalLV = TRUE)), tolerance = 0.1)
+  expect_equal(cor(poccupy(artfit2, usethetasummary = 1, lvvfromposterior = TRUE)[,,1]), matrix(1, ncol = 2, nrow = 2, byrow = FALSE), ignore_attr = TRUE)
+  expect_equal(colMeans(artfit2$data$y), colMeans(poccupy(artfit2, usethetasummary = 1, lvvfromposterior = TRUE)[,,1]), tolerance = 0.1, ignore_attr = TRUE)
   cor_occ <- cor(artfit2$data$y)
   expect_gt(cor_occ[1, 2], 0)
 })
