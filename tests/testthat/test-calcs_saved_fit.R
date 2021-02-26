@@ -1,4 +1,4 @@
-context("Likelihoods and Predictions Historically Consistent")
+local_edition(3)
 
 fit <- readRDS("../../../sflddata/private/data/testdata/cutfit_7_4_11_2LV.rds")
 fit <- translatefit(fit)
@@ -10,7 +10,8 @@ test_that("Likelihood is historically consistent", {
   out <- read.delim("lkl_sites.txt", sep = " ")
   out[1:17, 7:12] <- out[18:34, 1:6]
   savedlkl <- as.matrix(out[1:17, c(2:6, 8:12)])
-  expect_equivalent(lkl_sites, savedlkl, tolerance = 10)
+  expect_equal(lkl_sites, savedlkl, tolerance = 10, ignore_attr = TRUE)
+  expect_snapshot_value(lkl_sites, style = "serialize", ignore_attr = TRUE)
   # the magnitude of loglikelihood varies substantially between draw and site, as the simulation methods are different,
   # it is important that at least the magnitude matches
 })
@@ -19,13 +20,14 @@ test_that("Occupancy of species prediction is historically consistent", {
   pocc_theta01_condlv.v <- poccupy_species(fit, type = 1, conditionalLV = TRUE)
   
   out <- as.matrix(read.delim("pocc_theta01_condLV_part.txt", sep = " ", header = FALSE))
-  expect_equivalent(pocc_theta01_condlv.v[, 1:3], out)
+  expect_equal(pocc_theta01_condlv.v[, 1:3], out, ignore_attr = TRUE)
+  expect_snapshot_value(pocc_theta01_condlv.v, style = "serialize", ignore_attr = TRUE)
 
   set.seed(232413)
   pocc_theta01_marglv.v <- poccupy_species(fit, type = 1, conditionalLV = FALSE)
   rownames(pocc_theta01_marglv.v) <- 1:10
   names(dimnames(pocc_theta01_marglv.v)) <- c("", "row")
-  expect_known_output(pocc_theta01_marglv.v, file = "pocc_theta01_margLV.txt", print = TRUE, update = FALSE) #values saved from code with commit a0812ddad
+  expect_snapshot_value(pocc_theta01_marglv.v, style = "serialize", ignore_attr = TRUE)
 })
 
 test_that("Detection Probility of Species is historically consistent", { #values generate from code at commit a0812ddad
@@ -35,12 +37,29 @@ test_that("Detection Probility of Species is historically consistent", { #values
 
 test_that("Expected Biodiversity is Historically Consistent", { #values generate from code at commit a0812ddad
   pbopt <- pbapply::pboptions(type = "none")
-  Enspecies_condlv.v <- predsumspecies(fit, UseFittedLV = TRUE, type = "marginal")
-  expect_known_output(Enspecies_condlv.v, file = "Especrich_condLV.txt", print = TRUE, update = FALSE)
-  
+  noccspecies_condlv.v <- speciesrichness(fit,
+                                          occORdetection = "occupancy",
+                                          usefittedlvv = TRUE)
+  expect_snapshot_value(noccspecies_condlv.v, style = "serialize", ignore_attr = TRUE)
+
+  ndetspecies_condlv.v <- speciesrichness(fit,
+                                          occORdetection = "detection",
+                                          usefittedlvv = TRUE)
+  expect_snapshot_value(ndetspecies_condlv.v, style = "serialize", ignore_attr = TRUE)
+
   set.seed(1341) #for simulated lv.v
-  Enspecies_marglv.v <- predsumspecies(fit, UseFittedLV = FALSE, type = "marginal")
-  expect_known_output(Enspecies_marglv.v, file = "Especrich_margLV.txt", print = TRUE, update = FALSE)
+  Enoccspecies_marglv.v <- speciesrichness(fit,
+                                        occORdetection = "occupancy",
+                                        usefittedlvv = FALSE,
+                                        nlvperdraw = 1000)
+  expect_snapshot_value(Enoccspecies_marglv.v, style = "serialize", ignore_attr = TRUE)
+  set.seed(1654)
+  Endetspecies_marglv.v <- speciesrichness(fit,
+                                        occORdetection = "detection",
+                                        usefittedlvv = FALSE,
+                                        nlvperdraw = 1000)
+  expect_snapshot_value(Endetspecies_marglv.v, style = "serialize", ignore_attr = TRUE)
+
   pbapply::pboptions(pbopt)
 })
 
