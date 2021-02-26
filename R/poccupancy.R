@@ -141,7 +141,8 @@ abind_alongNp1 <- function(listofarrays){
 
 # default treats lv.v and loadings as independent, simulating the former. 
 #' lvvfromposterior = TRUE draws lv.v from the posterior with all other loadings.
-# margLV = TRUE returns probabilities marginal over fitted lv.b and unknown lv.v. Marginalising over lv.v (non-fitted) is equivalent to the plain jsodm occupancy probability given the occ.b loadings.
+# margLV = TRUE returns probabilities marginal over fitted lv.b and unknown lv.v. This is equivalent to the plain jsodm occupancy probability given the occ.b loadings.
+# margLV = FALSE and lvvfromposterior = FALSE means the values returned are given by lvv simulalated from independent standard normal, one set of lvv per draw.
 # due to use in DS_residuals default MUST be to use lv.v from posterior
 #' @export
 poccupy.jsodm_lv <- function(fit, usethetasummary = NULL, lvvfromposterior = TRUE, margLV = FALSE){

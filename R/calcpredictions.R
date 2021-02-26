@@ -20,6 +20,7 @@
 #' @return A 2 dimensional array. For each species (column) and each model site (row), the expected number of detections.
 #' @export
 Endetect_modelsite <- function(fit, type = "median", conditionalLV = TRUE){
+  warning("Obsolute: There is no replacement for this function.")
   if (!fit$summary.available){ fit <- add.summary(fit)}
   
   # Get ModelSite Occupany Predictions
@@ -109,6 +110,7 @@ pdetect_indvisit <- function(fit, type = "median", conditionalLV = TRUE){
 #' @return A matrix of detection probabilities. Each row is a visit, corresponding to the rows in Xobs. Each column is a species.
 #' @export
 pdetect_condoccupied <- function(fit, type = "median"){
+  warning("Obsolete: use pdet_occ() instead.")
   if (!fit$summary.available){ fit <- add.summary(fit)}
   fit$data <- as_list_format(fit$data)
 
@@ -146,6 +148,7 @@ pdetect_condoccupied <- function(fit, type = "median"){
 #' @return A matrix of occupany probabilities. Each row is a ModelSite, corresponding to the rows in Xocc. Each column is a species.
 #' @export
 poccupy_species <- function(fit, type = "median", conditionalLV = TRUE, numLVsims = 10000){
+  warning("Obsolete: use poccupy() instead, and then take the mean across draws if appropriate.")
   if (is.character(type) && type == "marginal"){
     draws <- do.call(rbind, fit$mcmc)
   } else {
