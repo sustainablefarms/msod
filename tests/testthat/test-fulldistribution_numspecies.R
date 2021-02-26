@@ -13,11 +13,11 @@ ci95generous <- function(rv){
 
 test_that("Full artificial model same summaries as expected_biodiversity", {
   artfit <- artificial_runjags(nspecies = 60, nsites = 20, nvisitspersite = 3, modeltype = "jsodm_lv", nlv = 4)
-  numspec_summ <- predsumspecies(artfit, UseFittedLV = TRUE, type = "marginal")
+  numspec_summ <- speciesrichness(artfit, occORdetection = "detection", usefittedlvv = TRUE)
   numspec_distr <- predsumspeciesRV(artfit, UseFittedLV = TRUE, type = "marginal")
   
-  expect_equivalent(numspec_summ["Esum_det", ], vapply(numspec_distr, E, FUN.VALUE = 0.23))
-  expect_equivalent(numspec_summ["Vsum_det", ], vapply(numspec_distr, V, FUN.VALUE = 0.23), tol = 1E-5)
+  expect_equal(numspec_summ["E", ], vapply(numspec_distr, E, FUN.VALUE = 0.23), ignore_attr = TRUE)
+  expect_equal(numspec_summ["V", ], vapply(numspec_distr, V, FUN.VALUE = 0.23), tolerance = 1E-5, ignore_attr = TRUE)
 })
 
 test_that("Full artificial model with excellent detection, same summaries as expected_biodiversity", {
@@ -25,12 +25,11 @@ test_that("Full artificial model with excellent detection, same summaries as exp
                                ObsFmla = "~ 1",
                                det.b.min = 20, det.b.max = 20.1, #makes detection almost certain
 			       modeltype = "jsodm_lv", nlv = 4) 
-  numspec_summ <- predsumspecies(artfit, UseFittedLV = TRUE, type = "marginal")
+  numspec_summ <- speciesrichness(artfit, occORdetection = "occupancy", usefittedlvv = TRUE)
   numspec_distr <- predsumspeciesRV(artfit, UseFittedLV = TRUE, type = "marginal")
   
-  expect_equivalent(numspec_summ["Esum_occ", ], numspec_summ["Esum_det", ])
-  expect_equivalent(numspec_summ["Esum_occ", ], vapply(numspec_distr, E, FUN.VALUE = 0.23))
-  expect_equivalent(numspec_summ["Vsum_occ", ], vapply(numspec_distr, V, FUN.VALUE = 0.23), tol = 1E-5)
+  expect_equal(numspec_summ["E", ], vapply(numspec_distr, E, FUN.VALUE = 0.23), ignore_attr = TRUE)
+  expect_equal(numspec_summ["V", ], vapply(numspec_distr, V, FUN.VALUE = 0.23), tolerance = 1E-5, ignore_attr = TRUE)
 })
 
 test_that("Uncertainty dominated by latent variables.", {
@@ -59,7 +58,7 @@ test_that("Uncertainty dominated by latent variables.", {
                  obsnum = NumSpecies,
                  SIMPLIFY = TRUE)
   # as draws are true representation of distribution expect the 95% credible interval to cover observation 95% of the time
-  expect_equal(mean(inci_fittedlv.v), 0.95, tol = 0.05)
+  expect_equal(mean(inci_fittedlv.v), 0.95, tolerance = 0.05)
 
   sumRVs_margpost_marglv.v <- predsumspeciesRV(artfit, UseFittedLV = FALSE, nLVsim = 100, type = "marginal")
   # par(mfrow = c(4, 5))
@@ -98,7 +97,7 @@ test_that("Credible intervals accurate for model without restrictions.", {
                           obsnum = NumSpecies,
                           SIMPLIFY = TRUE)
   # as draws are true representation of distribution expect the 95% credible interval to cover observation 95% of the time
-  expect_equal(mean(inci_fittedlv.v), 0.95, tol = 0.05)
+  expect_equal(mean(inci_fittedlv.v), 0.95, tolerance = 0.05)
   
   
   sumRVs_margpost_marglv.v <- predsumspeciesRV(artfit, UseFittedLV = FALSE, nLVsim = 100, type = "marginal")
@@ -114,7 +113,7 @@ test_that("Credible intervals accurate for model without restrictions.", {
                         obsnum = NumSpecies,
                         SIMPLIFY = TRUE)
   # although lv.v not supplied, the lv.vs are not far from Gaussian so expect the predictions marginal across the lv.v distribution will work
-  expect_equal(mean(inci_marglv.v), 0.95, tol = 0.05)
+  expect_equal(mean(inci_marglv.v), 0.95, tolerance = 0.05)
   
   # expect the confidence intervals to be larger when lv.v isn't known
   expect_gt(mean(ci_marglv.vsize - ci_fittedlv.vsize >= 0), 0.9) #nearly all of the time exceptions could be small rounding differences
