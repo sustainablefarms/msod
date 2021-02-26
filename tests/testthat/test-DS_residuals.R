@@ -100,33 +100,23 @@ test_that("Occupancy and Detection Residuals Gaussian for fresh conversion from 
   #'  pOccupancy is the probability of ModelSite being occupied.
   #'  pDetected_cond is the probability of detecting the species, given the species occupies the ModelSite.
   #' @param obs is a dataframe with columns Species, ModelSite, and Detected
-  pOccupancy <- poccupy_species(fit, type = 1)
+  pOccupancy <- poccupy(fit, usethetasummary = 1)[,,1]
   pOccupancy <- cbind(ModelSite = 1:nrow(fit$data$Xocc), pOccupancy) %>%
-    as_tibble() %>%
+    tibble::as_tibble() %>%
     tidyr::pivot_longer(-ModelSite, names_to = "Species", values_to = "pOccupancy")
-  pDetCondOcc <- cbind(ModelSite = fit$data$ModelSite, VisitId = 1:nrow(fit$data$Xobs), pdetect_condoccupied(fit, type = 1)) %>%
-    as_tibble() %>%
+  pDetCondOcc <- cbind(ModelSite = fit$data$ModelSite, VisitId = 1:nrow(fit$data$Xobs), pdet_occ(fit, usethetasummary = 1)[,,1]) %>%
+    tibble::as_tibble() %>%
     tidyr::pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "pDetected_cond")
-  preds <- inner_join(pOccupancy, pDetCondOcc, by = c("ModelSite", "Species")) %>% arrange(VisitId, Species, ModelSite)
+  preds <- dplyr::inner_join(pOccupancy, pDetCondOcc, by = c("ModelSite", "Species")) %>% dplyr::arrange(VisitId, Species, ModelSite)
   obs <- cbind(ModelSite = as.numeric(fit$data$ModelSite), VisitId = 1:nrow(fit$data$Xobs), fit$data$y) %>%
-    as_tibble() %>%
+    tibble::as_tibble() %>%
     tidyr::pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "Detected") %>%
-    arrange(VisitId, Species, ModelSite)
+    dplyr::arrange(VisitId, Species, ModelSite)
   
   ds_residuals <- ds_occupancy_residuals.raw(preds, obs)
   expect_gt(shapiro.test(ds_residuals$OccupancyResidual)$p.value, 0.01) #if things are good this test will fail 1/100 times
   
-  #' @param preds is a dataframe with columns Species, ModelSite, and pDetected
-  #' @param obs is a dataframe with columns Species, ModelSite, and Detected
-  preds <- cbind(ModelSite = fit$data$ModelSite, VisitId = 1:nrow(fit$data$Xobs), pdetect_indvisit(fit, type = 1)) %>%
-    as_tibble() %>%
-    tidyr::pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "pDetected") %>%
-    arrange(VisitId, Species, ModelSite)
-  obs <- cbind(ModelSite = as.numeric(fit$data$ModelSite), VisitId = 1:nrow(fit$data$Xobs), fit$data$y) %>%
-    as_tibble() %>%
-    tidyr::pivot_longer(-c(ModelSite, VisitId), names_to = "Species", values_to = "Detected") %>%
-    arrange(VisitId, Species, ModelSite)
-  
+  colnames(preds)[colnames(preds) == "pDetected_cond"] <- "pDetected"
   ds_residuals <- ds_detection_residuals.raw(preds, obs)
   expect_gt(shapiro.test(ds_residuals$DetectionResidual)$p.value, 0.01) #if things are good this test will fail 1/100 times
 })
@@ -144,13 +134,14 @@ test_that("Detection residuals sensible and gaussian for very raw simulated data
   names(specdet_base) <- species
   visitdetprob_offset <- runif(nrow(visits), -0.1, 0.1)
   preds <- visits %>%
-    dplyr::mutate(pDetected = pOccupancy * (specdet_base[Species] + visitdetprob_offset))
+    dplyr::mutate(pDetected = pOccupancy * (specdet_base[Species] + visitdetprob_offset),
+                  VisitId = 1:nrow(visits))
   
   # simulate observations from the given predicted values (purely for testing)
-  obs <- preds %>% dplyr::select(Species, ModelSite)
+  obs <- preds %>% dplyr::select(Species, ModelSite, VisitId)
   obs$Detected <- mapply(rbinom, prob = preds$pDetected, MoreArgs = list(n = 1, size = 1))
 
-  # test residuals
+  # test residuals fixed given seed
   expect_equal(ds_detection_residuals.raw(preds, obs, seed = 1234),
                ds_detection_residuals.raw(preds, obs, seed = 1234))
   expect_true(any(ds_detection_residuals.raw(preds, obs) != 
@@ -162,7 +153,7 @@ test_that("Detection residuals sensible and gaussian for very raw simulated data
   expect_gt(shapiroresults$p.value, 0.01) #if things are good this test will fail 1/100 times
 })
 
-test_that("Detection residuals sensible and gaussian for very raw simulated data", {
+test_that("Occupancy residuals sensible and gaussian for very raw simulated data", {
   # simulate a data set
   species <- LETTERS
   sites <- c(1:100)
@@ -176,13 +167,14 @@ test_that("Detection residuals sensible and gaussian for very raw simulated data
   names(specdet_base) <- species
   visitdetprob_offset <- runif(nrow(visits), -0.1, 0.1)
   preds <- visits %>%
-    dplyr::mutate(pDetected_cond = specdet_base[Species] + visitdetprob_offset)
+    dplyr::mutate(pDetected_cond = specdet_base[Species] + visitdetprob_offset,
+                  VisitId = 1:nrow(visits))
   
   # simulate observations from the given predicted values (purely for testing)
-  obs <- preds %>% dplyr::select(Species, ModelSite)
+  obs <- preds %>% dplyr::select(Species, ModelSite, VisitId)
   obs$Detected <- mapply(rbinom, prob = preds$Occupied * preds$pDetected_cond, MoreArgs = list(n = 1, size = 1))
 
-  preds <- preds %>% dplyr::select(Species, ModelSite, pOccupancy, pDetected_cond)
+  preds <- preds %>% dplyr::select(Species, ModelSite, VisitId, pOccupancy, pDetected_cond)
   
   # test residuals response to seed
   expect_equal(ds_occupancy_residuals.raw(preds, obs, seed = 1234),
@@ -294,10 +286,11 @@ test_that("Number of detection residuals computed for a highly common species at
   names(specdet_base) <- species
   visitdetprob_offset <- runif(nrow(visits), -0.1, 0.1)
   preds <- visits %>%
-    dplyr::mutate(pDetected = pOccupancy * (specdet_base[Species] + visitdetprob_offset))
+    dplyr::mutate(pDetected = pOccupancy * (specdet_base[Species] + visitdetprob_offset),
+                  VisitId = 1:nrow(visits))
   
   # simulate observations from the given predicted values (purely for testing)
-  obs <- preds %>% dplyr::select(Species, ModelSite)
+  obs <- preds %>% dplyr::select(Species, ModelSite, VisitId)
   obs$Detected <- mapply(rbinom, prob = preds$pDetected, MoreArgs = list(n = 1, size = 1))
   
   if (sum(obs$Detected) > 0){expect_equal(nrow(ds_detection_residuals.raw(preds, obs)), 1)}
@@ -340,14 +333,15 @@ test_that("Residuals for fitted and identical external data match for plain JSOD
   Xocc <- originalXocc[1:10, ]
   Xobs <- originalXobs[originalXobs$ModelSite %in% Xocc$ModelSite, ]
   y <- fit$data$y[originalXobs$ModelSite %in% Xocc$ModelSite, ]
-  fitwnewdata <- supplant_new_data(fit, Xocc, Xobs, ModelSite = "ModelSite", y = y)
+  expect_warning(fitwnewdata <- supplant_new_data(fit, Xocc, Xobs, ModelSite = Xobs$ModelSite, y = y),
+                 regexp = "[Oo]bsolete")
   
   resid_det_new <- ds_detection_residuals.fit(fitwnewdata, type = 1, seed = 32165)
   resid_occ_new <- ds_occupancy_residuals.fit(fitwnewdata, type = 1, seed = 32165)
   
   # test
-  expect_equivalent(resid_det[resid_det$ModelSite %in% 1:10, ], resid_det_new)
-  expect_equivalent(resid_occ[1:10, ], resid_occ_new)
+  expect_equal(resid_det[resid_det$ModelSite %in% 1:10, ], resid_det_new, ignore_attr = TRUE)
+  expect_equal(resid_occ[1:10, ], resid_occ_new, ignore_attr = TRUE)
 })
 
 
@@ -362,7 +356,8 @@ test_that("Supplanting new data into a fitted jsodm object", {
   Xocc <- originalXocc[1:10, ]
   Xobs <- originalXobs[originalXobs$ModelSite %in% Xocc$ModelSite, ]
   y <- fit$data$y[originalXobs$ModelSite %in% Xocc$ModelSite, ]
-  fitwnewdata <- supplant_new_data.jsodm_lv(fit, Xocc, Xobs, ModelSite = "ModelSite", y = y)
+  expect_warning(fitwnewdata <- supplant_new_data(fit, Xocc, Xobs, ModelSite = Xobs$ModelSite, y = y),
+                 regexp = "[Oo]bsolete")
 
   expect_equal(fit$data$Xocc[1:10, , drop = FALSE], fitwnewdata$data$Xocc[, , drop = FALSE])
   expect_equal(fit$data$Xobs[originalXobs$ModelSite %in% Xocc$ModelSite, ], fitwnewdata$data$Xobs[, , drop = FALSE])
