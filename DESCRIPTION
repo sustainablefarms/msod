@@ -19,7 +19,8 @@ Suggests:
     tensor,
     plyr,
     Rfast,
-    loo
+    loo,
+    abind
 Encoding: UTF-8
 ByteCompile: true
 Roxygen: list(markdown = TRUE)
