@@ -60,11 +60,13 @@ test_that("lppds insample and outsample data identical when observations identic
   originalXobs <- cbind(ModelSite = artmodel$data$ModelSite, originalXobs)
   
   outofsample_y <- artmodel$data$y
-  outofsample_lppd <- lppd_newdata(artmodel,
-                                   Xocc = originalXocc,
-                                   yXobs = cbind(originalXobs, outofsample_y),
-                                   ModelSite = "ModelSite")
-  
+  expect_warning(likel.mat <- apply_to_new_data(likelihood, artmodel, 
+                                 Xocc = originalXocc, 
+                                 Xobs = originalXobs,
+                                 ModelSite = originalXobs$ModelSite,
+                                 y = outofsample_y), "[Oo]bsolete")
+  outofsample_lppd <- elpd(likel.mat)
+
   # of a randomly selected NEW ModelSite
   lppd_pred_fromoutofsample <- mean(outofsample_lppd$lpds)
   lppd_pred_fromwaic <- waic$estimates["elpd_waic", "Estimate"] / nrow(artmodel$data$Xocc)
@@ -84,10 +86,12 @@ test_that("lppds insample and outsample data similar on very artifical simple si
   originalXobs <- cbind(ModelSite = artmodel$data$ModelSite, originalXobs)
   
   outofsample_y <- simulate_detections(artmodel, esttype = 1)
-  outofsample_lppd <- lppd_newdata(artmodel,
-               Xocc = originalXocc,
-               yXobs = cbind(originalXobs, outofsample_y),
-               ModelSite = "ModelSite")
+  expect_warning(likel.mat <- apply_to_new_data(likelihood, artmodel, 
+                                                Xocc = originalXocc, 
+                                                Xobs = originalXobs,
+                                                ModelSite = originalXobs$ModelSite,
+                                                y = outofsample_y), "[Oo]bsolete")
+  outofsample_lppd <- elpd(likel.mat)
   
   # of a randomly selected NEW ModelSite
   lppd_pred_fromoutofsample <- mean(outofsample_lppd$lpds)
@@ -106,7 +110,7 @@ test_that("Likelihood computations match simulations without lv.v for nearly cer
   jointoutcomes <- apply(artfit$data$y, 1, paste0, collapse = ",")
   
   # theory likelihoods
-  poccupancy_all <- poccupy_species(artfit, type = 1, conditionalLV = FALSE)[1, ]
+  poccupancy_all <- poccupy(artfit, usethetasummary = 1)[1, , 1]
   rvA <- discreteRV::RV(c(1, 0), poccupancy_all["A"], fractions = FALSE)
   rvB <- discreteRV::RV(c(1, 0), poccupancy_all["B"], fractions = FALSE)
   jointRV <- discreteRV::joint(rvA, rvB)
@@ -120,8 +124,8 @@ test_that("Likelihood computations match simulations without lv.v for nearly cer
   lkl <- likelihood(artfit)
   
   # compare all
-  expect_equivalent(lkl_th, lkl)
-  expect_equivalent(lkl_th, lkl_sim, tolerance = 0.05)
+  expect_equal(lkl_th, lkl, ignore_attr = TRUE)
+  expect_equal(lkl_th, lkl_sim, tolerance = 0.05, ignore_attr = TRUE)
 })
 
 test_that("Likelihood computations match simulations without lv.v for multiple visits", {
@@ -171,10 +175,10 @@ test_that("Likelihood computations match simulations with lv.v, single visits", 
   lkl_sim <- sim_distr[jointoutcomes]
   
   # from this package
-  lkl <- drop(likelihood(artfit))
+  lkl <- drop(likelihood(artfit, numlvsims = 2000))
   
   # compare 
-  expect_equivalent(lkl, lkl_sim, tolerance = 0.01)
+  expect_equal(lkl, lkl_sim, tolerance = 0.01, ignore_attr = TRUE)
 })
 
 test_that("Likelihood computations match simulations with lv.v, multiple visits", {
@@ -201,7 +205,7 @@ test_that("Likelihood computations match simulations with lv.v, multiple visits"
   lkl <- likelihood(artfit)
   
   # compare 
-  expect_equivalent(lkl, lkl_sim, tolerance = 0.01)
+  expect_equal(lkl, lkl_sim, tolerance = 0.01, ignore_attr = TRUE)
 })
 
 
