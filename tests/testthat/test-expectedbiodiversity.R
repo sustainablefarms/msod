@@ -101,7 +101,7 @@ test_that("In sample data; fitted lv.v; different draws", {
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
   ininterval_marg <- (NumSpecies_interleaved > numspec["E", ] - 2 * sqrt(numspec["V", ])) & 
     (NumSpecies_interleaved < numspec["E", ] + 2 * sqrt(numspec["V", ]))
-  expect_equal(mean(ininterval_marg), 0.95, tol = 0.05)
+  expect_equal(mean(ininterval_marg), 0.95, tolerance = 0.05)
 })
 
 test_that("In sample data; fitted lv.v", {
@@ -127,7 +127,7 @@ test_that("In sample data; fitted lv.v", {
   
   # check with predicted standard error once the software is computed
   sd_final <- sqrt(meanvar[ncol(numspec)])
-  expect_equal(meandiff[ncol(numspec)], 0, tol = 3 * sd_final)
+  expect_equal(meandiff[ncol(numspec)], 0, tolerance = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
   expect_lt(abs(meandiff[length(meandiff)]), max(abs(meandiff[floor(length(meandiff) / 20) + 1:20 ])))
@@ -136,14 +136,14 @@ test_that("In sample data; fitted lv.v", {
                data.frame(pred = numspec["E", ]),
                data.frame(pred = numspec["V", ])
                )
-  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
-  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
-  expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
+  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tolerance = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]], ignore_attr = TRUE)
+  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tolerance = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]], ignore_attr = TRUE)
+  expect_equal(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tolerance = 0.05 * Enum_compare_sum[["V[D]_obs"]], ignore_attr = TRUE)
   
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
   ininterval <- (NumSpecies > numspec["E", ] - 2 * sqrt(numspec["V", ])) & 
     (NumSpecies < numspec["E", ] + 2 * sqrt(numspec["V", ]))
-  expect_equal(mean(ininterval), 0.95, tol = 0.05)
+  expect_equal(mean(ininterval), 0.95, tolerance = 0.05)
   
   plt <- cbind(NumSpecies = NumSpecies, pred = numspec["E", ], se = sqrt(numspec["V", ])) %>% 
     dplyr::as_tibble() %>% 
@@ -211,7 +211,7 @@ test_that("In sample data; marginal on lv.v", {
   
   # check with predicted standard error 
   sd_final <- sqrt(meanvar[ncol(numspec)])
-  expect_equal(meandiff[ncol(numspec)], 0, tol = 3 * sd_final)
+  expect_equal(meandiff[ncol(numspec)], 0, tolerance = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
   expect_lt(abs(meandiff[length(meandiff)]), max(abs(meandiff[floor(length(meandiff) / 20) + 1:20 ])))
@@ -255,7 +255,7 @@ test_that("In sample data; no lv.v", {
   
   # check with predicted standard error once the software is computed
   sd_final <- sqrt(meanvar[ncol(Enumspecdet)])
-  expect_equal(meandiff[ncol(Enumspecdet)], 0, tol = 3 * sd_final)
+  expect_equal(meandiff[ncol(Enumspecdet)], 0, tolerance = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
   expect_lt(abs(meandiff[length(meandiff)]), max(abs(meandiff[floor(length(meandiff) / 20) + 1:20 ])))
@@ -263,12 +263,12 @@ test_that("In sample data; no lv.v", {
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
   ininterval <- (NumSpecies > Enumspecdet["E", ] - 2 * sqrt(Enumspecdet["V", ])) & 
     (NumSpecies < Enumspecdet["E", ] + 2 * sqrt(Enumspecdet["V", ]))
-  expect_equal(mean(ininterval), 0.95, tol = 0.05)
+  expect_equal(mean(ininterval), 0.95, tolerance = 0.05)
 })
 
 
 test_that("Holdout data; has lv.vs", {
-  nsites <- 10000
+  nsites <- 1000
   artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, modeltype = "jsodm_lv", nlv = 4) 
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
@@ -300,7 +300,7 @@ test_that("Holdout data; has lv.vs", {
   
   # check with predicted standard error once the software is computed
   sd_final <- sqrt(meanvar[ncol(Enumspec)])
-  expect_equal(meandiff[ncol(Enumspec)], 0, tol = 3 * sd_final)
+  expect_equal(meandiff[ncol(Enumspec)], 0, tolerance = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
   expect_lt(abs(meandiff[length(meandiff)]), max(abs(meandiff[floor(length(meandiff) / 100) + 1:20 ])))
@@ -309,14 +309,14 @@ test_that("Holdout data; has lv.vs", {
                                    data.frame(pred = Enumspec["E", ]),
                                    data.frame(pred = Enumspec["V", ])
   )
-  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
-  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
-  expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
+  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tolerance = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]], ignore_attr = TRUE)
+  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tolerance = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
+  expect_equal(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tolerance = 0.05 * Enum_compare_sum[["V[D]_obs"]], ignore_attr = TRUE)
   
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
   ininterval <- (NumSpecies > Enumspec["E", ] - 2 * sqrt(Enumspec["V", ])) & 
     (NumSpecies < Enumspec["E", ] + 2 * sqrt(Enumspec["V", ]))
-  expect_equal(mean(ininterval), 0.95, tol = 0.05)
+  expect_equal(mean(ininterval), 0.95, tolerance = 0.05)
 })
 
 
@@ -352,7 +352,7 @@ test_that("Holdout data; no lv.vs", {
   
   # check with predicted standard error once the software is computed
   sd_final <- sqrt(meanvar[ncol(Enumspec)])
-  expect_equal(meandiff[ncol(Enumspec)], 0, tol = 3 * sd_final)
+  expect_equal(meandiff[ncol(Enumspec)], 0, tolerance = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
   expect_lt(abs(meandiff[length(meandiff)]), max(abs(meandiff[floor(length(meandiff) / 100) + 1:20 ])))
@@ -361,14 +361,14 @@ test_that("Holdout data; no lv.vs", {
                                    data.frame(pred = Enumspec["E", ]),
                                    data.frame(pred = Enumspec["V", ])
   )
-  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
-  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
-  expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
+  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tolerance = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]], ignore_attr = TRUE)
+  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tolerance = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]], ignore_attr = TRUE)
+  expect_equal(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tolerance = 0.05 * Enum_compare_sum[["V[D]_obs"]], ignore_attr = TRUE)
   
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
   ininterval <- (NumSpecies > Enumspec["E", ] - 2 * sqrt(Enumspec["V", ])) & 
     (NumSpecies < Enumspec["E", ] + 2 * sqrt(Enumspec["V", ]))
-  expect_equal(mean(ininterval), 0.95, tol = 0.05)
+  expect_equal(mean(ininterval), 0.95, tolerance = 0.05)
 })
 
 test_that("Subset biodiversity matches simulations", {
@@ -400,13 +400,13 @@ test_that("Subset biodiversity matches simulations", {
   expect_warning(numspec_insample_fitlv.v <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedLV = TRUE, type = "marginal"), "[Oo]bsolete")
   inci_insample_fitlv.v <- (NumSpeciesObs > numspec_insample_fitlv.v["E", ] - 2 * sqrt(numspec_insample_fitlv.v["V", ])) & 
     (NumSpeciesObs < numspec_insample_fitlv.v["E", ] + 2 * sqrt(numspec_insample_fitlv.v["V", ]))
-  expect_equal(mean(inci_insample_fitlv.v), 0.95, tol = 0.05)
+  expect_equal(mean(inci_insample_fitlv.v), 0.95, tolerance = 0.05)
   
   # Predict number within subset, in sample, marginal lv.v
   expect_warning(numspec_insample_marglv.v <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedLV = FALSE, type = "marginal"), "[Oo]bsolete")
   inci_insample_marglv.v <- (NumSpeciesObs > numspec_insample_marglv.v["E", ] - 2 * sqrt(numspec_insample_marglv.v["V", ])) & 
     (NumSpeciesObs < numspec_insample_marglv.v["E", ] + 2 * sqrt(numspec_insample_marglv.v["V", ]))
-  expect_equal(mean(inci_insample_marglv.v), 0.95, tol = 0.05)
+  expect_equal(mean(inci_insample_marglv.v), 0.95, tolerance = 0.05)
   
   # Predict number within subset, outside sample, marginal lv.v
   originalXocc <- unstandardise.designmatprocess(artfit$XoccProcess, artfit$data$Xocc)
@@ -420,13 +420,13 @@ test_that("Subset biodiversity matches simulations", {
                       originalXocc, originalXobs, ModelSite = originalXobs$ModelSite,
                       funargs = list(occORdetection = "detection",
                                      usefittedlvv = FALSE,
-                                     nlvperdraw = 1000)), "[Oo]bsolete")
+                                     nlvperdraw = 100)), "[Oo]bsolete")
   
   NumSpeciesObsHoldout <- detectednumspec(outofsample_y, artfit$data$ModelSite)
 
   inci_holdout_marglv.v <- (NumSpeciesObsHoldout > numspec_holdout_marglv.v["E", ] - 2 * sqrt(numspec_holdout_marglv.v["V", ])) & 
     (NumSpeciesObsHoldout < numspec_holdout_marglv.v["E", ] + 2 * sqrt(numspec_holdout_marglv.v["V", ]))
-  expect_equal(mean(inci_holdout_marglv.v), 0.95, tol = 0.05)
+  expect_equal(mean(inci_holdout_marglv.v), 0.95, tolerance = 0.05)
 })
 
 test_that("Subset biodiversity to single species matches simulations", {
@@ -460,9 +460,9 @@ test_that("Subset biodiversity to single species matches simulations", {
                                    data.frame(pred = numspec_insample_fitlv.v["E", ]),
                                    data.frame(pred = numspec_insample_fitlv.v["V", ])
   )
-  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]], ignore_attr = TRUE)
-  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]], ignore_attr = TRUE)
-  expect_equal(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]], ignore_attr = TRUE)
+  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tolerance = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]], ignore_attr = TRUE)
+  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tolerance = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]], ignore_attr = TRUE)
+  expect_equal(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tolerance = 0.05 * Enum_compare_sum[["V[D]_obs"]], ignore_attr = TRUE)
 
   # Predict number within subset, in sample, marginal lv.v
   expect_warning(numspec_insample_marglv.v <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedLV = FALSE, type = "marginal"), "[Oo]bsolete")
@@ -470,10 +470,10 @@ test_that("Subset biodiversity to single species matches simulations", {
                                    data.frame(pred = numspec_insample_marglv.v["E", ]),
                                    data.frame(pred = numspec_insample_marglv.v["V", ])
   )
-  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]], ignore_attr = TRUE)
-  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]], ignore_attr = TRUE)
+  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tolerance = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]], ignore_attr = TRUE)
+  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tolerance = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]], ignore_attr = TRUE)
   # the follow test doesn't pass, which is consistent with the fitted lv.v not being distributed according to a Gaussian distribution
-  # expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
+  # expect_equal(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tolerance = 0.05 * Enum_compare_sum[["V[D]_obs"]])
   
   # Predict number within subset, outside sample, marginal lv.v
   originalXocc <- unstandardise.designmatprocess(artfit$XoccProcess, artfit$data$Xocc)
@@ -496,47 +496,10 @@ test_that("Subset biodiversity to single species matches simulations", {
                                    data.frame(pred = numspec_holdout_marglv.v["E", ]),
                                    data.frame(pred = numspec_holdout_marglv.v["V", ])
   )
-  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]], ignore_attr = TRUE)
-  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]], ignore_attr = TRUE)
+  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tolerance = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]], ignore_attr = TRUE)
+  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tolerance = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]], ignore_attr = TRUE)
   # the follow test doesn't pass, which is consistent with the fitted lv.v not being distributed according to a Gaussian distribution
-  # expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
-})
-
-test_that("Endetect_modelsite matches predsumspecies", {
-  # make it full test by having: different draws and latent variables, and testing both marginal and fitted latent variables
-  nsites <- 1000
-  artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 1, modeltype = "jsodm_lv", nlv = 4)
-  
-  # using fitted lv.v
-  Edet1 <- Endetect_modelsite(artfit, type = "median", conditionalLV = TRUE)
-  Edet2 <- lapply(artfit$species, function(sp) {
-                  Edet <- speciesrichness(artfit, 
-                   occORdetection = "detection",
-                   usefittedlvv = TRUE,
-                   desiredspecies = sp)
-                  return(Edet)}
-                  )
-  Edet2_t <- t(do.call(rbind, lapply(Edet2, function(x) x["E", , drop = FALSE])))
-  expect_equal(Edet1[[1]], Edet2_t, ignore_attr = TRUE)
-  
-  Edet2_V_t <- t(do.call(rbind, lapply(Edet2, function(x) x["V", , drop = FALSE])))
-  expect_equal(Edet1[[2]], Edet2_V_t, ignore_attr = TRUE)
-  
-  # marginal to lv.v
-  Edet1 <- Endetect_modelsite(artfit, type = "median", conditionalLV = FALSE)
-  Edet2 <- lapply(artfit$species, function(sp) {
-    Edet <- speciesrichness(artfit, 
-                            occORdetection = "detection",
-                            usefittedlvv = FALSE,
-                            nlvperdraw = 1000,
-                            desiredspecies = sp)
-    return(Edet)}
-  )
-  Edet2_t <- t(do.call(rbind, lapply(Edet2, function(x) x["E", , drop = FALSE])))
-  expect_equal(Edet1[[1]], Edet2_t, tolerance = 1E-2, ignore_attr = TRUE)
-  
-  Edet2_V_t <- t(do.call(rbind, lapply(Edet2, function(x) x["V", , drop = FALSE])))
-  expect_equal(Edet1[[2]], Edet2_V_t, tolerance = 1E-2, ignore_attr = TRUE)
+  # expect_equal(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tolerance = 0.05 * Enum_compare_sum[["V[D]_obs"]])
 })
 
 #########################################################################################
@@ -566,19 +529,19 @@ test_that("No lv.v and identical sites", {
   
   # check with predicted standard error once the software is computed
   sd_final <- sqrt(meanvar[ncol(EVsum)])
-  expect_equal(meandiff[ncol(EVsum)], 0, tol = 3 * sd_final)
+  expect_equal(meandiff[ncol(EVsum)], 0, tolerance = 3 * sd_final)
   
   # difference between expected and observed should be zero on average; check that is getting closer with increasing data
   expect_lt(abs(meandiff[length(meandiff)]), max(abs(meandiff[floor(length(meandiff) / 20) + 1:20 ])))
 
   # Expect sd to be close to theoretical sd. Hopefully within 10%
-  expect_equal(sd(NumSpecies), sqrt(EVsum["V", 1]), tol = 0.1 * sqrt(EVsum["V", 1]), ignore_attr = TRUE)
+  expect_equal(sd(NumSpecies), sqrt(EVsum["V", 1]), tolerance = 0.1 * sqrt(EVsum["V", 1]), ignore_attr = TRUE)
   
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
   expect_warning(Enumspecdet <- predsumspecies(artfit, type = "marginal", UseFittedLV = FALSE))
   ininterval <- (NumSpecies > Enumspecdet["E", ] - 2 * sqrt(Enumspecdet["V", ])) & 
     (NumSpecies < Enumspecdet["E", ] + 2 * sqrt(Enumspecdet["V", ]))
-  expect_equal(mean(ininterval), 0.95, tol = 0.05)
+  expect_equal(mean(ininterval), 0.95, tolerance = 0.05)
 })
 
 test_that("Expected occupied number for in sample data; fitted lv.v", {
@@ -604,7 +567,7 @@ test_that("Expected occupied number for in sample data; fitted lv.v", {
   
   # check with predicted standard error once the software is computed
   sd_final <- sqrt(meanvar[ncol(Enumspecdet)])
-  expect_equal(meandiff[ncol(Enumspecdet)], 0, tol = 3 * sd_final)
+  expect_equal(meandiff[ncol(Enumspecdet)], 0, tolerance = 3 * sd_final)
 })
 
 pbapply::pboptions(pbopt)
