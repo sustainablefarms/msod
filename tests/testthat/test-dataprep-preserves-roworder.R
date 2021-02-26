@@ -1,4 +1,5 @@
 # test data preparation and transformation
+testthat::local_edition(3)
 
 test_that("JAGS preparations preserve the order of input data", {
   datalist <- artificial_covar_data(nsites = 20, nvisitspersite = 2)  
@@ -17,10 +18,11 @@ test_that("JAGS preparations preserve the order of input data", {
   ftbl1 <- ftable(SpeciesAdetected = cbnd$SpeciesAdetected, StepA = cbnd$StepA)
   
   jagsdatalist <- prepJAGSdata2("jsodm", as.matrix(datalist$Xocc), as.matrix(datalist$Xobs), as.matrix(datalist$y[, -1, drop = FALSE]), as.vector(datalist$Xobs$ModelSite))
-  expect_equivalent(jagsdatalist$y, datalist$y[, -1])
-  expect_equivalent(jagsdatalist$Xobs, as.matrix(datalist$Xobs))
-  expect_equivalent(jagsdatalist$Xocc, as.matrix(datalist$Xocc))
+  expect_equal(jagsdatalist$y, datalist$y[, -1], ignore_attr = TRUE)
+  expect_equal(jagsdatalist$Xobs, as.matrix(datalist$Xobs), ignore_attr = TRUE)
+  expect_equal(jagsdatalist$Xocc, as.matrix(datalist$Xocc), ignore_attr = TRUE)
   
+  runjags::runjags.options(silent.jags=TRUE, silent.runjags=TRUE)
   fit <- suppressWarnings(fitjsodm2(
     Xocc = as.matrix(datalist$Xocc),
     Xobs = as.matrix(datalist$Xobs),
@@ -30,9 +32,9 @@ test_that("JAGS preparations preserve the order of input data", {
     MCMCparams = list(n.chains = 1, adapt = 0, burnin = 0, sample = 1, thin = 1)
   ))
   
-  expect_equivalent(fit$data$ModelSite, datalist$Xobs$ModelSite)
-  expect_equivalent(fit$data$y, as.matrix(datalist$y[, -1]))
-  expect_equivalent(fit$data$Xocc, as.matrix(datalist$Xocc))
+  expect_equal(fit$data$ModelSite, datalist$Xobs$ModelSite, ignore_attr = TRUE)
+  expect_equal(fit$data$y, as.matrix(datalist$y[, -1]), ignore_attr = TRUE)
+  expect_equal(fit$data$Xocc, as.matrix(datalist$Xocc), ignore_attr = TRUE)
   
   cbnd <- data.frame(cbind(ModelSite = fit$data$ModelSite, fit$data$y))  %>%
     dplyr::group_by(ModelSite) %>%
@@ -40,5 +42,5 @@ test_that("JAGS preparations preserve the order of input data", {
     dplyr::left_join(data.frame(fit$data$Xocc), by = "ModelSite")
   ftbl2 <- ftable(SpeciesAdetected = cbnd$SpeciesAdetected, StepA = cbnd$StepA)
   
-  expect_equivalent(ftbl2, ftbl1)
+  expect_equal(ftbl2, ftbl1, ignore_attr = TRUE)
 })
