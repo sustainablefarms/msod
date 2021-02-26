@@ -27,7 +27,7 @@ test_that("In sample data; fitted lv.v; different draws", {
   artfit$mcmc[[2]][1, grepl("^lv.v\\[.*", bugvarnames)] <- artfit$mcmc[[1]][1, grepl("^lv.v\\[.*", bugvarnames)] * runif(4, min = 0.5, max = 1)
   
   # Predicted number of species detected and in occupation
-  numspec <- predsumspecies(artfit, UseFittedLV = TRUE)
+  expect_warning(numspec <- predsumspecies(artfit, UseFittedLV = TRUE), "[Oo]bsolete")
   meanvar <- cumsum(numspec["V", ])/((1:ncol(numspec))^2)
   sd_final <- sqrt(meanvar[ncol(numspec)])
   expect_equal(ncol(numspec), nsites)
@@ -46,7 +46,7 @@ test_that("In sample data; fitted lv.v; different draws", {
   expect_gt(abs(meandiff_1st[ncol(numspec)]), 3 * sd_final)
   
   # Anticipate the Enumspec is correct when using only first draw (chain), as simulated data in artfit is from the first draw
-  Enumspec_1stonly <- predsumspecies(artfit, chain = 1, UseFittedLV = TRUE)
+  expect_warning(Enumspec_1stonly <- predsumspecies(artfit, chain = 1, UseFittedLV = TRUE), "[Oo]bsolete")
   meanvar_1stonly <- cumsum(Enumspec_1stonly["V", ])/((1:ncol(Enumspec_1stonly))^2)
   sd_final_1st <- sqrt(meanvar[ncol(Enumspec_1stonly)])
   
@@ -64,7 +64,7 @@ test_that("In sample data; fitted lv.v; different draws", {
   # Anticipate that it is correct for 2nd draw separated from the 1st draw
   y_2nd <- simulate_detections(artfit, esttype = 2)
   NumSpecies_2nd <- detectednumspec(y = y_2nd, ModelSite = artfit$data$ModelSite)
-  Enumspec_2ndonly <- predsumspecies(artfit, chain = 2, UseFittedLV = TRUE)
+  expect_warning(Enumspec_2ndonly <- predsumspecies(artfit, chain = 2, UseFittedLV = TRUE), "[Oo]bsolete")
   meanvar_2ndonly <- cumsum(Enumspec_2ndonly["V", ])/((1:ncol(Enumspec_2ndonly))^2)
   sd_final_2nd <- sqrt(meanvar[ncol(Enumspec_2ndonly)])
   meandiff_2nd <- dplyr::cummean(NumSpecies_2nd - Enumspec_2ndonly["E", ])
@@ -109,7 +109,7 @@ test_that("In sample data; fitted lv.v", {
   artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, modeltype = "jsodm_lv", nlv = 4)
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
-  numspec <- predsumspecies(artfit, UseFittedLV = TRUE, type = "marginal")
+  expect_warning(numspec <- predsumspecies(artfit, UseFittedLV = TRUE, type = "marginal"), "[Oo]bsolete")
   expect_equal(ncol(numspec), nsites)
   
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
@@ -170,7 +170,7 @@ test_that("In sample data; marginal on lv.v", {
                                )
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
-  numspec <- predsumspecies(artfit, UseFittedLV = FALSE, nLVsim = 1000, type = "marginal")
+  expect_warning(numspec <- predsumspecies(artfit, UseFittedLV = FALSE, nLVsim = 1000, type = "marginal"), "[Oo]bsolete")
   expect_equal(ncol(numspec), nsites)
   
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
@@ -238,7 +238,7 @@ test_that("In sample data; no lv.v", {
   artfit <- artificial_runjags(nspecies = 60, nsites = nsites, nvisitspersite = 3, modeltype = "jsodm")
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
-  Enumspecdet <- predsumspecies(artfit, UseFittedLV = FALSE, type = "marginal")
+  expect_warning(Enumspecdet <- predsumspecies(artfit, UseFittedLV = FALSE, type = "marginal"), "[Oo]bsolete")
   expect_equal(ncol(Enumspecdet), nsites)
   
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
@@ -278,11 +278,11 @@ test_that("Holdout data; has lv.vs", {
   originalXobs <- cbind(ModelSite = artfit$data$ModelSite, originalXobs)
   outofsample_y <- simulate_detections_lv.v(artfit, esttype = 1)
   
-  Enumspec <- apply_to_new_data(speciesrichness,
-                    artfit, originalXocc, originalXobs, ModelSite = "ModelSite",
+  expect_warning(Enumspec <- apply_to_new_data(speciesrichness,
+                    artfit, originalXocc, originalXobs, ModelSite = originalXobs$ModelSite,
                     funargs = list(occORdetection = "detection",
                                    usefittedlvv = FALSE,
-                                   nlvperdraw = 100))
+                                   nlvperdraw = 100)), "[Oo]bsolete")
   
   expect_equal(ncol(Enumspec), nsites)
   
@@ -332,9 +332,9 @@ test_that("Holdout data; no lv.vs", {
   originalXobs <- cbind(ModelSite = artfit$data$ModelSite, originalXobs)
   outofsample_y <- simulate_detections(artfit, esttype = 1)
   
-  Enumspec <- apply_to_new_data(speciesrichness,
-                                artfit, originalXocc, originalXobs, ModelSite = "ModelSite",
-                                funargs = list(occORdetection = "detection"))
+  expect_warning(Enumspec <- apply_to_new_data(speciesrichness,
+                                artfit, originalXocc, originalXobs, ModelSite = originalXobs$ModelSite,
+                                funargs = list(occORdetection = "detection")), "[Oo]bsolete")
 
   expect_equal(ncol(Enumspec), nsites)
   
@@ -397,13 +397,13 @@ test_that("Subset biodiversity matches simulations", {
   NumSpeciesObs <- detectednumspec(y_interleaved[, speciessubset], ModelSite = artfit$data$ModelSite)
   
   # Predict number within subset, in sample, using lv.v
-  numspec_insample_fitlv.v <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedLV = TRUE, type = "marginal")
+  expect_warning(numspec_insample_fitlv.v <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedLV = TRUE, type = "marginal"), "[Oo]bsolete")
   inci_insample_fitlv.v <- (NumSpeciesObs > numspec_insample_fitlv.v["E", ] - 2 * sqrt(numspec_insample_fitlv.v["V", ])) & 
     (NumSpeciesObs < numspec_insample_fitlv.v["E", ] + 2 * sqrt(numspec_insample_fitlv.v["V", ]))
   expect_equal(mean(inci_insample_fitlv.v), 0.95, tol = 0.05)
   
   # Predict number within subset, in sample, marginal lv.v
-  numspec_insample_marglv.v <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedLV = FALSE, type = "marginal")
+  expect_warning(numspec_insample_marglv.v <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedLV = FALSE, type = "marginal"), "[Oo]bsolete")
   inci_insample_marglv.v <- (NumSpeciesObs > numspec_insample_marglv.v["E", ] - 2 * sqrt(numspec_insample_marglv.v["V", ])) & 
     (NumSpeciesObs < numspec_insample_marglv.v["E", ] + 2 * sqrt(numspec_insample_marglv.v["V", ]))
   expect_equal(mean(inci_insample_marglv.v), 0.95, tol = 0.05)
@@ -415,12 +415,12 @@ test_that("Subset biodiversity matches simulations", {
   originalXobs <- cbind(ModelSite = artfit$data$ModelSite, originalXobs)
   outofsample_y <- simulate_detections_lv.v(artfit, esttype = 1)
   
-  numspec_holdout_marglv.v <- 
+  expect_warning(numspec_holdout_marglv.v <- 
     apply_to_new_data(speciesrichness,artfit, 
-                      originalXocc, originalXobs, ModelSite = "ModelSite",
+                      originalXocc, originalXobs, ModelSite = originalXobs$ModelSite,
                       funargs = list(occORdetection = "detection",
                                      usefittedlvv = FALSE,
-                                     nlvperdraw = 1000))
+                                     nlvperdraw = 1000)), "[Oo]bsolete")
   
   NumSpeciesObsHoldout <- detectednumspec(outofsample_y, artfit$data$ModelSite)
 
@@ -455,7 +455,7 @@ test_that("Subset biodiversity to single species matches simulations", {
   NumSpeciesObs <- detectednumspec(y_interleaved[, speciessubset, drop = FALSE], ModelSite = artfit$data$ModelSite)
   
   # Predict number within subset, in sample, using lv.v
-  numspec_insample_fitlv.v <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedLV = TRUE, type = "marginal")
+  expect_warning(numspec_insample_fitlv.v <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedLV = TRUE, type = "marginal"), "[Oo]bsolete")
   Enum_compare_sum <- Enum_compare(NumSpeciesObs,
                                    data.frame(pred = numspec_insample_fitlv.v["E", ]),
                                    data.frame(pred = numspec_insample_fitlv.v["V", ])
@@ -465,7 +465,7 @@ test_that("Subset biodiversity to single species matches simulations", {
   expect_equal(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]], ignore_attr = TRUE)
 
   # Predict number within subset, in sample, marginal lv.v
-  numspec_insample_marglv.v <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedLV = FALSE, type = "marginal")
+  expect_warning(numspec_insample_marglv.v <- predsumspecies(artfit, desiredspecies = speciessubset, UseFittedLV = FALSE, type = "marginal"), "[Oo]bsolete")
   Enum_compare_sum <- Enum_compare(NumSpeciesObs,
                                    data.frame(pred = numspec_insample_marglv.v["E", ]),
                                    data.frame(pred = numspec_insample_marglv.v["V", ])
@@ -482,16 +482,16 @@ test_that("Subset biodiversity to single species matches simulations", {
   originalXobs <- cbind(ModelSite = artfit$data$ModelSite, originalXobs)
   outofsample_y <- simulate_detections_lv.v(artfit, esttype = 1)
   
-  numspec_holdout_marglv.v <- 
+  expect_warning(numspec_holdout_marglv.v <- 
     apply_to_new_data(speciesrichness, 
                       fit = artfit,
                       originalXocc, 
                       originalXobs, 
-                      ModelSite = "ModelSite",
+                      ModelSite = originalXobs$ModelSite,
                       funargs = list(occORdetection = "detection",
                                      desiredspecies = speciessubset,
                                      usefittedlvv = FALSE,
-                                     nlvperdraw = 100))
+                                     nlvperdraw = 100)), "[Oo]bsolete")
   Enum_compare_sum <- Enum_compare(NumSpeciesObs,
                                    data.frame(pred = numspec_holdout_marglv.v["E", ]),
                                    data.frame(pred = numspec_holdout_marglv.v["V", ])
@@ -575,7 +575,7 @@ test_that("No lv.v and identical sites", {
   expect_equal(sd(NumSpecies), sqrt(EVsum["V", 1]), tol = 0.1 * sqrt(EVsum["V", 1]), ignore_attr = TRUE)
   
   # Hope that Gaussian approximation of a 95% interval covers the observed data 95% of the time
-  Enumspecdet <- predsumspecies(artfit, type = "marginal", UseFittedLV = FALSE)
+  expect_warning(Enumspecdet <- predsumspecies(artfit, type = "marginal", UseFittedLV = FALSE))
   ininterval <- (NumSpecies > Enumspecdet["E", ] - 2 * sqrt(Enumspecdet["V", ])) & 
     (NumSpecies < Enumspecdet["E", ] + 2 * sqrt(Enumspecdet["V", ]))
   expect_equal(mean(ininterval), 0.95, tol = 0.05)
@@ -587,7 +587,7 @@ test_that("Expected occupied number for in sample data; fitted lv.v", {
                                det.b.min = 20, det.b.max = 20.1, modeltype = "jsodm_lv", nlv = 4) #detection is still not certain
   artfit$mcmc[[1]] <- rbind(artfit$mcmc[[1]][1, ], artfit$mcmc[[1]][1, ])
   
-  Enumspecdet <- predsumspecies(artfit, UseFittedLV = TRUE, type = "marginal")
+  expect_warning(Enumspecdet <- predsumspecies(artfit, UseFittedLV = TRUE, type = "marginal"), "[Oo]bsolete")
   expect_equal(ncol(Enumspecdet), nsites)
   
   NumSpecies <- detectednumspec(y = artfit$data$y, ModelSite = artfit$data$ModelSite)
