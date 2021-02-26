@@ -32,7 +32,7 @@ test_that("Occupancy of species prediction is historically consistent", {
 
 test_that("Detection Probility of Species is historically consistent", { #values generate from code at commit a0812ddad
   pdet_theta01 <- pdetect_condoccupied(fit, type = 1)
-  expect_known_output(pdet_theta01, file = "pdet_theta01.txt", print = TRUE, update = FALSE)
+  expect_snapshot_value(pdet_theta01, style = "serialize", ignore_attr = TRUE)
 })
 
 test_that("Expected Biodiversity is Historically Consistent", { #values generate from code at commit a0812ddad
@@ -65,9 +65,9 @@ test_that("Expected Biodiversity is Historically Consistent", { #values generate
 
 test_that("Expected Individual Species Detections are Historically Consistent", { #values generate from code at commit a0812ddad
   En_condlv.v <- Endetect_modelsite(fit, type = 1, conditionalLV = TRUE)$E_ndetect
-  expect_known_output(En_condlv.v, file = "En_condLV.txt", print = TRUE, update = FALSE)
+  expect_snapshot_value(En_condlv.v, style = "serialize", ignore_attr = TRUE)
   
   set.seed(232413)
   En_marglv.v <- Endetect_modelsite(fit, type = 1, conditionalLV = FALSE)$E_ndetect
-  expect_known_output(En_marglv.v, file = "En_margLV.txt", print = TRUE, update = FALSE)
+  expect_snapshot_value(En_marglv.v, style = "serialize", ignore_attr = TRUE)
 })
