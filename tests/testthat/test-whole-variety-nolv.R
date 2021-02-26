@@ -7,19 +7,13 @@ rjo <- runjags::runjags.options("silent.jags" = TRUE)
 artmodel <- artificial_runjags(nspecies = 10, nsites = 2000, nvisitspersite = 2, modeltype = "jsodm")
 
 # fit to data and simulations using runjags
-originalXocc <- unstandardise.designmatprocess(artmodel$XoccProcess, artmodel$data$Xocc)
-originalXocc <- cbind(ModelSite = 1:nrow(originalXocc), originalXocc)
-originalXobs <- unstandardise.designmatprocess(artmodel$XobsProcess, artmodel$data$Xobs)
-originalXobs <- cbind(ModelSite = artmodel$data$ModelSite, originalXobs)
-
-fit_runjags <- run.detectionoccupancy(originalXocc, cbind(originalXobs, artmodel$data$y), 
-                                      species = colnames(artmodel$data$y),
-                                      ModelSite = "ModelSite",
-                                      OccFmla = artmodel$XoccProcess$fmla,
-                                      ObsFmla = artmodel$XobsProcess$fmla,
-                                      initsfunction = function(chain, indata){return(NULL)},
-                                      MCMCparams = list(n.chains = 2, adapt = 1000, burnin = 10000, sample = 500, thin = 40),
-                                      nlv = 0)
+fit_runjags <- fitjsodm2(Xocc = artmodel$data$Xocc,
+                                          Xobs = artmodel$data$Xobs,
+                                          y = artmodel$data$y, 
+                                          ModelSite = artmodel$data$ModelSite, 
+                                          modeltype = "jsodm",
+                                          MCMCparams = list(n.chains = 2, adapt = 1000, burnin = 10000, sample = 500, thin = 40)
+)
 save(fit_runjags, artmodel, originalXocc, originalXobs, file = "benchmark_varietysitesmodel_nolv.Rdata")
 
 runjags.options(rjo)
@@ -70,9 +64,9 @@ test_that("Median of Posterior is close to true", {
   relres <- res / artmodel$mcmc[[1]][1, var2compare]
   plot(res[!grepl("^lv.v", names(res))])
   plot(relres[!grepl("^lv.v", names(relres))])
-  expect_equivalent(relres[!grepl("^lv.v", names(res))],
+  expect_equal(relres[!grepl("^lv.v", names(res))],
                     rep(0, sum(!grepl("^lv.v", names(res)))),
-                    tol = 0.1)
+                    tolerance = 0.1, ignore_attr = TRUE)
 })
 
 test_that("Fitted likelihood matches true likelihood", {
@@ -80,13 +74,13 @@ test_that("Fitted likelihood matches true likelihood", {
   lkl_runjags <- likelihoods.fit(fit_runjags, cl = cl)
   lkl_artmodel <- likelihoods.fit(artmodel, cl = cl)
   parallel::stopCluster(cl)
-  expect_equivalent(Rfast::colmeans(lkl_runjags), Rfast::colmeans(lkl_artmodel), tol = 0.01)
-  expect_equivalent((Rfast::colmeans(lkl_runjags) - Rfast::colmeans(lkl_artmodel)) / Rfast::colmeans(lkl_artmodel),
+  expect_equal(Rfast::colmeans(lkl_runjags), Rfast::colmeans(lkl_artmodel), tol = 0.01)
+  expect_equal((Rfast::colmeans(lkl_runjags) - Rfast::colmeans(lkl_artmodel)) / Rfast::colmeans(lkl_artmodel),
                     rep(0, ncol(lkl_artmodel)),
-                    tol = 0.1)
-  expect_equivalent((Rfast::colmeans(lkl_runjags) - Rfast::colmeans(lkl_artmodel)) / Rfast::colmeans(lkl_runjags),
+               tolerance = 0.1, ignore_attr = TRUE)
+  expect_equal((Rfast::colmeans(lkl_runjags) - Rfast::colmeans(lkl_artmodel)) / Rfast::colmeans(lkl_runjags),
                     rep(0, ncol(lkl_artmodel)),
-                    tol = 0.1)
+               tolerance = 0.1, ignore_attr = TRUE)
 })
 
 test_that("Expected Number of Detected Species", {
@@ -100,7 +94,7 @@ test_that("Expected Number of Detected Species", {
     tibble::as_tibble(.name_repair = "minimal") %>%
     tibble::rowid_to_column() %>%
     ggplot2::ggplot()
-  expect_equivalent(Enumspec, Enumspec_art, tol = 0.1)
+  expect_equal(Enumspec, Enumspec_art, tolerance = 0.1, ignore_attr = TRUE)
   
   NumSpecies <- detectednumspec(y = fit_runjags$data$y, ModelSite = fit_runjags$data$ModelSite)
   
@@ -119,7 +113,7 @@ test_that("Expected Number of Detected Species", {
                                    as.matrix(Enumspec["Esum_det", ], ncol = 1),
                                    as.matrix(Enumspec["Vsum_det", ], ncol = 1)
   )
-  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]])
-  expect_equivalent(Enum_compare_sum[["E[D]_obs"]], 0, tol = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]])
-  expect_equivalent(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tol = 0.05 * Enum_compare_sum[["V[D]_obs"]])
+  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tolerance = 3 * Enum_compare_sum[["SE(E[D]_obs)_model"]], ignore_attr = TRUE)
+  expect_equal(Enum_compare_sum[["E[D]_obs"]], 0, tolerance = 3 * Enum_compare_sum[["SE(E[D]_obs)_obs"]], ignore_attr = TRUE)
+  expect_equal(Enum_compare_sum[["V[D]_model"]], Enum_compare_sum[["V[D]_obs"]], tolerance = 0.05 * Enum_compare_sum[["V[D]_obs"]], ignore_attr = TRUE)
 })

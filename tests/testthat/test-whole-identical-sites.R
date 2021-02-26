@@ -4,7 +4,7 @@
 context("Wholistic tests using identical, independent, ModelSites")
 skip_if(parallel::detectCores() < 10)
 
-rjo <- runjags::runjags.options("silent.jags" = TRUE)
+rjo <- runjags::runjags.options("silent.jags" = TRUE, silent.runjags = TRUE)
 
 # Create a process with known parameters
 artmodel <- artificial_runjags(nspecies = 10, nsites = 2000, nvisitspersite = 2,
@@ -13,32 +13,27 @@ artmodel <- artificial_runjags(nspecies = 10, nsites = 2000, nvisitspersite = 2,
                                modeltype = "jsodm")
 
 # fit to data and simulations using runjags
-origXocc <- unstandardise.designmatprocess(artmodel$XoccProcess, artmodel$data$Xocc)
-origXocc <- cbind(ModelSite = 1:nrow(origXocc), origXocc)
+suppressWarnings(fit_runjags <- fitjsodm2(Xocc = artmodel$data$Xocc,
+                                  Xobs = artmodel$data$Xobs,
+                                  y = artmodel$data$y, 
+                                  ModelSite = artmodel$data$ModelSite, 
+                                  modeltype = "jsodm",
+                                  MCMCparams = list(n.chains = 2, adapt = 1000, burnin = 10000, sample = 500, thin = 40)
+))
 
-origXobs <- unstandardise.designmatprocess(artmodel$XobsProcess, artmodel$data$Xobs)
-origXobs <- cbind(ModelSite = artmodel$data$ModelSite, origXobs)
-
-fit_runjags <- run.detectionoccupancy(origXocc, cbind(origXobs, artmodel$data$y),
-                       species = colnames(artmodel$data$y),
-                       ModelSite = "ModelSite",
-                       OccFmla = artmodel$XoccProcess$fmla,
-                       ObsFmla = artmodel$XobsProcess$fmla,
-                       initsfunction = function(chain, indata){return(NULL)},
-                       MCMCparams = list(n.chains = 2, adapt = 1000, burnin = 10000, sample = 500, thin = 40),
-                       nlv = 0)
 runjags.options(rjo)
 
 cl <- parallel::makeCluster(10)
-lkl_runjags <- likelihoods.fit(fit_runjags, cl = cl)
-lkl_artmodel <- likelihoods.fit(artmodel, cl = cl)
+lkl_runjags <- likelihood(fit_runjags, cl = cl)
+lkl_artmodel <- likelihood(artmodel, cl = cl)
 pbopt <- pbapply::pboptions(type = "none")
-Enumspec <- predsumspecies(fit_runjags, UseFittedLV = FALSE, type = "marginal", cl = cl)
+noccspecies <- speciesrichness(fit_runjags, occORdetection = "occupancy", cl = cl)
+ndetspecies <- speciesrichness(fit_runjags, occORdetection = "detection", cl = cl)
 pbapply::pboptions(pbopt)
 parallel::stopCluster(cl)
 
 save(fit_runjags, artmodel, origXocc, origXobs,
-     lkl_runjags, lkl_artmodel,  Enumspec, file = "../../tests/testthat/benchmark_identicalsitesmodel.Rdata")
+     lkl_runjags, lkl_artmodel,  noccspecies, ndetspecies, file = "../../tests/testthat/benchmark_identicalsitesmodel.Rdata")
 
 load("benchmark_identicalsitesmodel.Rdata")
 pbopt <- pbapply::pboptions(type = "none")
@@ -79,17 +74,17 @@ test_that("Predicted likelihoods match observations", {
   parallel::stopCluster(cl)
   
   # sim vs artmodel
-  expect_equivalent(Rfast::colmeans(lkl_artmodel), lkl_sim, tolerance = 0.01)
+  expect_equal(Rfast::colmeans(lkl_artmodel), lkl_sim, tolerance = 0.01, ignore_attr = TRUE)
   reldiff_art_sim <- abs(Rfast::colmeans(lkl_artmodel) - lkl_sim) / Rfast::colmeans(lkl_artmodel)
   expect_lt(quantile(reldiff_art_sim, probs = 0.9), 0.1)
   
   # sim vs runjags
-  expect_equivalent(Rfast::colmeans(lkl_runjags), lkl_sim, tolerance = 0.01)
+  expect_equal(Rfast::colmeans(lkl_runjags), lkl_sim, tolerance = 0.01, ignore_attr = TRUE)
   reldiff_jags_sim <- abs(Rfast::colmeans(lkl_runjags) - lkl_sim) / lkl_sim
   expect_lt(quantile(reldiff_jags_sim, probs = 0.9), 0.1)
   
    # runjags vs artmodel
-  expect_equivalent(Rfast::colmeans(lkl_runjags), Rfast::colmeans(lkl_artmodel), tolerance = 0.01)
+  expect_equal(Rfast::colmeans(lkl_runjags), Rfast::colmeans(lkl_artmodel), tolerance = 0.01, ignore_attr = TRUE)
   reldiff_jags_art <- abs(Rfast::colmeans(lkl_runjags) - Rfast::colmeans(lkl_artmodel)) / Rfast::colmeans(lkl_artmodel)
   expect_lt(quantile(reldiff_jags_art, probs = 0.9), 0.1)
   
