@@ -52,9 +52,8 @@ get_center_n_scale <- function(indata, const_tol = 1E-8, preserve = NULL){
   isconstant <- (sds < const_tol)
   center[isconstant] <- means[isconstant] - 1 #centering of constant columns to 1
   scale[isconstant] <- 1 #no scaling of constant columns - they are already set to 1
-  stopifnot(length(setdiff(preserve, names(center))) == 0)
-  center[preserve] <- 0 #no centering of preserved columns
-  scale[preserve] <- 1 #no scaling of preserved columns
+  center[names(center) %in% preserve] <- 0 #no centering of preserved columns
+  scale[names(scale) %in% preserve] <- 1 #no scaling of preserved columns
   return(list(
     center = center,
     scale = scale
