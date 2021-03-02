@@ -13,13 +13,16 @@ Imports:
     parallel,
     runjags,
     tensor,
+    tidyr,
     abind
 Suggests:
     testthat,
     arrangements,
     ggplot2,
     plyr,
-    loo,
+    loo
+Enhances:
+    car
 Encoding: UTF-8
 ByteCompile: true
 Roxygen: list(markdown = TRUE)
