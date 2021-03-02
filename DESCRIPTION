@@ -9,11 +9,16 @@ Description: Code developed for fitted various multispecies occupancy detection 
 License: GPL (>= 2)
 Imports:
     dplyr,
+    plyr,
     Rfast,
     parallel,
     runjags,
     tensor,
     tidyr,
+    pbapply,
+    tibble,
+    ellipsis,
+    stats,
     abind
 Suggests:
     testthat,
@@ -22,7 +27,9 @@ Suggests:
     plyr,
     loo
 Enhances:
-    car
+    car,
+    discreteRV,
+    FD
 Encoding: UTF-8
 ByteCompile: true
 Roxygen: list(markdown = TRUE)
