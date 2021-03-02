@@ -8,19 +8,18 @@ Maintainer: Kassel Liam Hingee <kassel.hingee@anu.edu.au>
 Description: Code developed for fitted various multispecies occupancy detection models. This code is in early development.
 License: GPL (>= 2)
 Imports:
-    dplyr
-Suggests:
-    testthat,
-    arrangements,
+    dplyr,
     Rfast,
     parallel,
     runjags,
-    ggplot2,
     tensor,
-    plyr,
-    Rfast,
-    loo,
     abind
+Suggests:
+    testthat,
+    arrangements,
+    ggplot2,
+    plyr,
+    loo,
 Encoding: UTF-8
 ByteCompile: true
 Roxygen: list(markdown = TRUE)
