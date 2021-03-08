@@ -36,7 +36,7 @@ supplant_new_data.jsodm <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL, y 
   if (is.null(toXocc)){
     warning("Using saved XoccProcess. This functionality will become obsolete.")
     toXoccFun <- function(indf, mainparams = fit$XoccProcess){
-      Xocc <- apply.designmatprocess(mainparams, indf)
+      Xocc <- msod::apply.designmatprocess(mainparams, indf)
       return(Xocc)
     }
     toXocc <- save_process(toXoccFun, checkwith = Xocc, params = list(mainparams = fit$XoccProcess))
@@ -44,7 +44,7 @@ supplant_new_data.jsodm <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL, y 
   if (is.null(toXobs) && !is.null(Xobs)){
     warning("Using saved XobsProcess. This functionality will become obsolete.")
     toXobsFun <- function(indf, mainparams = fit$XobsProcess){
-      Xobs <- apply.designmatprocess(mainparams, indf)
+      Xobs <- msod::apply.designmatprocess(mainparams, indf)
       return(Xobs)
     }
     toXobs <- save_process(toXoccFun, checkwith = Xobs, params = list(mainparams = fit$XobsProcess))
