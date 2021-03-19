@@ -71,6 +71,7 @@ occspecrichness.jsodm_lv <- function(fit, Xocc){
   specrich <- apply_to_new_data(speciesrichness, fit = fit, Xocc = Xocc,  
                                 funargs = list(occORdetection = "occupancy",
                                                nlvperdraw = 5))
+  warning("Using 5 simulated LV values per draw")
   return(specrich)
 }
 
