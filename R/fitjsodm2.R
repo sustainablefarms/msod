@@ -25,7 +25,7 @@
 #' *   ModelSite slot is the list with values for each visit (row in detection covariates) giving the row of the ModelSite in the occupancy covariates.
 #' *   species slot is the list of species names.
 #' @export
-fitjsodm2             <- function(Xocc, Xobs, y, ModelSite, modeltype,  #all these arguments are mandatory
+fitjsodm             <- function(Xocc, Xobs, y, ModelSite, modeltype,  #all these arguments are mandatory
                                   ..., #ellipsis for arguments specific to each model type
                                   initsfunction = get0(paste0("paraminits.", modeltype)),
                                   MCMCparams = list(n.chains = 1, adapt = 2000, burnin = 25000, sample = 1000, thin = 30),
@@ -121,3 +121,6 @@ fitjsodm2             <- function(Xocc, Xobs, y, ModelSite, modeltype,  #all the
   ellipsis::check_dots_used()
   invisible(fit.runjags)
 }
+
+#' @export
+fitjsodm2 <- fitjsodm

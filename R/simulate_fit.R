@@ -12,7 +12,7 @@
 #' @title Simulate observations from parameters of a fitted object.
 #' @details Simulate detections from all given parameters (including LV and random effects)
 #' @param fit A runjags fitted object created by [run.detectionoccupancy()]
-#' @param esttype Specifies parameter set to extract from fit, see [get_theta()]
+#' @param esttype Specifies parameter set to extract from fit. See [get_occ_b()] and similar for specification.
 #' @param UseFittedLV Logical. If TRUE, the simulation uses fitted latent variable values.
 #'  If FALSE, latent variable values will be simulated for each ModelSite
 #' @export

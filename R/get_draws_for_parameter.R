@@ -1,6 +1,6 @@
 #' Get Arrays of Draws from Posterior for Each Parameter
 #' @param fit Fitted model
-#' @param usesummary is either media, mean, or a function to apply across draws (it is applied using the `apply` function)
+#' @param usesummary is either media, mean, an integer, or a function to apply across draws (it is applied using the `apply` function). An integer will select that draw. Chains are concatenated, so if there are 500 samples per chain then the 5th draw of the second chain can be selected by `usesummary = 5 + 500`. `usesummary = NULL` will not summarise the parameters.
 #' @return A named array with the final dimension corresponding to draws from the posterior.
 #' @export
 get_occ_b <- function(fit, usesummary = NULL){
@@ -57,3 +57,4 @@ picksummary <- function(arr, usesummary = NULL){
   }
   return(theta)
 }
+

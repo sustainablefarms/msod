@@ -17,7 +17,7 @@
 #' @describeIn DunnSmythResiduals Given a fitted occupancy detection model (variable names must match). Computes Dunn-Smyth residuals for detection, marginalising the latent variables.
 #' @param fit A fitted occupancy-detection model.
 #' @param seed A seed to fix randomness of Dunn-Smyth residual jitter.
-#' @param type The type of point estimate to use for parameter estimates. See \code{\link{get_theta}}
+#' @param type The type of point estimate to use for parameter estimates. See \code{\link{get_ooc_b}} and similar.
 #' @return A matrix, each row is a ModelSite and each column is a species.
 #' Detection residuals are only computed for species and sites that have at least one detection. Other values are NA.
 #' @export
@@ -61,7 +61,7 @@ ds_detection_residuals.fit <- function(fit, type = "median", seed = NULL){
 #'  Computes Dunn-Smyth residuals for occupancy, marginalising the latent variables.
 #' @param fit A fitted occupancy-detection model.
 #' @param seed A seed to fix randomness of Dunn-Smyth residual jitter.
-#' @param type The type of point estimate to use for parameter estimates. See \code{\link{get_theta}}
+#' @param type The type of point estimate to use for parameter estimates. See \code{\link{get_occ_b}} and similar.
 #' @return A matrix, each row is a ModelSite and each column is a species.
 #' @export
 ds_occupancy_residuals.fit <- function(fit, type = "median", seed = NULL, conditionalLV = TRUE){
