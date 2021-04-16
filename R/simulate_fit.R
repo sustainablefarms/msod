@@ -107,24 +107,19 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2,
   
   # first step is to populate predictor values (including LV) and parameter values
   species <- make.names(rep(LETTERS, ceiling(nspecies / length(LETTERS))), unique = TRUE)[1:nspecies]
-  covardfs <- artificial_covar_data(nsites, nvisitspersite)
-  XoccProcess <- prep.designmatprocess(covardfs$Xocc, OccFmla)
-  XobsProcess <- prep.designmatprocess(covardfs$Xobs, ObsFmla)
-
+  covardfs <- artificial_covar(nsites, nvisitspersite, OccFmla = OccFmla, ObsFmla = ObsFmla)
   
-  data.list <- prepJAGSdata(modeltype,
-                         covardfs$Xocc, yXobs = covardfs$Xobs,
-                         ModelSite = "ModelSite", 
-                         species = NULL,
-                         XoccProcess = XoccProcess,
-                         XobsProcess = XobsProcess,
-                         ...) 
+  data.list <- prepJAGSdata2(modeltype,
+                             Xocc = covardfs$Xocc,
+                             Xobs = covardfs$Xobs,
+                             y = NULL,
+                             ModelSite = covardfs$ModelSite,
+                             ...)
+  
   fit <- list()
   fit$data <- data.list
   fit$data$nspecies <- length(species)
   fit$species <- species
-  fit$XoccProcess <- XoccProcess
-  fit$XobsProcess <- XobsProcess
   fit$ModelSite <- "ModelSite"
   fit$summary.available <- TRUE
   fit$sample <- 1
@@ -175,17 +170,30 @@ artificial_runjags <- function(nspecies = 4, nsites = 100, nvisitspersite  = 2,
 #' @return A list with elements Xocc, and Xobs for the occupancy and detection covariates respectively
 #' @export
 artificial_covar_data <- function(nsites, nvisitspersite){
+  warning("This function will be obsolete in next version.")
+  out <- artificial_covar(nsites = nsites, nvisitspersite = nvisitspersite)
+  Xocc <- cbind(ModelSite = 1:nrow(out$Xocc), out$Xocc)
+  Xobs <- cbind(ModelSite = out$ModelSite, out$Xobs)
+  return(list(Xocc = Xocc, Xobs = Xobs))
+}
+
+artificial_covar <- function(nsites, nvisitspersite, OccFmla = "~ .", ObsFmla = "~ ."){
   sites <- c(1:nsites)
-  XoccIn <- data.frame(ModelSite = sites,
+  XoccIn <- data.frame(
                      UpSite = sites,
                      Sine1 = 10 * sin(2 * pi * sites / nsites) + 100,
                      Sine2 = sin(4 * pi * sites / nsites))
+  XoccIn <- scale(XoccIn)
+  Xocc <- model.matrix(as.formula(OccFmla), data = data.frame(XoccIn))
   XobsIn <- data.frame(ModelSite = rep(sites, nvisitspersite),
                      UpVisit = 1:(nvisitspersite*nsites),
                      Step = c(rep(0, floor(nvisitspersite*nsites / 2)),
                               rep(1, ceiling(nvisitspersite*nsites / 2)))
                      )
-  return(list(Xocc = XoccIn, Xobs = XobsIn))
+  ModelSite <- XobsIn$ModelSite
+  XobsIn <- scale(XobsIn[, -1])
+  Xobs <- model.matrix(as.formula(ObsFmla), data = data.frame(XobsIn))
+  return(list(Xocc = Xocc, Xobs = Xobs, ModelSite = ModelSite))
 }
 
 #' @describeIn artificial_runjags Generate fake observation data.

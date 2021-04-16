@@ -7,6 +7,8 @@
 #' Must also include the ModelSiteVars columns to uniquely specify ModelSite.
 #' @param y A dataframe of species observations (1 or 0). Each column is a species. Rows must correspond to Xobs
 #' @param ModelSite A vector of integers of equal length to the number of visits. Each entry species for the corresponding visit, the of Xocc that was visited 
+#' @param toXocc NULL to use a process saved by [sflddata::save_process], otherwise a function that takes Xocc as the only input and returns a model matrix for the occupancy component.
+#' @param toXobs like `toXocc`, except for Xobs and the detection component of the model.
 #' @examples 
 #' fitold <- readRDS("../Experiments/7_4_modelrefinement/fittedmodels/7_4_13_model_2lv_e13.rds")
 #' fit <- translatefit(fitold)
@@ -36,24 +38,32 @@ supplant_new_data.jsodm <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL, y 
   if (is.null(toXocc)){
     warning("Using saved XoccProcess. This functionality will become obsolete.")
     toXoccFun <- function(indf, mainparams = fit$XoccProcess){
-      Xocc <- msod::apply.designmatprocess(mainparams, indf)
+      Xocc <- sflddata::apply.designmatprocess(mainparams, indf)
       return(Xocc)
     }
-    toXocc <- save_process(toXoccFun, checkwith = Xocc, params = list(mainparams = fit$XoccProcess))
+    toXocc <- sflddata::save_process(toXoccFun, checkwith = Xocc, params = list(mainparams = fit$XoccProcess))
   }
   if (is.null(toXobs) && !is.null(Xobs)){
     warning("Using saved XobsProcess. This functionality will become obsolete.")
     toXobsFun <- function(indf, mainparams = fit$XobsProcess){
-      Xobs <- msod::apply.designmatprocess(mainparams, indf)
+      Xobs <- sflddata::apply.designmatprocess(mainparams, indf)
       return(Xobs)
     }
-    toXobs <- save_process(toXoccFun, checkwith = Xobs, params = list(mainparams = fit$XobsProcess))
+    toXobs <- sflddata::save_process(toXoccFun, checkwith = Xobs, params = list(mainparams = fit$XobsProcess))
   }
   
-  if (!is.null(Xobs)){
-    Xobs <- apply_saved_process(toXobs, Xobs)
+  if (is.function(toXocc)){
+    Xocc <- toXocc(Xocc)
+  } else {
+    Xocc <- sflddata::apply_saved_process(toXocc, Xocc)
   }
-  Xocc <- apply_saved_process(toXocc, Xocc)
+  if (!is.null(Xobs)){
+    if (is.function(toXobs)){
+      Xobs <- toXobs(Xobs)
+    } else {
+      Xobs <- sflddata::apply_saved_process(toXobs, Xobs)
+    }
+  }
   
   data.list <- prepJAGSdata2("jsodm",
                 Xocc = Xocc,

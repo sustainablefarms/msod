@@ -325,16 +325,17 @@ test_that("Residuals for fitted and identical external data match for plain JSOD
   resid_det <- ds_detection_residuals.fit(fit, type = 1, seed = 32165)
   resid_occ <- ds_occupancy_residuals.fit(fit, type = 1, seed = 32165)
   
-  # compute using external data
-  originalXocc <- unstandardise.designmatprocess(fit$XoccProcess, fit$data$Xocc)
-  originalXocc <- cbind(ModelSite = 1:nrow(originalXocc), originalXocc)
-  originalXobs <- unstandardise.designmatprocess(fit$XobsProcess, fit$data$Xobs)
-  originalXobs <- cbind(ModelSite = fit$data$ModelSite, originalXobs)
-  Xocc <- originalXocc[1:10, ]
-  Xobs <- originalXobs[originalXobs$ModelSite %in% Xocc$ModelSite, ]
-  y <- fit$data$y[originalXobs$ModelSite %in% Xocc$ModelSite, ]
-  expect_warning(fitwnewdata <- supplant_new_data(fit, Xocc, Xobs, ModelSite = Xobs$ModelSite, y = y),
-                 regexp = "[Oo]bsolete")
+  # compute using same data supplied externally
+  data.list <- fit$data
+  # covars <- artificial_covar(nsites = nrow(fit$data$Xocc),
+                   # nvisitspersite = nrow(fit$data$Xobs) / nrow(fit$data$Xocc))
+  Xocc <- data.list$Xocc[1:10, ]
+  Xobs <- data.list$Xobs[data.list$ModelSite %in% 1:10, ]
+  y <- fit$data$y[data.list$ModelSite %in% 1:10, ]
+  ModelSite <- data.list$ModelSite[data.list$ModelSite %in% 1:10]
+  fitwnewdata <- supplant_new_data(fit, Xocc, Xobs, ModelSite = ModelSite, y = y,
+                                                  toXocc = function(x) return(x),
+                                                  toXobs = function(x) return(x))
   
   resid_det_new <- ds_detection_residuals.fit(fitwnewdata, type = 1, seed = 32165)
   resid_occ_new <- ds_occupancy_residuals.fit(fitwnewdata, type = 1, seed = 32165)
@@ -348,16 +349,16 @@ test_that("Residuals for fitted and identical external data match for plain JSOD
 test_that("Supplanting new data into a fitted jsodm object", {
   # simulate a fitted object
   fit <- artificial_runjags(nspecies = 5, nsites = 500, nvisitspersite = 5, modeltype = "jsodm")
-  
-  originalXocc <- unstandardise.designmatprocess(fit$XoccProcess, fit$data$Xocc)
-  originalXocc <- cbind(ModelSite = 1:nrow(originalXocc), originalXocc)
-  originalXobs <- unstandardise.designmatprocess(fit$XobsProcess, fit$data$Xobs)
-  originalXobs <- cbind(ModelSite = fit$data$ModelSite, originalXobs)
-  Xocc <- originalXocc[1:10, ]
-  Xobs <- originalXobs[originalXobs$ModelSite %in% Xocc$ModelSite, ]
-  y <- fit$data$y[originalXobs$ModelSite %in% Xocc$ModelSite, ]
-  expect_warning(fitwnewdata <- supplant_new_data(fit, Xocc, Xobs, ModelSite = Xobs$ModelSite, y = y),
-                 regexp = "[Oo]bsolete")
+ 
+  # use external data 
+  data.list <- fit$data
+  Xocc <- data.list$Xocc[1:10, ]
+  Xobs <- data.list$Xobs[data.list$ModelSite %in% 1:10, ]
+  y <- fit$data$y[data.list$ModelSite %in% 1:10, ]
+  ModelSite <- data.list$ModelSite[data.list$ModelSite %in% 1:10]
+  fitwnewdata <- supplant_new_data(fit, Xocc, Xobs, ModelSite = ModelSite, y = y,
+                                                  toXocc = function(x) return(x),
+                                                  toXobs = function(x) return(x))
 
   expect_equal(fit$data$Xocc[1:10, , drop = FALSE], fitwnewdata$data$Xocc[, , drop = FALSE])
   expect_equal(fit$data$Xobs[originalXobs$ModelSite %in% Xocc$ModelSite, ], fitwnewdata$data$Xobs[, , drop = FALSE])
