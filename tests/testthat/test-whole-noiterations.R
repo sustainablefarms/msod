@@ -11,7 +11,7 @@ test_that("Prep with complicated formula, save preparations", {
   y <- artmodel$data$y
   rm(artmodel)
   
-  toXoccParams <- prep.designmatprocess(indata$Xocc, "~ 1 + UpSite + Sine1 + Sine2 + UpSite*Sine2 + I(Sine1^2) + log(UpSite)")
+  toXoccParams <- sflddata::prep.designmatprocess(indata$Xocc, "~ 1 + UpSite + Sine1 + Sine2 + UpSite*Sine2 + I(Sine1^2) + log(UpSite)")
   toXoccFun <- function(indf, params = toXoccParams){
     Xocc <- apply.designmatprocess(params, indf)
     return(Xocc)
@@ -23,7 +23,7 @@ test_that("Prep with complicated formula, save preparations", {
   expect_equivalent(cmns[c("UpSite", "Sine1", "Sine2", "log.UpSite.")], rep(0, 4))
   expect_equivalent(sds[c("UpSite", "Sine1", "Sine2", "log.UpSite.")], rep(1, 4), tolerance = 0.1)
   
-  toXobsParams <- prep.designmatprocess(indata$Xobs, "~ 1")
+  toXobsParams <- sflddata::prep.designmatprocess(indata$Xobs, "~ 1")
   toXobsFun <- function(indf, params = toXobsParams){
     X <- apply.designmatprocess(params, indf)
     return(X)
