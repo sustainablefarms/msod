@@ -5,34 +5,34 @@
 \alias{poccupy.ModelSite.theta}
 \title{Probability of detection and occupation for a single ModelSite and parameter set}
 \usage{
-pdetection_occupied.ModelSite.theta(Xobs, v.b)
+pdetection_occupied.ModelSite.theta(Xobs, det.b)
 
-poccupy.ModelSite.theta(Xocc, u.b, lv.coef = NULL, LVvals = NULL)
+\method{poccupy}{ModelSite.theta}(Xocc, occ.b, lv.b = NULL, lv.v = NULL)
 }
 \arguments{
 \item{Xobs}{A matrix of detection covariates, each row is a visit.}
 
-\item{v.b}{Covariate loadings. Each row is a species, each column a detection covariate}
+\item{det.b}{Covariate loadings. Each row is a species, each column a detection covariate}
 
 \item{Xocc}{A matrix of occupancy covariates. Must have a single row. Columns correspond to covariates.}
 
-\item{u.b}{Covariate loadings for occupancy. Each row is a species, each column an occupancy covariate.}
+\item{occ.b}{Covariate loadings for occupancy. Each row is a species, each column an occupancy covariate.}
 
-\item{lv.coef}{Loadings for the latent variables. Each row is a species, each column corresponds to a LV.}
+\item{lv.b}{Loadings for the latent variables. Each row is a species, each column corresponds to a LV.}
 
-\item{LVvals}{A matrix of LV values. Each column corresponds to a LV. To condition on specific LV values, provide a matrix of row 1.}
+\item{lv.v}{A matrix of LV values. Each column corresponds to a LV. To condition on specific LV values, provide a matrix of row 1.}
 }
 \value{
 A matrix of detection probabilities for each row of Xobs and each species.
 Rows in returned value correspond to rows in Xobs, columns correspond to species.
 
-A matrix of occupancy probabilities. Each row corresponds to a row of LVvals, each column to a species.
+A matrix of occupancy probabilities. Each row corresponds to a row of lv.v, each column to a species.
 }
 \description{
 Probability of detection and occupation for a single ModelSite and parameter set
 }
-\section{Functions}{
+\section{Methods (by generic)}{
 \itemize{
-\item \code{poccupy.ModelSite.theta}: The probability of occupation for given LV values.
+\item \code{poccupy}: The probability of occupation for given LV values.
 }}
 

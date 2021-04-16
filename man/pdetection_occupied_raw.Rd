@@ -4,12 +4,12 @@
 \alias{pdetection_occupied_raw}
 \title{Probability of Detection Given Occupied}
 \usage{
-pdetection_occupied_raw(Xobs, v.b_arr)
+pdetection_occupied_raw(Xobs, det.b_arr)
 }
 \arguments{
 \item{Xobs}{A matrix of detection covariates, each row is a visit.}
 
-\item{v.b_arrA}{3-array of detection covariates. Each row is a species, each column is a covariate, and layer is a draw from the posterior.}
+\item{det.b_arrA}{3-array of detection covariates. Each row is a species, each column is a covariate, and layer is a draw from the posterior.}
 }
 \value{
 A matrix with each row a visit, each column a species. The entry is the probability, according to the posterior, of the species being detected IF it is in occupation.

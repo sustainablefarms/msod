@@ -56,7 +56,7 @@ If "marginal" then a single distribution for each site is returned and this dist
 
 \item{theta}{A vector of model parameters, labelled according to the BUGS labelling convention seen in runjags}
 
-\item{LVvals}{A matrix of LV values. Each column corresponds to a LV. To condition on specific LV values, provide a matrix of row 1.}
+\item{lv.v}{A matrix of LV values. Each column corresponds to a LV. To condition on specific LV values, provide a matrix of row 1.}
 }
 \description{
 Uses \link{discreteRV} to compute distribution of number of species

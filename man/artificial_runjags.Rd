@@ -2,7 +2,7 @@
 % Please edit documentation in R/simulate_fit.R
 \name{artificial_runjags}
 \alias{artificial_runjags}
-\alias{simulate_covar_data}
+\alias{artificial_covar_data}
 \alias{simulate_iid_detections}
 \title{Create a fully artificial fitted object}
 \usage{
@@ -19,10 +19,11 @@ artificial_runjags(
   lv.b.min = -0.5,
   lv.b.max = 0.5,
   modeltype = "jsodm_lv",
+  seed = NULL,
   ...
 )
 
-simulate_covar_data(nsites, nvisitspersite)
+artificial_covar_data(nsites, nvisitspersite)
 
 simulate_iid_detections(nspecies, nvisits, p = 0.5)
 }
@@ -69,13 +70,14 @@ Every species is equally likely to be detected at every visit.
 }
 \section{Functions}{
 \itemize{
-\item \code{simulate_covar_data}: Generate fake covariate data.
+\item \code{artificial_covar_data}: Generate fake covariate data.
 
 \item \code{simulate_iid_detections}: Generate fake observation data.
 }}
 
 \examples{
-artfit <- artificial_runjags(nspecies = 2, nsites = 10, nvisitspersite = 4, modeltype = "jsodm_lv", nlv = 2)
+artfit <- artificial_runjags(nspecies = 2, nsites = 20, nvisitspersite = 4, 
+modeltype = "jsodm_lv", nlv = 2, seed = NULL)
 \# with high correlation between occupancy of species
 artfit <- artificial_runjags(nspecies = 2, nsites = 10, nvisitspersite = 4,
                               OccFmla = "~ 1",

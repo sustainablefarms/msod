@@ -5,7 +5,7 @@
 \alias{parnames}
 \title{Convert old fit objects to use new parameter naming convention}
 \format{
-An object of class \code{matrix} (inherits from \code{array}) with 23 rows and 2 columns.
+An object of class \code{matrix} (inherits from \code{array}) with 24 rows and 2 columns.
 }
 \usage{
 parnames

@@ -2,17 +2,17 @@
 % Please edit documentation in R/simulate_fit.R
 \name{simulate_detections}
 \alias{simulate_detections}
-\alias{simulate_detections_LV}
+\alias{simulate_detections_lv.v}
 \title{Simulate observations from parameters of a fitted object.}
 \usage{
-simulate_detections(fit, esttype = "median")
+simulate_detections(fit, esttype = "median", seed = NULL)
 
-simulate_detections_LV(fit, esttype = "median")
+simulate_detections_lv.v(fit, esttype = "median", seed = NULL)
 }
 \arguments{
 \item{fit}{A runjags fitted object created by \code{\link[=run.detectionoccupancy]{run.detectionoccupancy()}}}
 
-\item{esttype}{Specifies parameter set to extract from fit, see \code{\link[=get_theta]{get_theta()}}}
+\item{esttype}{Specifies parameter set to extract from fit. See \code{\link[=get_occ_b]{get_occ_b()}} and similar for specification.}
 
 \item{UseFittedLV}{Logical. If TRUE, the simulation uses fitted latent variable values.
 If FALSE, latent variable values will be simulated for each ModelSite}
@@ -25,7 +25,7 @@ Simulate detections from all given parameters (including LV and random effects)
 }
 \section{Functions}{
 \itemize{
-\item \code{simulate_detections_LV}: Simulate LV values and use these for simulating detections (with \code{\link[=simulate_detections]{simulate_detections()}}). For each site the simulated LV values are copied across all draws.
+\item \code{simulate_detections_lv.v}: Simulate LV values and use these for simulating detections (with \code{\link[=simulate_detections]{simulate_detections()}}). For each site the simulated LV values are copied across all draws.
 }}
 
 \examples{

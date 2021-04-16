@@ -4,19 +4,40 @@
 \alias{modelqualstats}
 \title{Compute Model Quality Information}
 \usage{
-modelqualstats(fit, holdoutXocc, holdoutyXobs, ModelSite, cl)
+modelqualstats(
+  fit,
+  holdoutXocc,
+  holdoutXobs,
+  holdoutModelSite,
+  holdouty,
+  cl,
+  nlvperdraw = 1000,
+  ...
+)
 }
 \arguments{
 \item{fit}{a model fitted using run.detectionoccupancy}
 
 \item{holdoutXocc}{A data frame of occupancy predictors for sites.}
 
+\item{cl}{A cluster created by parallel::makeCluster}
+
 \item{holdoutyXobs}{A data frame of detection information and species detections}
 
 \item{ModelSite}{Column names used to match the holdoutyXobs to sites in holdoutXocc}
-
-\item{cl}{A cluster created by parallel::makeCluster}
 }
 \description{
 Compute Model Quality Information
+}
+\examples{
+fit <- readRDS("../sflddata/private/data/testdata/cutfit_7_4_11_2LV.rds")
+fit <- translatefit(fit)
+Xocc <- unstandardise.designmatprocess(fit$XoccProcess, fit$data$Xocc)
+Xocc$ModelSite <- 1:nrow(Xocc)
+Xobs <- unstandardise.designmatprocess(fit$XobsProcess, fit$data$Xobs)
+Xobs$ModelSite <- fit$data$ModelSite
+y <- fit$data$y
+yXobs <- cbind(Xobs, y)
+cl <- parallel::makeCluster(1)
+quality <- modelqualstats(fit, holdoutXocc = Xocc, holdoutyXobs = yXobs, ModelSite = 'ModelSite', cl = cl)
 }

@@ -17,7 +17,7 @@ ds_occupancy_residuals.fit(
 \arguments{
 \item{fit}{A fitted occupancy-detection model.}
 
-\item{type}{The type of point estimate to use for parameter estimates. See \code{\link{get_theta}}}
+\item{type}{The type of point estimate to use for parameter estimates. See \code{\link{get_occ_b}} and similar.}
 
 \item{seed}{A seed to fix randomness of Dunn-Smyth residual jitter.}
 }
@@ -42,6 +42,10 @@ Computes Dunn-Smyth residuals for occupancy, marginalising the latent variables.
 fit <- readRDS("./tmpdata/7_2_10_clim_year.rds")
 detection_resids <- ds_detection_residuals.fit(fit, type = "median")
 occupancy_resids <- ds_occupancy_residuals.fit(fit, type = "median", conditionalLV = FALSE)
+fitold <- readRDS("../Experiments/7_4_modelrefinement/fittedmodels/7_4_13_allhyp_vif_logwoody500m_msnm_year_Time_Wind.rds")
+fit <- translatefit(fitold)
+ds_detection_residuals.fit(fit)
+ds_occupancy_residuals.fit(fit)
 }
 \references{
 D. I. Warton, J. Stoklosa, G. Guillera-Arroita, D. I. MacKenzie, and A. H. Welsh,

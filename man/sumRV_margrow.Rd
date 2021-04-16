@@ -7,6 +7,8 @@
 sumRV_margrow(pmat)
 }
 \arguments{
+\item{pmat}{A matrix of probabilities. Each element creates a Bernoulli RV with probability of success (1), given by p.}
+
 \item{rvs}{A list of Random Variable (distributions) of class 'RV'}
 }
 \description{

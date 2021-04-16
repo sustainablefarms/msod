@@ -15,7 +15,7 @@ matrix2bugsvar(theta, name)
 \arguments{
 \item{values}{is a list of values named according to the bugs variables names}
 
-\item{varname}{is the desired variable name (e.g. 'u.b')}
+\item{varname}{is the desired variable name (e.g. 'occ.b')}
 
 \item{rowidx}{is a list of rows to extract, by number}
 
