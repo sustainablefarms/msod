@@ -124,3 +124,15 @@ fitjsodm             <- function(Xocc, Xobs, y, ModelSite, modeltype,  #all thes
 
 #' @export
 fitjsodm2 <- fitjsodm
+
+checkwritable <- function(x){
+  if (!file.exists(x)){
+    saveRDS(NA, x)
+    file.remove(x)
+  } else {
+    stopifnot(file.access(x, mode = 2) == 0)
+  }
+  return(invisible(x))
+}
+
+
