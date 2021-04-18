@@ -361,7 +361,7 @@ test_that("Supplanting new data into a fitted jsodm object", {
                                                   toXobs = function(x) return(x))
 
   expect_equal(fit$data$Xocc[1:10, , drop = FALSE], fitwnewdata$data$Xocc[, , drop = FALSE])
-  expect_equal(fit$data$Xobs[originalXobs$ModelSite %in% Xocc$ModelSite, ], fitwnewdata$data$Xobs[, , drop = FALSE])
-  expect_equivalent(fit$data$y[originalXobs$ModelSite %in% Xocc$ModelSite, ], fitwnewdata$data$y[, , drop = FALSE])
+  expect_equal(fit$data$Xobs[fit$data$ModelSite %in% 1:10, ], fitwnewdata$data$Xobs[, , drop = FALSE])
+  expect_equivalent(fit$data$y[fit$data$ModelSite %in% 1:10, ], fitwnewdata$data$y[, , drop = FALSE])
   # non-equal attributes is the dimname of "row" for species attributes(fitwnewdata$data$y)$dimnames
 })
