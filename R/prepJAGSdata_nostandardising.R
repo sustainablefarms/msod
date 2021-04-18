@@ -11,7 +11,7 @@ prepJAGSdata2 <- function(modeltype, Xocc, Xobs, y, ModelSite, ...){ # nlv){
   stopifnot(modeltype %in% availmodeltypes)
   ModelSite <- as.integer(ModelSite)
   data.list <- do.call(paste0("prepJAGSdata2.", modeltype),
-                       c( list(Xocc, Xobs, y, ModelSite), ...))
+                       c( list(Xocc, Xobs, y, ModelSite), list(...)))
   return(data.list)
 }
 
@@ -73,7 +73,6 @@ prepJAGSdata2.jsodm_lv_sepexp <- function(Xocc, Xobs, y, ModelSite, nlv, spatdis
   data.list <- prepJAGSdata2.jsodm_lv(Xocc, Xobs, y, ModelSite, nlv)
   stopifnot("matrix" %in% class(spatdistmat))
   stopifnot("matrix" %in% class(timedistmat))
-  warning("distances are not standardised to have mean 1, and sd of 1 (so prior of covariance scale may be inappropriate)")
   stopifnot((ncol(spatdistmat) == nrow(data.list$Xocc)) && (nrow(spatdistmat) == nrow(data.list$Xocc)))
   stopifnot((ncol(timedistmat) == nrow(data.list$Xocc)) && (nrow(timedistmat) == nrow(data.list$Xocc)))
   zero.lv.v <- rep(1, nrow(data.list$Xocc))
