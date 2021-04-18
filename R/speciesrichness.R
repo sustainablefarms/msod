@@ -89,6 +89,8 @@ detspeciesrichness_raw.jsodm <- function(Xocc, occ.b, Xobs, det.b, ModelSite){
 }
 
 #' @export
+#' @param occORdetection 'detection' to predict detected richness, or 'occupancy' to predict richness of occupancy species
+#' @param desiredspecies A list of species to include in the calculations, defaults to all species in the model.
 speciesrichness <- function(fit, occORdetection, desiredspecies, ...){
   UseMethod("speciesrichness")
 }
