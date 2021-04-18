@@ -41,6 +41,27 @@ get_lv_b <- function(fit, usesummary = NULL){
   return(lv.b)
 }
 
+#' @describeIn get_occ_b Get fitted latent variable spatial correlation scale for jsodm_lv_sepexp model
+#' @export
+get_lv_v_spatscale <- function(fit, usesummary = NULL){
+  draws <- do.call(rbind, fit$mcmc)
+  lv.v.spatscale <- draws[ , "lv.v.spatscale[1]", drop = FALSE]
+  dim(lv.v.spatscale) <- c(1, 1, nrow(draws)) #convert so that third dimension is draws
+  lv.v.spatscale <- picksummary(lv.v.spatscale, usesummary = usesummary)
+  return(lv.v.spatscale)
+}
+
+#' @describeIn get_occ_b Get fitted latent variable temporal correlation scale for jsodm_lv_sepexp model
+#' @export
+get_lv_v_timescale <- function(fit, usesummary = NULL){
+  draws <- do.call(rbind, fit$mcmc)
+  lv.v.timescale <- draws[ , "lv.v.timescale[1]", drop = FALSE]
+  dim(lv.v.timescale) <- c(1, 1, nrow(draws)) #convert so that third dimension is draws
+  lv.v.timescale <- picksummary(lv.v.timescale, usesummary = usesummary)
+  return(lv.v.timescale)
+}
+
+
 picksummary <- function(arr, usesummary = NULL){
   if (is.null(usesummary)){return(arr)}
   if (is.numeric(usesummary) && length(usesummary) == 1){
