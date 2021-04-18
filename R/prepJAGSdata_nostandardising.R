@@ -69,11 +69,9 @@ prepJAGSdata2.jsodm_lv <- function(Xocc, Xobs, y, ModelSite, nlv, ...){
 }
 
 #' @describeIn prepJAGSdata Data preparation for the jsodm_lv_sepexp model (latent variables with separable covariance that is an exponential function)
-prepJAGSdata2.jsodm_lv_sepexp <- function(Xocc, Xobs, y, ModelSite, nlv, SpatDist, TimeDist, ...){
+prepJAGSdata2.jsodm_lv_sepexp <- function(Xocc, Xobs, y, ModelSite, nlv, spatdistmat, timedistmat, ...){
   data.list <- prepJAGSdata2.jsodm_lv(Xocc, Xobs, y, ModelSite, nlv)
-  spatdistmat <- SpatDist(Xocc)
   stopifnot("matrix" %in% class(spatdistmat))
-  timedistmat <- TimeDist(Xocc)
   stopifnot("matrix" %in% class(timedistmat))
   warning("distances are not standardised to have mean 1, and sd of 1 (so prior of covariance scale may be inappropriate)")
   stopifnot((ncol(spatdistmat) == nrow(data.list$Xocc)) && (nrow(spatdistmat) == nrow(data.list$Xocc)))
