@@ -9,7 +9,7 @@
 #' The value in each cell is the probability density, given the parameters from the draw, evaluated at the observations for the model site.
 #' @export
 likelihood.jsodm_lv <- function(fit,
-                                numlvsims = 1000, cl = NULL, simseed = NULL){
+                                numlvsims = 1000, cl = NULL, simseed = NULL, reps = ceiling(numlvsims / 100)){
   stopifnot(class(fit)[[1]] %in% c("jsodm_lv"))
 
   Xocc <- fit$data$Xocc
@@ -23,27 +23,27 @@ likelihood.jsodm_lv <- function(fit,
   
   if (is.null(cl)) {
     likel.l <- lapply(1:dim(occ.b_arr)[[3]], function(drawid) {
-      lkl <- likelihood_LVvmarg_draw.jsodm_lv(
+      lkl <- Rfast::rowmeans(replicate(reps, likelihood_LVvmarg_draw.jsodm_lv(
         Xocc, Xobs, y, ModelSite,
         occ.b_arr[,,drawid, drop = FALSE],
         det.b_arr[,,drawid, drop = FALSE],
         lv.b_arr[,,drawid, drop = FALSE],
-        numlvsims,
+        ceiling(numlvsims / reps),
         simseed
-      )
+      )))
       return(lkl)
     })
   }
   else {
     likel.l <- parallel::parLapply(cl = cl, 1:dim(occ.b_arr)[[3]], function(drawid) {
-      lkl <- likelihood_LVvmarg_draw.jsodm_lv(
+      lkl <- Rfast::rowmeans(replicate(reps, likelihood_LVvmarg_draw.jsodm_lv(
         Xocc, Xobs, y, ModelSite,
         occ.b_arr[,,drawid, drop = FALSE],
         det.b_arr[,,drawid, drop = FALSE],
         lv.b_arr[,,drawid, drop = FALSE],
-        numlvsims,
+        ceiling(numlvsims / reps),
         simseed
-      )
+      )))
       return(lkl)
     })
   }  
