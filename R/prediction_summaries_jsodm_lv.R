@@ -19,8 +19,8 @@
 
 #' @export
 # returns probability of occupancy of each species ignoring other species, for each site
-poccupancy_margotherspecies.jsodm_lv <- function(fit, Xocc){
-  Xocc <- apply.designmatprocess(fit$XoccProcess, Xocc)
+poccupancy_margotherspecies.jsodm_lv <- function(fit, Xocc, toXocc = fit$toXocc){
+  Xocc <- sflddata::apply.designmatprocess(fit$XoccProcess, Xocc)
   stopifnot("jsodm_lv" %in% class(fit))
   occ.b <- get_occ_b(fit)
   pocc <- poccupy_raw.jsodm(Xocc, occ.b)
@@ -46,7 +46,7 @@ poccupancy_mostfavourablesite.jsodm_lv <- function(fit, Xocc){
 # returns probability of occupancy in a randomly selected site
 #' @export
 poccupancy_randomsite.jsodm_lv <- function(fit, Xocc){
-  Xocc <- apply.designmatprocess(fit$XoccProcess, Xocc)
+  Xocc <- sflddata::apply.designmatprocess(fit$XoccProcess, Xocc)
   stopifnot("jsodm_lv" %in% class(fit))
   occ.b <- get_occ_b(fit)
   pocc <- poccupy_raw.jsodm(Xocc, occ.b)
