@@ -7,8 +7,21 @@
 #' @param cl a cluster created by parallel::makeCluster()
 #' @return Returns a matrix. Each row corresponds to a draw of the parameters from the posterior. Each column to a ModelSite.
 #' The value in each cell is the probability density, given the parameters from the draw, evaluated at the observations for the model site.
+#' @param chunksize divides the work up by `chunksize` sets of sites
+#' @param reps divides the work into `reps` of lv.v simulations
 #' @export
 likelihood.jsodm_lv <- function(fit,
+                                numlvsims = 1000, cl = NULL, simseed = NULL, reps = ceiling(numlvsims / 100), chunksize = 100){
+  sitesplits <- split(1:nrow(fit$data$Xocc), ceiling(1:nrow(fit$data$Xocc) / chunksize))
+  likel.mat.l <- lapply(sitesplits, function(modelsites){
+    subfit <- subsetofmodelsites.jsodm_lv(fit, modelsites)
+    likel.mat <- likelihood.jsodm_lv_allsites(subfit, numlvsims = numlvsims, cl = cl, simseed = simseed, reps = reps)
+  })
+  likel.mat <- do.call(cbind, likel.mat.l)
+  return(likel.mat)
+}
+
+likelihood.jsodm_lv_allsites <- function(fit,
                                 numlvsims = 1000, cl = NULL, simseed = NULL, reps = ceiling(numlvsims / 100)){
   stopifnot(class(fit)[[1]] %in% c("jsodm_lv"))
 
@@ -20,6 +33,8 @@ likelihood.jsodm_lv <- function(fit,
   occ.b_arr <- get_occ_b(fit) # rows are species, columns are occupancy covariates
   det.b_arr <- get_det_b(fit)  # rows are species, columns are observation covariates
   lv.b_arr <- get_lv_b(fit) # rows are species, columns are lv
+  
+  
   
   if (is.null(cl)) {
     likel.l <- lapply(1:dim(occ.b_arr)[[3]], function(drawid) {

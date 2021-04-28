@@ -86,8 +86,48 @@ supplant_new_data.jsodm_lv <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL,
   bugsnames_lvv <- grepl("^lv.v", colnames(fit$mcmc[[1]]))
   fit$mcmc <- lapply(fit$mcmc,
          function(x){
-           out <- x[, !bugsnames_lvv]
+           out <- x
+           out[, bugsnames_lvv] <- NA
            return(out)
          })
   return(fit)
+}
+
+subsetofmodelsites.jsodm_lv <- function(fit, modelsites){
+  stopifnot(anyDuplicated(modelsites) == 0)
+  Xocc <- fit$data$Xocc
+  Xobs <- fit$data$Xobs
+  y <- fit$data$y
+  ModelSite <- fit$data$ModelSite
+  
+  tonewmodelsite <- function(sitenumbers){
+    newmodelsites <- 1:length(modelsites)
+    names(newmodelsites) <- modelsites
+    return(newmodelsites[as.character(sitenumbers)])
+  }
+  
+  fit <- supplant_new_data.jsodm(fit, Xocc[modelsites, ], 
+                                 Xobs = Xobs[ModelSite %in% modelsites, ], 
+                                 ModelSite = tonewmodelsite(ModelSite[ModelSite %in% modelsites]), 
+                                 y = y[ModelSite %in% modelsites, ],
+                                 toXocc = function(x) x, toXobs = function(x) x)
+  
+  # relabel fitted lv.v for the modelsites
+  newlvvnames <- unlist(lapply(1:fit$data$nlv, function(lv){
+    paste0("lv.v[", 1:length(modelsites), ",", lv, "]")
+  }))
+  names(newlvvnames) <- unlist(lapply(1:fit$data$nlv, function(lv){
+    paste0("lv.v[", modelsites, ",", lv, "]")
+  }))
+  oldparnameskeep <- c(grep("lv.v", colnames(fit$mcmc[[1]]), invert = TRUE, value = TRUE),
+                       names(newlvvnames))
+  newparnameskeep <- c(grep("lv.v", colnames(fit$mcmc[[1]]), invert = TRUE, value = TRUE),
+                       newlvvnames)
+  fit$mcmc <- lapply(fit$mcmc,
+                     function(x){
+                       out <- x[, colnames(x) %in% oldparnameskeep]
+                       colnames(out) <- newparnameskeep[oldparnameskeep %in% colnames(out)]
+                       return(out)
+                     })
+  return(fit) 
 }
