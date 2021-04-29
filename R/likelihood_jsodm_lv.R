@@ -9,6 +9,11 @@
 #' The value in each cell is the probability density, given the parameters from the draw, evaluated at the observations for the model site.
 #' @param chunksize divides the work up by `chunksize` sets of sites
 #' @param reps divides the work into `reps` of lv.v simulations
+#' @examples 
+#' fit <- readRDS("../sflddata/private/data/testdata/cutfit_7_4_11_2LV.rds")
+#' fit <- translatefit(fit)
+#' cl <- parallel::makeCluster(1)
+#' lkl <- likelihood(fit, numlvsims = 10, cl = cl, chunksize = 2)
 #' @export
 likelihood.jsodm_lv <- function(fit,
                                 numlvsims = 1000, cl = NULL, simseed = NULL, reps = ceiling(numlvsims / 100), chunksize = 100){
@@ -113,10 +118,12 @@ likelihood_LVvmarg_draw.jsodm_lv <- function(Xocc, Xobs, y, ModelSite, occ.b, de
   NoneDetected <- t(NoneDetected)
   
   ## Probability of Site Occupancy, for each simulated LV, for the given draw. #this seems to be the SLOWEST part
+  if (!is.null(simseed)){set.seed(simseed)}
+  lv.v_sitewsim <- rnorm(dim(lv.b)[[2]] * numlvsims)
+  dim(lv.v_sitewsim) <- c(numlvsims, dim(lv.b)[[2]])
   Occ.Pred.CondLV <- vapply(1:numlvsims,
          function(i){
-           if (!is.null(simseed)){set.seed(simseed)}
-           lv.v_site <- rnorm(dim(lv.b)[[2]])
+           lv.v_site <- lv.v_sitewsim[i, , drop = TRUE]
            lv.v <- matrix(lv.v_site, nrow = nrow(Xocc), ncol = dim(lv.b)[[2]], byrow = TRUE)
            dim(lv.v) <- c(dim(lv.v), 1)
            pocc <- poccupy_raw.jsodm_lv(Xocc, occ.b, lv.v, lv.b)
