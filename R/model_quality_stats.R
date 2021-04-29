@@ -41,7 +41,8 @@ modelqualstats_holdout <- function(fit_wholdoutdata, cl, nlvperdraw = 1000){
     prednumbers_holdout <- speciesrichness(fit_wholdoutdata, occORdetection = "detection",
                                            usefittedlvv = FALSE,
                                            nlvperdraw = nlvperdraw,
-                                           cl = cl)
+                                           chunksize = 2,
+                                           cl = NULL) # using a cluster doesn't reduce memory cost
     print("Computed: Predicted Number of Species for Holdout Data")
   } else if ("jsodm" %in% class(fit_wholdoutdata)){
     prednumbers_holdout <- speciesrichness(fit_wholdoutdata, occORdetection = "detection")
@@ -65,8 +66,8 @@ modelqualstats_insample <- function(fit, cl, nlvperdraw = 1000){
   
   prednumbers_insample <- prednumbers_insample_fitLV <- prednumbers_insample_margLV <- NULL
   if ("jsodm_lv" %in% class(fit)){
-    prednumbers_insample_fitLV <- speciesrichness(fit, occORdetection = "detection", usefittedlvv = TRUE, cl = cl)
-    prednumbers_insample_margLV <- speciesrichness(fit, occORdetection = "detection", usefittedlvv = FALSE, nlvperdraw = nlvperdraw, cl = cl)
+    prednumbers_insample_fitLV <- speciesrichness(fit, occORdetection = "detection", usefittedlvv = TRUE, chunksize = 2)
+    prednumbers_insample_margLV <- speciesrichness(fit, occORdetection = "detection", usefittedlvv = FALSE, nlvperdraw = nlvperdraw, chunksize = 2)
     print("Computed: Predicted Number of Species for Insample Data")
   } else if ("jsodm" %in% class(fit)){
     prednumbers_insample <- speciesrichness(fit, occORdetection = "detection")
