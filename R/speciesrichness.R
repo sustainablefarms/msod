@@ -3,10 +3,10 @@
 #' @examples 
 #' fit <- readRDS("../sflddata/private/data/testdata/cutfit_7_4_11_2LV.rds")
 #' fit <- translatefit(fit)
-#' cl <- parallel::makeCluster(2)
-#' srich <- speciesrichness(fit,  occORdetection = "detection",
-#'                 desiredspecies = fit$species, usefittedlvv = FALSE,
-#'                                      nlvperdraw = 1000, chunksize = 2, cl = cl)
+# cl <- NULL #parallel::makeCluster(2)
+# srich <- speciesrichness(fit,  occORdetection = "detection",
+#                 desiredspecies = fit$species, usefittedlvv = FALSE,
+#                                      nlvperdraw = 1000, chunksize = 2, cl = cl)
 
 # probarr is a 3-array of probabilities of sucess Bernoulli RV. Within each layer columns (species) are independent (i.e. conditional on draw)
 # computes the Expectation and Variance of the number of success per site assuming each layer (draw)
@@ -116,13 +116,28 @@ speciesrichness.jsodm_lv <- function(fit,
                             envir = environment())
   }
   sitesplits <- split(1:nrow(fit$data$Xocc), ceiling(1:nrow(fit$data$Xocc) / chunksize))
-  srich.l <- pbapply::pblapply(sitesplits, function(modelsites){
-    subfit <- subsetofmodelsites.jsodm_lv(fit, modelsites)
-    srich <- speciesrichness.jsodm_lv_allsites(subfit, occORdetection = occORdetection, 
-                                      desiredspecies = desiredspecies, usefittedlvv = usefittedlvv,
-                                      nlvperdraw = nlvperdraw)
-  }, cl = cl)
-  srich <- do.call(cbind, srich.l)
+  if ("cluster" %in% class(cl)){
+    parallel::clusterExport(cl = cl,
+                            varlist = c("fit", "occORdetection", "desiredspecies",
+                                        "usefittedlvv", "nlvperdraw"),
+                            envir = environment())
+    srich.l <- parallel::parLapply(cl = cl , sitesplits, function(modelsites){
+      subfit <- subsetofmodelsites.jsodm_lv(fit, modelsites)
+      srich <- speciesrichness.jsodm_lv_allsites(subfit, occORdetection = occORdetection, 
+                                                 desiredspecies = desiredspecies, usefittedlvv = usefittedlvv,
+                                                 nlvperdraw = nlvperdraw)
+    }, chunk.size = 1)
+    srich <- do.call(cbind, srich.l)
+  } else {
+    srich <- NULL
+    for (modelsites in sitesplits){
+      subfit <- subsetofmodelsites.jsodm_lv(fit, modelsites)
+      srich.t <- speciesrichness.jsodm_lv_allsites(subfit, occORdetection = occORdetection, 
+                                                 desiredspecies = desiredspecies, usefittedlvv = usefittedlvv,
+                                                 nlvperdraw = nlvperdraw)
+      srich <- cbind(srich, srich.t)
+    }
+  }
   return(srich)
 }
 
