@@ -40,7 +40,8 @@ modelqualstats_holdout <- function(fit_wholdoutdata, cl, nlvperdraw = 1000){
   if ("jsodm_lv" %in% class(fit_wholdoutdata)){
     prednumbers_holdout <- speciesrichness(fit_wholdoutdata, occORdetection = "detection",
                                            usefittedlvv = FALSE,
-                                           nlvperdraw = nlvperdraw)
+                                           nlvperdraw = nlvperdraw,
+                                           cl = cl)
     print("Computed: Predicted Number of Species for Holdout Data")
   } else if ("jsodm" %in% class(fit_wholdoutdata)){
     prednumbers_holdout <- speciesrichness(fit_wholdoutdata, occORdetection = "detection")
@@ -64,8 +65,8 @@ modelqualstats_insample <- function(fit, cl, nlvperdraw = 1000){
   
   prednumbers_insample <- prednumbers_insample_fitLV <- prednumbers_insample_margLV <- NULL
   if ("jsodm_lv" %in% class(fit)){
-    prednumbers_insample_fitLV <- speciesrichness(fit, occORdetection = "detection", usefittedlvv = TRUE)
-    prednumbers_insample_margLV <- speciesrichness(fit, occORdetection = "detection", usefittedlvv = FALSE, nlvperdraw = nlvperdraw)
+    prednumbers_insample_fitLV <- speciesrichness(fit, occORdetection = "detection", usefittedlvv = TRUE, cl = cl)
+    prednumbers_insample_margLV <- speciesrichness(fit, occORdetection = "detection", usefittedlvv = FALSE, nlvperdraw = nlvperdraw, cl = cl)
     print("Computed: Predicted Number of Species for Insample Data")
   } else if ("jsodm" %in% class(fit)){
     prednumbers_insample <- speciesrichness(fit, occORdetection = "detection")

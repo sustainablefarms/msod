@@ -1,7 +1,12 @@
 #' @title Expected Biodiversity
 #' @description The expected number of species occupying a ModelSite, or the expected number of species detected at a ModelSite.
-#' 
-
+#' @examples 
+#' fit <- readRDS("../sflddata/private/data/testdata/cutfit_7_4_11_2LV.rds")
+#' fit <- translatefit(fit)
+#' cl <- parallel::makeCluster(2)
+#' srich <- speciesrichness(fit,  occORdetection = "detection",
+#'                 desiredspecies = fit$species, usefittedlvv = FALSE,
+#'                                      nlvperdraw = 1000, chunksize = 2, cl = cl)
 
 # probarr is a 3-array of probabilities of sucess Bernoulli RV. Within each layer columns (species) are independent (i.e. conditional on draw)
 # computes the Expectation and Variance of the number of success per site assuming each layer (draw)
@@ -97,6 +102,31 @@ speciesrichness <- function(fit, occORdetection, desiredspecies, ...){
 
 #' @export
 speciesrichness.jsodm_lv <- function(fit, 
+                                     occORdetection,
+                                    desiredspecies = fit$species,
+                                     usefittedlvv = FALSE,
+                                    nlvperdraw = 1,
+                                    chunksize = ceiling(1E7 / (nrow(fit$mcmc[[1]]) * nlvperdraw)),
+                                    cl = NULL){
+  stopifnot(chunksize > 1)
+  if ("cluster" %in% class(cl)){
+    parallel::clusterExport(cl = cl,
+                            varlist = c("fit", "occORdetection", "desiredspecies",
+                                        "usefittedlvv", "nlvperdraw"),
+                            envir = environment())
+  }
+  sitesplits <- split(1:nrow(fit$data$Xocc), ceiling(1:nrow(fit$data$Xocc) / chunksize))
+  srich.l <- pbapply::pblapply(sitesplits, function(modelsites){
+    subfit <- subsetofmodelsites.jsodm_lv(fit, modelsites)
+    srich <- speciesrichness.jsodm_lv_allsites(subfit, occORdetection = occORdetection, 
+                                      desiredspecies = desiredspecies, usefittedlvv = usefittedlvv,
+                                      nlvperdraw = nlvperdraw)
+  }, cl = cl)
+  srich <- do.call(cbind, srich.l)
+  return(srich)
+}
+
+speciesrichness.jsodm_lv_allsites <- function(fit, 
                                      occORdetection,
                                     desiredspecies = fit$species,
                                      usefittedlvv = FALSE,
