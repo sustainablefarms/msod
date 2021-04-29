@@ -32,10 +32,6 @@ modelqualstats <- function(fit, holdoutXocc, holdoutXobs, holdoutModelSite, hold
 }
 
 modelqualstats_holdout <- function(fit_wholdoutdata, cl, nlvperdraw = 1000){
-  likel.mat_holdout <- likelihood(fit_wholdoutdata, numlvsims = nlvperdraw)
-  lpd_holdout <- elpd(likel.mat_holdout)
-  print("Estimated LPD of Holdout Sites")
-  
   prednumbers_holdout <- NULL
   if ("jsodm_lv" %in% class(fit_wholdoutdata)){
     prednumbers_holdout <- speciesrichness(fit_wholdoutdata, occORdetection = "detection",
@@ -48,6 +44,11 @@ modelqualstats_holdout <- function(fit_wholdoutdata, cl, nlvperdraw = 1000){
     prednumbers_holdout <- speciesrichness(fit_wholdoutdata, occORdetection = "detection")
     print("Computed: Predicted Number of Species for Holdout Data")
   }
+  
+  likel.mat_holdout <- likelihood(fit_wholdoutdata, numlvsims = nlvperdraw)
+  lpd_holdout <- elpd(likel.mat_holdout)
+  print("Estimated LPD of Holdout Sites")
+  
   return(list(
     lpd = lpd_holdout,
     predspecnum = prednumbers_holdout)
