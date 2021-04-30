@@ -17,7 +17,7 @@
 #' @export
 likelihood.jsodm_lv <- function(fit,
                                 numlvsims = 1000, cl = NULL, simseed = NULL, reps = ceiling(numlvsims / 100), chunksize = 100){
-  stopifnot(chunksize > 1)
+  # stopifnot(chunksize > 1)
   if ((reps > 1) && !is.null(simseed)){warning("simseed is supplied: each repeat of lv.v simulation will use the same seed. Suggest setting reps = 1 or simseed = NULL.")}
   sitesplits <- split(1:nrow(fit$data$Xocc), ceiling(1:nrow(fit$data$Xocc) / chunksize))
   likel.mat.l <- pbapply::pblapply(sitesplits, function(modelsites){

@@ -106,10 +106,10 @@ subsetofmodelsites.jsodm_lv <- function(fit, modelsites){
     return(newmodelsites[as.character(sitenumbers)])
   }
   
-  fit <- supplant_new_data.jsodm(fit, Xocc[modelsites, ], 
-                                 Xobs = Xobs[ModelSite %in% modelsites, ], 
-                                 ModelSite = tonewmodelsite(ModelSite[ModelSite %in% modelsites]), 
-                                 y = y[ModelSite %in% modelsites, ],
+  fit <- supplant_new_data.jsodm(fit, Xocc[modelsites, , drop = FALSE], 
+                                 Xobs = Xobs[ModelSite %in% modelsites, , drop = FALSE], 
+                                 ModelSite = tonewmodelsite(ModelSite[ModelSite %in% modelsites, drop = FALSE]), 
+                                 y = y[ModelSite %in% modelsites, , drop = FALSE],
                                  toXocc = function(x) x, toXobs = function(x) x)
   
   # relabel fitted lv.v for the modelsites
