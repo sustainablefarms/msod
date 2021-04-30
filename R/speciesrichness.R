@@ -3,7 +3,7 @@
 #' @examples 
 #' fit <- readRDS("../sflddata/private/data/testdata/cutfit_7_4_11_2LV.rds")
 #' fit <- translatefit(fit)
-#' cl <- parallel::makeCluster(1)
+#' cl <- NULL # cl <- parallel::makeCluster(1)
 #' srich <- speciesrichness(fit,  occORdetection = "detection",
 #'                 desiredspecies = fit$species, usefittedlvv = FALSE,
 #'                                      nlvperdraw = 1000, chunksize = 2, cl = cl)
@@ -129,13 +129,18 @@ speciesrichness.jsodm_lv <- function(fit,
     }, chunk.size = 1)
     srich <- do.call(cbind, srich.l)
   } else {
+    # using for loop to ensure that R's smart lapply functions don't load multiple chunks at once.
+    # Though I think the issue was that chunk size was too big!
     srich <- NULL
-    for (modelsites in sitesplits){
-      subfit <- subsetofmodelsites.jsodm_lv(fit, modelsites)
+    pb <- pbapply::startpb(0, length(sitesplits))
+    on.exit(pbapply::closepb(pb))
+    for (i in 1:length(sitesplits)){
+      subfit <- subsetofmodelsites.jsodm_lv(fit, sitesplits[[i]])
       srich.t <- speciesrichness.jsodm_lv_allsites(subfit, occORdetection = occORdetection, 
                                                  desiredspecies = desiredspecies, usefittedlvv = usefittedlvv,
                                                  nlvperdraw = nlvperdraw)
       srich <- cbind(srich, srich.t)
+      pbapply::setpb(pb, i)
     }
   }
   return(srich)
