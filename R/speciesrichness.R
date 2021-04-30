@@ -106,7 +106,7 @@ speciesrichness.jsodm_lv <- function(fit,
                                     desiredspecies = fit$species,
                                      usefittedlvv = FALSE,
                                     nlvperdraw = 1,
-                                    chunksize = ceiling(1E7 / (nrow(fit$mcmc[[1]]) * nlvperdraw)),
+                                    chunksize = ceiling(1E6 / (nrow(fit$mcmc[[1]]) * nlvperdraw)),
                                     cl = NULL){
   # stopifnot(chunksize > 1)
   if ("cluster" %in% class(cl)){
