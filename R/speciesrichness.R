@@ -135,6 +135,7 @@ speciesrichness.jsodm_lv <- function(fit,
                                                  desiredspecies = desiredspecies, usefittedlvv = usefittedlvv,
                                                  nlvperdraw = nlvperdraw)
     })
+    srich <- do.call(cbind, srich.l)
   }
   return(srich)
 }
