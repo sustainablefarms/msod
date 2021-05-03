@@ -50,12 +50,13 @@ poccupancy_randomsite.jsodm_lv <- function(fit){
 
   Epocc <- apply(pocc, MARGIN = c(1, 2), mean)
   Vpocc <- apply(pocc, MARGIN = c(1, 2), sd)^2
-  randselsiteEV <- EVtheta2EVmarg(Vsum = Vpocc, Esum = Epocc)
-  colnames(randselsiteEV) <- colnames(pocc)
-  rownames(randselsiteEV) <- c("E", "V")
-  lower <- randselsiteEV["E", ] - 2 * sqrt(randselsiteEV["V", ])
-  upper <- randselsiteEV["E", ] + 2 * sqrt(randselsiteEV["V", ])
-  out <- rbind(randselsiteEV, lower = lower, upper = upper)
+  E <- colMeans(Epocc)
+  V <- colMeans(Vpocc) +
+    (apply(Vpocc, MARGIN = 2, sd) * (nrow(Vpocc) - 1) / nrow(Vpocc))^2 #have full population of sites
+  
+  lower <- E - 2 * sqrt(V)
+  upper <- E + 2 * sqrt(V)
+  out <- rbind(E = E, V = V, lower = lower, upper = upper)
   if ( any(lower < 0) || any(upper > 1)){warning("The Gaussian approximation for upper and lower limits is not appropriate: some limits are outside 0 and 1")}
   return(out)
 }
