@@ -9,21 +9,20 @@
 #' fit <- readRDS("../sflddata/private/data/testdata/cutfit_7_4_11_2LV.rds")
 #' fit <- readRDS("../Experiments/7_4_modelrefinement/fittedmodels/7_4_13_model_2lv_e13.rds")
 #' fit <- translatefit(fit)
-#' Xocc <- unstandardise.designmatprocess(fit$XoccProcess, fit$data$Xocc[1, , drop = FALSE])
-#' pocc <- poccupancy_margotherspecies.jsodm_lv(fit, Xocc)
-#' pocc <- poccupancy_mostfavourablesite.jsodm_lv(fit, Xocc)
-#' pocc <- poccupancy_randomsite.jsodm_lv(fit, Xocc)
-#' sprich1 <- occspecrichness.jsodm_lv(fit, Xocc)
-#' sprich <- occspecrichnessRV.jsodm_lv(fit, Xocc)
-#' system.time(sprich <- occspecrichness_avsite.jsodm_lv(fit, Xocc))
+#' Xocc <- sflddata::unstandardise.designmatprocess(fit$XoccProcess, fit$data$Xocc[1:5, , drop = FALSE])
+#' fittmp <- supplant_new_data(fit, Xocc)
+#' pocc <- poccupancy_margotherspecies.jsodm_lv(fittmp)
+#' pocc <- poccupancy_mostfavourablesite.jsodm_lv(fittmp)
+#' pocc <- poccupancy_randomsite.jsodm_lv(fittmp)
+#' sprich1 <- occspecrichness.jsodm_lv(fittmp)
+#' sprich <- occspecrichnessRV.jsodm_lv(fittmp)
+#' system.time(sprich <- occspecrichness_avsite.jsodm_lv(fittmp))
 
 #' @export
 # returns probability of occupancy of each species ignoring other species, for each site
-poccupancy_margotherspecies.jsodm_lv <- function(fit, Xocc, toXocc = fit$toXocc){
-  Xocc <- sflddata::apply.designmatprocess(fit$XoccProcess, Xocc)
+poccupancy_margotherspecies.jsodm_lv <- function(fit){
   stopifnot("jsodm_lv" %in% class(fit))
-  occ.b <- get_occ_b(fit)
-  pocc <- poccupy_raw.jsodm(Xocc, occ.b)
+  pocc <- poccupy(fit, lvvfromposterior = FALSE, margLV = TRUE)
   limits <- hpd_narray(pocc)
   pocc_median <- apply(pocc, MARGIN = c(1, 2), median)
   out <- abind::abind(limits, median = pocc_median)
@@ -32,8 +31,8 @@ poccupancy_margotherspecies.jsodm_lv <- function(fit, Xocc, toXocc = fit$toXocc)
 
 # returns probability of occupancy of a species at the most favourable (according to median) patch, along with corresponding 95% HPD limits of this most favourable patch
 #' @export
-poccupancy_mostfavourablesite.jsodm_lv <- function(fit, Xocc){
-  pocc <- poccupancy_margotherspecies.jsodm_lv(fit, Xocc)
+poccupancy_mostfavourablesite.jsodm_lv <- function(fit){
+  pocc <- poccupancy_margotherspecies.jsodm_lv(fit)
   bestsite <- apply(pocc[,,"median", drop = FALSE], MARGIN = 2, which.max)
   pocc_best <- pocc[1, , ] * 0
   for (i in 1:ncol(pocc)){
@@ -45,12 +44,10 @@ poccupancy_mostfavourablesite.jsodm_lv <- function(fit, Xocc){
 
 # returns probability of occupancy in a randomly selected site
 #' @export
-poccupancy_randomsite.jsodm_lv <- function(fit, Xocc){
-  Xocc <- sflddata::apply.designmatprocess(fit$XoccProcess, Xocc)
+poccupancy_randomsite.jsodm_lv <- function(fit){
   stopifnot("jsodm_lv" %in% class(fit))
-  occ.b <- get_occ_b(fit)
-  pocc <- poccupy_raw.jsodm(Xocc, occ.b)
-  
+  pocc <- poccupy(fit, lvvfromposterior = FALSE, margLV = TRUE)
+
   Epocc <- apply(pocc, MARGIN = c(1, 2), mean)
   Vpocc <- apply(pocc, MARGIN = c(1, 2), sd)^2
   randselsiteEV <- EVtheta2EVmarg(Vsum = Vpocc, Esum = Epocc)
@@ -66,19 +63,17 @@ poccupancy_randomsite.jsodm_lv <- function(fit, Xocc){
 
 # returns species richness predicted mean and variance
 #' @export
-occspecrichness.jsodm_lv <- function(fit, Xocc){
+occspecrichness.jsodm_lv <- function(fit){
   stopifnot("jsodm_lv" %in% class(fit))
-  specrich <- apply_to_new_data(speciesrichness, fit = fit, Xocc = Xocc,  
-                                funargs = list(occORdetection = "occupancy",
-                                               nlvperdraw = 5))
+  specrich <- speciesrichness(fit, occORdetection = "occupancy", nlvperdraw = 5)
   warning("Using 5 simulated LV values per draw")
   return(specrich)
 }
 
 #' @export
-occspecrichnessRV.jsodm_lv <- function(fit, Xocc){
+occspecrichnessRV.jsodm_lv <- function(fit){
   stopifnot("jsodm_lv" %in% class(fit))
-  specrich <- predsumspeciesRV_newdata(fit, Xocc, nLVsim = 100, type = "marginal")
+  specrich <- predsumspeciesRV(fit, nLVsim = 100, UseFittedLV = FALSE, type = "marginal")
   return(specrich)
 }
 
