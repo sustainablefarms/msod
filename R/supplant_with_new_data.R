@@ -76,6 +76,7 @@ supplant_new_data.jsodm <- function(fit, Xocc, Xobs = NULL, ModelSite = NULL, y 
   fit$data$ModelSite <- data.list$ModelSite
   fit$data$nmodelsites <- data.list$nmodelsites
   fit$data$nvisits <- data.list$nvisits
+  stopifnot("matrix" %in% class(fit$data$Xocc))
   return(fit)
 }
 
