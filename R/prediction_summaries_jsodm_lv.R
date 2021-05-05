@@ -72,6 +72,13 @@ occspecrichness.jsodm_lv <- function(fit){
 }
 
 #' @export
+occspecrichness.jsodm <- function(fit){
+  stopifnot("jsodm" %in% class(fit))
+  specrich <- speciesrichness(fit, occORdetection = "occupancy")
+  return(specrich)
+}
+
+#' @export
 occspecrichnessRV.jsodm_lv <- function(fit){
   stopifnot("jsodm_lv" %in% class(fit))
   specrich <- predsumspeciesRV(fit, nLVsim = 100, UseFittedLV = FALSE, type = "marginal")
@@ -82,6 +89,18 @@ occspecrichnessRV.jsodm_lv <- function(fit){
 # returns species richness predicted mean and variance when the site is chosen randomly with equal probability
 occspecrichness_avsite.jsodm_lv <- function(fit){
   specrich <- occspecrichness.jsodm_lv(fit)
+  Epred <- mean(specrich["E",])
+  m2_site <- specrich["V", ] + specrich["E",]^2
+  Em2 <- mean(m2_site)
+  Vpred <- Em2 - Epred^2
+  return(c(
+    E = Epred,
+    V = Vpred
+  ))
+}
+#' @export
+occspecrichness_avsite.jsodm <- function(fit){
+  specrich <- occspecrichness.jsodm(fit)
   Epred <- mean(specrich["E",])
   m2_site <- specrich["V", ] + specrich["E",]^2
   Em2 <- mean(m2_site)
