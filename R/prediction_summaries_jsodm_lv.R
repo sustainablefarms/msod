@@ -12,6 +12,7 @@
 #' Xocc <- sflddata::unstandardise.designmatprocess(fit$XoccProcess, fit$data$Xocc[1:5, , drop = FALSE])
 #' fittmp <- supplant_new_data(fit, Xocc)
 #' pocc <- poccupancy_margotherspecies.jsodm_lv(fittmp)
+#' pocc <- poccupancy_margotherspeciespmaxsite.jsodm_lv(fittmp)
 #' pocc <- poccupancy_mostfavourablesite.jsodm_lv(fittmp)
 #' pocc <- poccupancy_randomsite.jsodm_lv(fittmp)
 #' sprich1 <- occspecrichness.jsodm_lv(fittmp)
@@ -26,6 +27,32 @@ poccupancy_margotherspecies.jsodm_lv <- function(fit){
   limits <- hpd_narray(pocc)
   pocc_median <- apply(pocc, MARGIN = c(1, 2), median)
   out <- abind::abind(limits, median = pocc_median)
+  return(out)
+}
+
+#' @export
+poccupancy_margotherspeciespmaxsite.jsodm_lv <- function(fit){
+  stopifnot("jsodm_lv" %in% class(fit))
+  pocc <- poccupy(fit, lvvfromposterior = FALSE, margLV = TRUE)
+  # sitemedians <- apply(pocc, MARGIN = c(1, 2), median)
+  # bestsite <- apply(sitemedians, MARGIN = 2, which.max)
+  if (nrow(pocc) > 1){
+    # Get maximums per draw per species, across sites
+    # with apply: maxpocc <- apply(pocc, MARGIN = c(2, 3), max)
+    # faster with Rfast I think:
+    dimpocc <- dim(pocc)
+    dimnamespocc <- dimnames(pocc)
+    dim(pocc) <- c(dimpocc[1], dimpocc[2] * dimpocc[3])
+    maxpocc <- Rfast::colMaxs(pocc, value = TRUE)
+    dim(maxpocc) <- dimpocc[2:3]
+    dimnames(maxpocc) <- dimnamespocc[2:3]
+  } else {
+    maxpocc <- pocc[1, , , drop = TRUE]
+  }
+  limits <- hpd_narray(maxpocc)
+  maxpocc_median <- apply(maxpocc, MARGIN = 1, median)
+  out <- abind::abind(limits, median = maxpocc_median)
+  out <- cbind(out, bestsite = 0)
   return(out)
 }
 
