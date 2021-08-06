@@ -68,6 +68,20 @@ prepJAGSdata2.jsodm_lv <- function(Xocc, Xobs, y, ModelSite, nlv, ...){
   return(data.list)
 }
 
+#' @describeIn prepJAGSdata Data preparation for the jsodm_lv_re model
+#' @param ModelSiteGroup is a vector of integers for grouping model sites for the purpose of random effects. For each row of Xocc it gives an index that defines the group. Each group has its own random effect for occupancy, and another for detection
+# ModelSiteGroup <- as.integer(as.factor(Xocc$SiteCode) )
+prepJAGSdata2.jsodm_lv_re <- function(Xocc, Xobs, y, ModelSite, nlv, ModelSiteGroup, ...){
+  stopifnot(nrow(Xocc) == length(ModelSiteGroup))
+  stopifnot(all(1:max(ModelSiteGroup) %in% ModelSiteGroup))
+  data.list <- prepJAGSdata2.jsodm_lv(Xocc, Xobs, y, ModelSite, nlv)
+  SiteOccInd <- ModelSiteGroup # a map from model site to group
+  SiteObsInd <- ModelSiteGroup[ModelSite]# a map from visit to group 
+  nsitegroups <- max(ModelSiteGroup) # number of different groups
+  data.list <- c(data.list, list(nsitegroups = nsitegroups, SiteOccInd = SiteOccInd, SiteObsInd = SiteObsInd))
+  return(data.list)
+}
+
 #' @describeIn prepJAGSdata Data preparation for the jsodm_lv_sepexp model (latent variables with separable covariance that is an exponential function)
 prepJAGSdata2.jsodm_lv_sepexp <- function(Xocc, Xobs, y, ModelSite, nlv, spatdistmat, timedistmat, ...){
   data.list <- prepJAGSdata2.jsodm_lv(Xocc, Xobs, y, ModelSite, nlv)

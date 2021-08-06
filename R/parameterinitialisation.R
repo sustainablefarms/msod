@@ -26,6 +26,11 @@ paraminits.jsodm_lv <- function(chain, indata, ...){
   return(out)
 }
 
+paraminits.jsodm_lv_re <- function(chain, indata, ...){
+  out <- paraminits.jsodm_lv(chain, indata, ...)
+  return(out)
+}
+
 paraminits.jsodm_lv_sepexp <- function(chain, indata, ...){
   out <- paraminits.jsodm(chain, indata, ...)
   return(out)

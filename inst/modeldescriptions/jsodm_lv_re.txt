@@ -57,7 +57,7 @@ model{
 
   # setup site level random effects
   
-  for (j in 1:nmodelsites) {
+  for (j in 1:nsitegroups) {
     occ.re[j] ~ dnorm(0, tau.occ.re)T(-10,10)
     det.re[j] ~ dnorm(0, tau.det.re)T(-10,10)
   }

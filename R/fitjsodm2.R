@@ -57,6 +57,15 @@ fitjsodm             <- function(Xocc, Xobs, y, ModelSite, modeltype,  #all thes
     #Specify the parameters to be monitored
     monitor.params = c(monitor.params, 'lv.b', "lv.v")
   }
+  if (modeltype == "jsodm_lv_re"){
+    ### Latent variable multi-species co-occurence model with random effects
+    modelFile=system.file("modeldescriptions",
+                          "jsodm_lv_re.txt",
+                          package = "msod")
+    #Specify the parameters to be monitored
+    monitor.params = c(monitor.params, 'lv.b', "lv.v", "occ.re", "sigma.occ.re",
+                      "det.re", "sigma.det.re")
+  }
   if (modeltype == "jsodm_lv_sepexp"){
     ### Latent variable multi-species co-occurence model
     modelFile=system.file("modeldescriptions",
