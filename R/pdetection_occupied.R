@@ -34,6 +34,27 @@ pdet_occ_raw.jsodm <- function(fixedcovar, loadfixed){
   return(pdet)
 }
 
+#' Raw version for random effects in the detection takes a set of offsets
+#' Random effect value is the value of a random effect for each row of the fixed covariates (in this case visits)
+#' Can be constructed from a fitted object by `get_det_re(fit)[fit$data$SiteObsInd, ]`
+#' @export
+pdet_occ_raw.jsodm_lv_re <- function(fixedcovar, loadfixed, det.re){
+  stopifnot(length(dim(fixedcovar)) == 2)
+  stopifnot(length(dim(loadfixed)) <= 3)
+  stopifnot(nrow(det.re) == nrow(fixedcovar))
+  stopifnot(dplyr::last(dim(loadfixed)) == dplyr::last(dim(det.re)))
+  # convert randomeffectval to duplicated across species (as it is per site not species)
+  det.re_allspec <- rep(det.re, nrow(loadfixed))
+  dim(det.re_allspec) <- c(nrow(fixedcovar), ncol(det.re), nrow(loadfixed))
+  det.re_allspec <- aperm(det.re_allspec, perm = c(1, 3, 2))
+  
+  # add to usual linear predictor
+  det_linpred <-  det.re_allspec + tensor::tensor(fixedcovar, loadfixed, alongA = 2, alongB = 2)
+  
+  pdet <- exp(det_linpred) / (exp(det_linpred) + 1)   #this is the inverse logit function
+  return(pdet)
+}
+
 #' @export
 pdet_occ <- function(fit, usethetasummary = NULL, ...){
   UseMethod("pdet_occ")
@@ -47,5 +68,15 @@ pdet_occ.jsodm <- function(fit, usethetasummary = NULL){
 
 #' @export
 pdet_occ.jsodm_lv <- pdet_occ.jsodm
-  
+
+pdet_occ.jsodm_lv_re <- function(fit, usethetasummary = NULL, refromposterior = TRUE){
+  det.v <- fit$data$Xobs
+  det.b <- get_det_b(fit, usesummary = usethetasummary)
+  if (refromposterior){
+    det.re <- get_det_re(fit)[fit$data$SiteObsInd, ]
+  } else {
+    stop("Function for simulating random effect values not implemented. Please us random effects fitted in the posterior.")
+  }
+  return(pdet_occ_raw.jsodm_lv_re(det.v, det.b, det.re))
+}  
   

@@ -21,6 +21,13 @@ get_det_b <- function(fit, usesummary = NULL){
   return(det.b)
 }
 
+#' @describeIn get_occ_b Get the fitted detection random effects
+get_det_re <- function(fit, usesummary = NULL){
+  draws <- do.call(rbind, fit$mcmc)
+  det.re <- bugsvar2array_vector(draws, "det.re", 1:fit$data$nsitegroups)
+  return(det.re)
+}
+
 #' @describeIn get_occ_b Get fitted latent variable values.
 #' @export
 get_lv_v <- function(fit, usesummary = NULL){

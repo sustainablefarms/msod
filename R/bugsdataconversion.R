@@ -34,6 +34,25 @@ bugsvar2matrix <- function(values, varname, rowidx, colidx){
   return(return(mat))
 }
 
+#' @describeIn bugsvar2array Converting vector-valued parameters from the bugs variable format to an R array
+#' @param idx Index for the vector
+#' @export
+bugsvar2array_vector <- function(values, varname, idx){
+  if (is.vector(values)) {
+    values <- matrix(values, nrow = 1, dimnames = list(row = NULL, col = names(values)))
+  }
+  #checks
+  nvalues <- sum(grepl(paste0("^", varname, "\\[.*"), colnames(values)))
+  stopifnot(nvalues > 0)
+  stopifnot(length(idx) <= nvalues)
+  #actual extraction
+  bugsnames <- paste0(varname, "[",idx, "]")
+  value <- array(t(values[, bugsnames]),
+        dim = c(length(idx), nrow(values)),
+        dimnames = list(idx = idx, draw = 1:nrow(values)))
+  return(value)  
+}
+
 #' @describeIn bugsvar2array Converts a matrix of parameter values to bugs variable format
 #' @param theta is a parameter arrays
 #' @param name parameter
