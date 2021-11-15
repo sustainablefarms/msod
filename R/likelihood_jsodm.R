@@ -77,7 +77,8 @@ likelihood_draw.jsodm <- function(Xocc, Xobs, y, ModelSite, occ.b, det.b){
     (1 - Occ.Pred) * NoneDetected #add probability of unoccupied for zero detections
   
   # combine likelihoods of detections between species
-  Likl.JointVisitSp <- apply(Likl.JointVisit, MARGIN = 1, prod) # multiply probabilities of each species together because species are conditionally independent
+  if (dim(y)[[2]] == 1){Likl.JointVisitSp <- drop(Likl.JointVisit)} # when only one species the dimensions of Likl_condoccupied.JointVisit and NoneDetected get turned into single row, columns per site.
+  else {Likl.JointVisitSp <- apply(Likl.JointVisit, MARGIN = 1, prod)} # multiply probabilities of each species together because species are conditionally independent
   
   return(Likl.JointVisitSp)
 }
