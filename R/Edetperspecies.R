@@ -49,3 +49,26 @@ detperspecies_probarr <- function(pocc, pdet_occ, ModelSite){
   Endet <- Endet_occ * pocc + 0
   return(Endet)
 }
+
+#' @describeIn Edetperspecies.jsodm Get observed detections per model site x species from the 'y' data in the fitted object.
+#' @export
+Odetperspecies <- function(fit, y = NULL){
+  ModSiteVisits <- plyr::split_indices(fit$data$ModelSite)
+  names(ModSiteVisits) <- lapply(ModSiteVisits, function(x) fit$data$ModelSite[x[[1]]]) %>% unlist()
+  
+  if (is.null(y)){y <- fit$data$y}
+  
+  # per species number of detections at each site 
+  # Depends on the number of visits
+  Ondet <- vapply(ModSiteVisits,
+                      function(visits){
+                        ndet <- colSums(y[visits, , drop = FALSE])
+                        ndet <- matrix(ndet, nrow = 1, ncol = ncol(y)) 
+                        colnames(ndet) <- colnames(y)
+                        return(ndet)
+                      },
+                      FUN.VALUE = matrix(1.1, nrow = 1, ncol = ncol(y)))
+  #Ondet array of 1 x species x modelsite
+  Ondet <- aperm(Ondet, perm = c(3, 2, 1)) #now Model Site x Species x 1
+  return(Ondet)
+}

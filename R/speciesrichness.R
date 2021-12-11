@@ -55,6 +55,7 @@ Eoccspeciesrichness_raw.jsodm_lv <- function(fixedcovar, loadfixed, randomcovar,
 detspeciesrichness_probarr <- function(pocc, pdet_occ, ModelSite){
   ModSiteVisits <- plyr::split_indices(ModelSite)
   
+  # for each species probability that it isn't detect in all visits
   NoDetections_occ <- vapply(ModSiteVisits,
                              function(visits){
                                NoDetectProb <- rowprods_arr(1 - pdet_occ[visits, , , drop = FALSE])
