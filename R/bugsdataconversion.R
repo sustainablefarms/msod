@@ -1,9 +1,11 @@
 #' @title Converting Parameter Values in BUGS Name and Format to Arrays and Matrices
 #' @description For converting values for array-valued parameters from the bugs variable format to an array
-#' @param values is a list of values named according to the bugs variables names
+#' @param values is a matrix of values with column names named according to the bugs variables names
 #' @param varname is the desired variable name (e.g. 'occ.b')
-#' @param rowidx is a list of rows to extract, by number
-#' @param colidx is a list of columns to extract, by number
+#' @param rowidx is a list of rows to extract, by number, typically 1, 2,  , nrow of the array-valued parameter
+#' @param colidx is a list of columns to extract, by number, typically 1, 2,  , ncol of array-valued parameter
+#' @return A 3-array. The first two dimensions match the row and column of the array-valued parameter. 
+#' The third dimension corresponds to draws.
 #' @export
 bugsvar2array <- function(values, varname, rowidx, colidx){
   if (is.vector(values)) {
@@ -23,19 +25,17 @@ bugsvar2array <- function(values, varname, rowidx, colidx){
 }
 
 #' @describeIn bugsvar2array For converting values for array-valued parameters from the bugs variable format to a matrix
-#' @param values is a list of values named according to the bugs variables names
-#' @param varname is the desired variable name (e.g. 'occ.b')
-#' @param rowidx is a list of rows to extract, by number
-#' @param colidx is a list of columns to extract, by number
+#' when `values` is a matrix with a single row.
+#' @return A matrix representing `varname` extracted from `values`.
 #' @export
 bugsvar2matrix <- function(values, varname, rowidx, colidx){
   arr <- bugsvar2array(values, varname, rowidx, colidx)
   mat <- drop_to_matrix(arr, 3)
-  return(return(mat))
+  return(mat)
 }
 
 #' @describeIn bugsvar2array Converting vector-valued parameters from the bugs variable format to an R array
-#' @param idx Index for the vector
+#' @param idx The index values of the vector: 1, 2, .... length.
 #' @export
 bugsvar2array_vector <- function(values, varname, idx){
   if (is.vector(values)) {
