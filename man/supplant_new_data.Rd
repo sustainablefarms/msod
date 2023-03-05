@@ -28,6 +28,10 @@ Must also include the ModelSiteVars columns to uniquely specify ModelSite.}
 \item{ModelSite}{A vector of integers of equal length to the number of visits. Each entry species for the corresponding visit, the of Xocc that was visited}
 
 \item{y}{A dataframe of species observations (1 or 0). Each column is a species. Rows must correspond to Xobs}
+
+\item{toXocc}{NULL to use a process saved by \link[sflddata:save_process]{sflddata::save_process}, otherwise a function that takes Xocc as the only input and returns a model matrix for the occupancy component.}
+
+\item{toXobs}{like \code{toXocc}, except for Xobs and the detection component of the model.}
 }
 \description{
 Supplant data in fitted object with new data for the purposes of predicting on new data

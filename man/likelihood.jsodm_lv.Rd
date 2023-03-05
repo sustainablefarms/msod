@@ -4,12 +4,23 @@
 \alias{likelihood.jsodm_lv}
 \title{Likelihood Computation for JSODM_LV Model}
 \usage{
-\method{likelihood}{jsodm_lv}(fit, numlvsims = 1000, cl = NULL, simseed = NULL)
+\method{likelihood}{jsodm_lv}(
+  fit,
+  numlvsims = 1000,
+  cl = NULL,
+  simseed = NULL,
+  reps = ceiling(numlvsims/100),
+  chunksize = 100
+)
 }
 \arguments{
 \item{numlvsims}{the number of simulated latent variable values to use for computing likelihoods}
 
 \item{cl}{a cluster created by parallel::makeCluster()}
+
+\item{reps}{divides the work into \code{reps} of lv.v simulations}
+
+\item{chunksize}{divides the work up by \code{chunksize} sets of sites}
 
 \item{chains}{is a vector indicator which mcmc chains to extract draws from. If NULL then all chains used.}
 }
@@ -20,4 +31,10 @@ The value in each cell is the probability density, given the parameters from the
 \description{
 Computes the likelihood of observations at each ModelSite. At data in the fitted model, or on new data supplied.
 It uses \link{likelihood_joint_LVvmarg_draw.jsodm_lv}.
+}
+\examples{
+fit <- readRDS("../sflddata/private/data/testdata/cutfit_7_4_11_2LV.rds")
+fit <- translatefit(fit)
+cl <- parallel::makeCluster(1)
+lkl <- likelihood(fit, numlvsims = 10, cl = cl, chunksize = 2)
 }

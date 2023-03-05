@@ -2,15 +2,15 @@
 % Please edit documentation in R/as_list_format.R
 \name{as_list_format}
 \alias{as_list_format}
-\title{A quick replacement to \code{\link[runjags:list.dump.format]{runjags::list.format()}} that does nothing if the argument is already a list.}
+\title{A quick replacement to \code{\link[runjags:dump.list.format]{runjags::list.format()}} that does nothing if the argument is already a list.}
 \usage{
 as_list_format(data, checkvalid = TRUE)
 }
 \arguments{
-\item{data}{Same as \code{\link[runjags:list.dump.format]{runjags::list.format()}}. Typically found in the \code{data} slot of runjags object.}
+\item{data}{Same as \code{\link[runjags:dump.list.format]{runjags::list.format()}}. Typically found in the \code{data} slot of runjags object.}
 
-\item{checkvalid}{See \code{\link[runjags:list.dump.format]{runjags::list.format()}}.}
+\item{checkvalid}{See \code{\link[runjags:dump.list.format]{runjags::list.format()}}.}
 }
 \description{
-A quick replacement to \code{\link[runjags:list.dump.format]{runjags::list.format()}} that does nothing if the argument is already a list.
+A quick replacement to \code{\link[runjags:dump.list.format]{runjags::list.format()}} that does nothing if the argument is already a list.
 }

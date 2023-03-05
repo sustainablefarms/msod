@@ -3,12 +3,15 @@
 \name{bugsvar2array}
 \alias{bugsvar2array}
 \alias{bugsvar2matrix}
+\alias{bugsvar2array_vector}
 \alias{matrix2bugsvar}
 \title{Converting Parameter Values in BUGS Name and Format to Arrays and Matrices}
 \usage{
 bugsvar2array(values, varname, rowidx, colidx)
 
 bugsvar2matrix(values, varname, rowidx, colidx)
+
+bugsvar2array_vector(values, varname, idx)
 
 matrix2bugsvar(theta, name)
 }
@@ -20,6 +23,8 @@ matrix2bugsvar(theta, name)
 \item{rowidx}{is a list of rows to extract, by number}
 
 \item{colidx}{is a list of columns to extract, by number}
+
+\item{idx}{Index for the vector}
 
 \item{theta}{is a parameter arrays}
 
@@ -34,6 +39,8 @@ For converting values for array-valued parameters from the bugs variable format 
 \section{Functions}{
 \itemize{
 \item \code{bugsvar2matrix}: For converting values for array-valued parameters from the bugs variable format to a matrix
+
+\item \code{bugsvar2array_vector}: Converting vector-valued parameters from the bugs variable format to an R array
 
 \item \code{matrix2bugsvar}: Converts a matrix of parameter values to bugs variable format
 }}

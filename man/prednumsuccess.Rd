@@ -9,3 +9,11 @@ prednumsuccess(probarr)
 \description{
 The expected number of species occupying a ModelSite, or the expected number of species detected at a ModelSite.
 }
+\examples{
+fit <- readRDS("../sflddata/private/data/testdata/cutfit_7_4_11_2LV.rds")
+fit <- translatefit(fit)
+cl <- NULL # cl <- parallel::makeCluster(1)
+srich <- speciesrichness(fit,  occORdetection = "detection",
+                desiredspecies = fit$species, usefittedlvv = FALSE,
+                                     nlvperdraw = 1000, chunksize = 2, cl = cl)
+}

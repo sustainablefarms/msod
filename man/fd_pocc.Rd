@@ -28,7 +28,8 @@ I am not sure what effect this has on the summary metrics.
 fit <- readRDS("../Experiments/7_4_modelrefinement/fittedmodels/7_4_13_model_2lv_e13.rds")
 fit <- translatefit(fit)
 Xocc <- unstandardise.designmatprocess(fit$XoccProcess, fit$data$Xocc[1:2, , drop = FALSE])
-pocc <- poccupancy_margotherspecies.jsodm_lv(fit, Xocc)[,,"median"]
+fitsub <- supplant_new_data(fit, Xocc)
+pocc <- poccupancy_margotherspecies.jsodm_lv(fitsub)[,,"median"]
 pocc2_all <- poccupy(fit, lvvfromposterior = FALSE, margLV = FALSE)
 pocc2 <- pocc2_all[1, , , drop = TRUE]
 pocc2 <- t(pocc2)
@@ -45,6 +46,12 @@ traits_raw <- traits_raw[, c("CommonName",
                              nesting_aggregation = "BScore", 
                              seasonal_movement = "MScore", 
                              body_size = "CubeRootBodyWeight")]
+# convert body size into an ordinal value (rather than continuous)
+traits_raw$BodySizeScore <- traits_raw$CubeRootBodyWeight \%>\% cut(c(0, c(20, 90)^(1/3), max(traits_raw$CubeRootBodyWeight)), 
+                                                          ordered_result = TRUE,
+                                                          labels = 1:3) \%>\% 
+  as.character() \%>\% as.numeric()
+traits_raw <- traits_raw[, colnames(traits_raw) != "CubeRootBodyWeight"]
 species <- colnames(pocc)
 stopifnot(setequal(intersect(traits_raw$CommonName, species), species))
 traits <- traits_raw[traits_raw$CommonName \%in\% species, ]

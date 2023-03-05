@@ -13,9 +13,6 @@ simulate_detections_lv.v(fit, esttype = "median", seed = NULL)
 \item{fit}{A runjags fitted object created by \code{\link[=run.detectionoccupancy]{run.detectionoccupancy()}}}
 
 \item{esttype}{Specifies parameter set to extract from fit. See \code{\link[=get_occ_b]{get_occ_b()}} and similar for specification.}
-
-\item{UseFittedLV}{Logical. If TRUE, the simulation uses fitted latent variable values.
-If FALSE, latent variable values will be simulated for each ModelSite}
 }
 \description{
 Simulate observations from parameters of a fitted object.
@@ -25,7 +22,9 @@ Simulate detections from all given parameters (including LV and random effects)
 }
 \section{Functions}{
 \itemize{
-\item \code{simulate_detections_lv.v}: Simulate LV values and use these for simulating detections (with \code{\link[=simulate_detections]{simulate_detections()}}). For each site the simulated LV values are copied across all draws.
+\item \code{simulate_detections_lv.v}: Simulate LV values and detections.
+Uses \code{\link[=simulate_detections]{simulate_detections()}} and \code{\link[=simulate_lv.v]{simulate_lv.v()}}.
+For each site the simulated LV values are copied across all draws.
 }}
 
 \examples{

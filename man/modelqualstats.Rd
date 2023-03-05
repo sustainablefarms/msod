@@ -32,12 +32,15 @@ Compute Model Quality Information
 \examples{
 fit <- readRDS("../sflddata/private/data/testdata/cutfit_7_4_11_2LV.rds")
 fit <- translatefit(fit)
-Xocc <- unstandardise.designmatprocess(fit$XoccProcess, fit$data$Xocc)
+Xocc <- sflddata::unstandardise.designmatprocess(fit$XoccProcess, fit$data$Xocc)
 Xocc$ModelSite <- 1:nrow(Xocc)
-Xobs <- unstandardise.designmatprocess(fit$XobsProcess, fit$data$Xobs)
+Xobs <- sflddata::unstandardise.designmatprocess(fit$XobsProcess, fit$data$Xobs)
 Xobs$ModelSite <- fit$data$ModelSite
 y <- fit$data$y
 yXobs <- cbind(Xobs, y)
 cl <- parallel::makeCluster(1)
-quality <- modelqualstats(fit, holdoutXocc = Xocc, holdoutyXobs = yXobs, ModelSite = 'ModelSite', cl = cl)
+quality <- modelqualstats(fit, holdoutXocc = Xocc, holdoutXobs = Xobs, holdoutModelSite = Xobs$ModelSite,
+holdouty = y, cl = cl, nlvperdraw = 10)
+
+out <- msod:::modelqualstats_insample(fit, cl, nlvperdraw = 10)
 }

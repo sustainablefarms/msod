@@ -3,17 +3,26 @@
 \name{get_occ_b}
 \alias{get_occ_b}
 \alias{get_det_b}
+\alias{get_det_re}
 \alias{get_lv_v}
 \alias{get_lv_b}
+\alias{get_lv_v_spatscale}
+\alias{get_lv_v_timescale}
 \title{Get Arrays of Draws from Posterior for Each Parameter}
 \usage{
 get_occ_b(fit, usesummary = NULL)
 
 get_det_b(fit, usesummary = NULL)
 
+get_det_re(fit, usesummary = NULL)
+
 get_lv_v(fit, usesummary = NULL)
 
 get_lv_b(fit, usesummary = NULL)
+
+get_lv_v_spatscale(fit, usesummary = NULL)
+
+get_lv_v_timescale(fit, usesummary = NULL)
 }
 \arguments{
 \item{fit}{Fitted model}
@@ -30,8 +39,14 @@ Get Arrays of Draws from Posterior for Each Parameter
 \itemize{
 \item \code{get_det_b}: Get detection loadings for external covariates.
 
+\item \code{get_det_re}: Get the fitted detection random effects
+
 \item \code{get_lv_v}: Get fitted latent variable values.
 
 \item \code{get_lv_b}: Get fitted latent variable loadings.
+
+\item \code{get_lv_v_spatscale}: Get fitted latent variable spatial correlation scale for jsodm_lv_sepexp model
+
+\item \code{get_lv_v_timescale}: Get fitted latent variable temporal correlation scale for jsodm_lv_sepexp model
 }}
 
